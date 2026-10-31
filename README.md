@@ -4,7 +4,7 @@ A personal flight-preparation agent accessible through MCP from ChatGPT, Claude,
 
 **Status: partial local implementation.** A local Deep Agent (GPT-6 Luna via Sign in with ChatGPT) researches real flights through FlightAware, prepares legs after approval, and finalizes a briefing with a labeled N1 estimate from a user-generated SimBrief plan. SimBrief API generation, simulator stand mapping, client-app acceptance, and verified aircraft support remain incomplete. No remote repository or deployment exists.
 
-See [agent setup and evaluation](docs/implementation/agent-usage.md) and [MCP SimBrief usage](docs/implementation/simbrief-usage.md).
+See [agent setup and evaluation](docs/implementation/agent-usage.md), [MCP SimBrief usage](docs/implementation/simbrief-usage.md), and the [Cloudflare deployment scaffolding](docs/implementation/deployment.md) (not deployed).
 
 ## Start here
 

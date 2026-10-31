@@ -16,7 +16,7 @@ from typing import Any
 from browserbase import Browserbase
 from playwright.sync_api import sync_playwright
 
-from ifdispatcher.config import ENV_FILE, setting
+from ifdispatcher.config import ENV_FILE, require_paid_operations, setting
 
 HOME_URL = "https://www.simbrief.com/home/"
 DISPATCH_URL = "https://dispatch.simbrief.com/options/custom"
@@ -189,6 +189,7 @@ def generate(fields: dict[str, Any], click: bool, shots_dir: Path) -> dict[str, 
     Returns status "filled" (dry run), "generated", "error", "uncertain", "fill_mismatch", or
     "not_logged_in", with screenshots and the full session replay link.
     """
+    require_paid_operations()  # Browserbase time; a click also writes to SimBrief
     want = form_values(fields)
     shots_dir.mkdir(parents=True, exist_ok=True)
     tag = fields["tag"]

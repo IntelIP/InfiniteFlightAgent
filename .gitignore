@@ -19,3 +19,6 @@ coverage/
 
 # Eval runs contain FlightAware observations; storage terms not yet confirmed.
 /artifacts/evals/
+
+# Wrangler local state
+.wrangler/

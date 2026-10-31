@@ -13,6 +13,9 @@ dependencies = [
     "pyjwt[crypto]>=2.15.1",
     "browserbase>=1.23.0",
     "playwright>=1.64.1",
+    "psycopg[binary]>=3.3.6",
+    "langgraph-checkpoint-postgres>=3.2.0",
+    "boto3>=1.43.123",
 ]
 
 [dependency-groups]
@@ -35,5 +38,7 @@ packages = ["src/ifdispatcher"]
 [project.scripts]
 ifdispatcher = "ifdispatcher.server:main"
 ifd-login = "ifdispatcher.siwc:main"
+ifd-credentials = "ifdispatcher.siwc:credentials_main"
+ifd-serve = "ifdispatcher.remote:main"
 ifd-chat = "ifdispatcher.agent:main"
 ifd-simbrief = "ifdispatcher.simbrief_browser:main"

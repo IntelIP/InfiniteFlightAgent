@@ -30,3 +30,19 @@ def export_tracing_settings() -> bool:
             if key.strip().startswith("LANGSMITH_") and value.strip():
                 os.environ.setdefault(key.strip(), value.strip())
     return os.environ.get("LANGSMITH_TRACING", "").lower() == "true"
+
+
+def paid_operations_enabled() -> bool:
+    """Kill switch for paid work (FlightAware, Browserbase generation, model turns).
+
+    Unset means enabled (local use); deployments set it explicitly. Invalid values fail closed.
+    """
+    value = (setting("IFD_PAID_OPERATIONS_ENABLED") or "true").strip().lower()
+    return value == "true"
+
+
+def require_paid_operations() -> None:
+    if not paid_operations_enabled():
+        raise ValueError(
+            "paid_operations_disabled: IFD_PAID_OPERATIONS_ENABLED is not 'true' for this deployment"
+        )

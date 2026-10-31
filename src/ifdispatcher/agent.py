@@ -20,7 +20,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 
 from ifdispatcher import flights, thrust, workflow
-from ifdispatcher.config import data_dir, export_tracing_settings
+from ifdispatcher.config import data_dir, export_tracing_settings, setting
 from ifdispatcher.siwc import chatgpt_model
 
 INSTRUCTIONS = (Path(__file__).resolve().parents[2] / "instructions.md").read_text()
@@ -239,7 +239,18 @@ def build_agent(model=None, checkpointer=None):
     )
 
 
-def checkpointer() -> SqliteSaver:
+def checkpointer():
+    """Postgres (Neon) when DATABASE_URL is set, else a local SQLite file."""
+    dsn = setting("DATABASE_URL")
+    if dsn:
+        import psycopg
+        from langgraph.checkpoint.postgres import PostgresSaver
+        from psycopg.rows import dict_row
+
+        conn = psycopg.connect(dsn, autocommit=True, prepare_threshold=None, row_factory=dict_row)
+        saver = PostgresSaver(conn)
+        saver.setup()
+        return saver
     directory = data_dir()
     directory.mkdir(parents=True, exist_ok=True, mode=0o700)
     return SqliteSaver(sqlite3.connect(directory / "agent.sqlite", check_same_thread=False))

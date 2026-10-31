@@ -1,8 +1,6 @@
 """Local stdio tools. No generation endpoint is claimed or invoked."""
 
-import os
 import logging
-from pathlib import Path
 from typing import Annotated, Any
 
 from mcp.server.fastmcp import FastMCP
@@ -10,13 +8,13 @@ from pydantic import Field
 
 from ifdispatcher import thrust
 from ifdispatcher.config import setting
-from ifdispatcher.core import Dispatch, Identifier, Store, fetch
+from ifdispatcher.core import Dispatch, Identifier, fetch, open_store
 
 mcp = FastMCP("InfiniteFlightDispatcher")
 
 
 def store():
-    return Store(Path(os.environ.get("IFD_DATA_DIR", "data")))
+    return open_store()
 
 
 @mcp.tool()

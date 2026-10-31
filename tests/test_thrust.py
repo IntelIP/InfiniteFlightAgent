@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from ifdispatcher import server
-from ifdispatcher.core import Dispatch, Store, normalize
+from ifdispatcher.core import Dispatch, normalize, open_store
 from ifdispatcher.thrust import estimate_takeoff_n1
 
 FIXTURE = Path("docs/research/evidence/simbrief-b38m-parser-fixture.json")
@@ -158,7 +158,7 @@ def test_engine_override_is_recorded():
 
 def test_tool_reads_saved_snapshot(tmp_path, monkeypatch):
     monkeypatch.setenv("IFD_DATA_DIR", str(tmp_path))
-    s = Store(tmp_path)
+    s = open_store()
     s.prepare(
         Dispatch(
             trip="neo",

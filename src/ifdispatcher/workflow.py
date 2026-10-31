@@ -10,15 +10,15 @@ import re
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from ifdispatcher import flights, simbrief_browser, thrust
+from ifdispatcher import artifacts, flights, simbrief_browser, thrust
 from ifdispatcher.config import data_dir, setting
-from ifdispatcher.core import Dispatch, Store, fetch_sync, normalize
+from ifdispatcher.core import Dispatch, Store, fetch_sync, normalize, open_store
 
 MAX_DEPARTURE_DRIFT = timedelta(hours=3)
 
 
 def _store() -> Store:
-    return Store(data_dir())
+    return open_store()
 
 
 def _utc(value: str) -> datetime:
@@ -177,6 +177,12 @@ def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) ->
         meta["generation"] = {"status": "clicking", "at": datetime.now(timezone.utc).isoformat()}
         store.save_meta(trip, leg, revision, meta)
     result = simbrief_browser.generate(fields, click, data_dir() / "screens")
+    try:
+        result["r2_keys"] = artifacts.upload(
+            result.get("screenshots") or [], f"screens/{fields['tag']}"
+        )
+    except Exception as exc:  # screenshots are evidence, not required for the dispatch
+        result["r2_error"] = type(exc).__name__
     if click:
         meta["generation"] = {**meta["generation"], **result, "status": result["status"]}
         store.save_meta(trip, leg, revision, meta)

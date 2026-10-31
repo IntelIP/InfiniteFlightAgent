@@ -1,0 +1,45 @@
+"$schema" = "./node_modules/wrangler/config-schema.json"
+name = "infinite-flight-dispatcher"
+main = "src/index.ts"
+compatibility_date = "2026-10-16"
+upload_source_maps = true
+
+[observability]
+enabled = true
+
+# Non-secret settings. The release workflow fills these from GitHub repository
+# variables with --var, so this open-source file stays account-neutral.
+# An empty value fails closed: every request is rejected.
+[vars]
+ACCESS_TEAM_DOMAIN = ""   # https://<team>.cloudflareaccess.com
+ACCESS_AUD = ""           # Access application AUD tag
+ACCESS_ALLOWED_EMAIL = "" # optional second check on the Access identity
+
+# All other configuration is a Worker secret synced from Doppler
+# (scripts/sync-secrets.sh). IFD_PAID_OPERATIONS_ENABLED is deliberately a
+# secret, not a var, so the emergency stop can change it without new code;
+# the Worker treats a missing value as "false".
+[secrets]
+required = ["DATABASE_URL", "IFD_CREDENTIAL_KEY", "IFD_INTERNAL_TOKEN"]
+
+[[containers]]
+class_name = "DispatcherContainer"
+name = "infinite-flight-dispatcher"
+scheduling_policy = "durable_object"
+
+# `wrangler deploy` and `wrangler versions upload` build this image with Docker
+# and pin it by digest in the uploaded version. A new image reaches the running
+# container when the Worker restarts it (see ensureReady in src/index.ts).
+[containers.images.base]
+dockerfile = "../../Dockerfile"
+build_context = "../.."
+
+[[durable_objects.bindings]]
+name = "DISPATCHER"
+class_name = "DispatcherContainer"
+
+# Legacy migrations rather than `exports`: `wrangler versions upload` rejects
+# configurations with Durable Object `exports`.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["DispatcherContainer"]

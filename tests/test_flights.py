@@ -35,3 +35,31 @@ def test_recent_gates_uses_latest_completed_occurrence_with_gate(monkeypatch):
 def test_recent_gates_none_found(monkeypatch):
     monkeypatch.setattr(flights, "_get", lambda path, params=None: {"flights": []})
     assert flights.recent_gates("UA495", "KIAD")["status"] == "no_flights"
+
+
+def test_kill_switch_blocks_flightaware_and_fails_closed(monkeypatch):
+    flights._cache.clear()
+    for value in ("false", "maybe"):
+        monkeypatch.setenv("IFD_PAID_OPERATIONS_ENABLED", value)
+        try:
+            flights._get("/airports/KIAD")
+        except ValueError as exc:
+            assert "paid_operations_disabled" in str(exc)
+        else:
+            raise AssertionError("kill switch did not block the call")
+
+
+def test_rate_limiter_waits_instead_of_exceeding(monkeypatch):
+    slept = []
+    clock = [1000.0]
+    monkeypatch.setattr(flights.time, "monotonic", lambda: clock[0])
+
+    def fake_sleep(seconds):
+        slept.append(seconds)
+        clock[0] += seconds
+
+    monkeypatch.setattr(flights.time, "sleep", fake_sleep)
+    flights._recent[:] = [(clock[0] - 10, 9)]  # 9 sets used 10 s ago
+    flights._wait_for_rate_limit(3)  # would make 12 > 10
+    assert slept and 50 <= slept[0] <= 51
+    flights._recent.clear()

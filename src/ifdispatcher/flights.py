@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
-from ifdispatcher.config import setting
+from ifdispatcher.config import require_paid_operations, setting
 
 BASE = "https://aeroapi.flightaware.com/aeroapi"
 SOURCE = "FlightAware AeroAPI v4"
@@ -31,6 +31,18 @@ CARGO_OPERATORS = {"FDX", "UPS", "MTN", "GTI", "ABX", "ATN", "CKS", "PAC", "GEC"
 
 _cache: dict[str, tuple[float, dict]] = {}
 usage = {"requests": 0, "result_sets": 0}
+RATE_LIMIT = 10  # Personal tier: 10 result sets per minute
+_recent: list[tuple[float, int]] = []  # (monotonic time, result sets) in the last minute
+
+
+def _wait_for_rate_limit(sets: int) -> None:
+    """Pace calls under the per-minute result-set limit instead of failing with 429."""
+    while True:
+        now = time.monotonic()
+        _recent[:] = [(t, n) for t, n in _recent if now - t < 60]
+        if sum(n for _, n in _recent) + sets <= RATE_LIMIT or not _recent:
+            return
+        time.sleep(min(60.0, 60 - (now - _recent[0][0]) + 0.5))
 
 
 def _api_key() -> str:
@@ -46,6 +58,8 @@ def _get(path: str, params: dict | None = None, transport=None) -> dict:
     hit = _cache.get(cache_key)
     if hit and time.monotonic() - hit[0] < CACHE_TTL:
         return hit[1]
+    require_paid_operations()
+    _wait_for_rate_limit(int(query.get("max_pages") or 1))
     try:
         with httpx.Client(timeout=30, transport=transport) as client:
             response = client.get(BASE + path, params=query, headers={"x-apikey": _api_key()})
@@ -60,6 +74,7 @@ def _get(path: str, params: dict | None = None, transport=None) -> dict:
     data = response.json()
     usage["requests"] += 1
     usage["result_sets"] += int(data.get("num_pages") or 1)
+    _recent.append((time.monotonic(), int(data.get("num_pages") or 1)))
     _cache[cache_key] = (time.monotonic(), data)
     return data
 

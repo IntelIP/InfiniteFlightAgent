@@ -24,6 +24,8 @@ import httpx
 import jwt
 from langchain_openai import ChatOpenAI
 
+from ifdispatcher.config import setting
+
 ISSUER = "https://auth.openai.com"
 AUTHORIZE = ISSUER + "/api/accounts/authorize"
 TOKEN = ISSUER + "/api/accounts/oauth/token"
@@ -92,24 +94,94 @@ def _validate_id_token(id_token: str, client_id: str, nonce: str | None) -> dict
     return claims
 
 
-def _save(tokens: dict, client_id: str, claims: dict) -> dict:
-    scopes = (tokens.get("scope") or "").split()
-    record = {
+def _record(tokens: dict, client_id: str, claims: dict, host: str) -> dict:
+    return {
         "email": claims.get("email"),
         "issuer": claims.get("iss"),
         "subject": claims.get("sub"),
         "client_id": client_id,
-        "ext_agent_host_id": host_id(),
+        "ext_agent_host_id": host,
         "id_token": tokens.get("id_token"),
         "access_token": tokens["access_token"],
         "refresh_token": tokens.get("refresh_token"),
         "token_type": tokens.get("token_type", "Bearer"),
         "expires_at": time.time() + int(tokens.get("expires_in", 3600)),
-        "scopes": scopes,
+        "scopes": (tokens.get("scope") or "").split(),
         "saved_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
+
+
+def _save(tokens: dict, client_id: str, claims: dict) -> dict:
+    record = _record(tokens, client_id, claims, host_id())
     _write_private(CREDENTIALS, json.dumps(record, indent=2))
     return record
+
+
+def _refreshed(record: dict) -> dict:
+    """Refresh the access token; the rotated refresh token replaces the old one."""
+    response = httpx.post(
+        TOKEN,
+        data={
+            "grant_type": "refresh_token",
+            "client_id": record["client_id"],
+            "refresh_token": record["refresh_token"],
+            "resource": RESOURCE,
+        },
+        timeout=30,
+    )
+    if response.status_code >= 400:
+        raise ValueError("siwc_refresh_failed: sign in again and re-import the credentials")
+    tokens = response.json()
+    tokens.setdefault("id_token", record.get("id_token"))
+    tokens.setdefault("refresh_token", record["refresh_token"])
+    tokens.setdefault("scope", " ".join(record["scopes"]))
+    claims = {"email": record["email"], "iss": record["issuer"], "sub": record["subject"]}
+    return _record(tokens, record["client_id"], claims, record["ext_agent_host_id"])
+
+
+# Deployed host: one encrypted credential row in Postgres (key IFD_CREDENTIAL_KEY, a Fernet key).
+CREDENTIAL_DDL = (
+    "CREATE TABLE IF NOT EXISTS siwc_credentials (id TEXT PRIMARY KEY, ciphertext BYTEA NOT NULL, "
+    "updated_at TIMESTAMPTZ NOT NULL DEFAULT now())"
+)
+CREDENTIAL_LOCK = 4343
+
+
+def _fernet():
+    from cryptography.fernet import Fernet
+
+    key = setting("IFD_CREDENTIAL_KEY")
+    if not key:
+        raise ValueError("missing_configuration: IFD_CREDENTIAL_KEY (Fernet key) is not set")
+    return Fernet(key.encode())
+
+
+def _db_write(conn, record: dict) -> None:
+    conn.execute(CREDENTIAL_DDL)
+    conn.execute(
+        "INSERT INTO siwc_credentials (id, ciphertext) VALUES ('default', %s) ON CONFLICT (id) "
+        "DO UPDATE SET ciphertext = EXCLUDED.ciphertext, updated_at = now()",
+        (_fernet().encrypt(json.dumps(record).encode()),),
+    )
+
+
+def _db_access_token(dsn: str) -> str:
+    import psycopg
+
+    with psycopg.connect(dsn, prepare_threshold=None) as conn:
+        conn.execute(f"SELECT pg_advisory_xact_lock({CREDENTIAL_LOCK})")
+        conn.execute(CREDENTIAL_DDL)
+        row = conn.execute(
+            "SELECT ciphertext FROM siwc_credentials WHERE id = 'default'"
+        ).fetchone()
+        if not row:
+            raise ValueError("siwc_not_imported: run `ifd-credentials import --move` locally")
+        record = json.loads(_fernet().decrypt(bytes(row[0])))
+        if record["expires_at"] - time.time() > REFRESH_MARGIN:
+            return record["access_token"]
+        record = _refreshed(record)
+        _db_write(conn, record)  # commits with the lock held
+        return record["access_token"]
 
 
 def login(port: int = 1455, timeout: float = 300) -> dict[str, Any]:
@@ -203,6 +275,9 @@ def login(port: int = 1455, timeout: float = 300) -> dict[str, Any]:
 
 def access_token() -> str:
     """Current access token, refreshed (serialized across processes) near expiry."""
+    dsn = setting("DATABASE_URL")
+    if dsn:
+        return _db_access_token(dsn)
     if not CREDENTIALS.exists():
         raise ValueError("siwc_not_signed_in: run `uv run ifd-login` first")
     CONFIG.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -211,24 +286,9 @@ def access_token() -> str:
         record = json.loads(CREDENTIALS.read_text())
         if record["expires_at"] - time.time() > REFRESH_MARGIN:
             return record["access_token"]
-        response = httpx.post(
-            TOKEN,
-            data={
-                "grant_type": "refresh_token",
-                "client_id": record["client_id"],
-                "refresh_token": record["refresh_token"],
-                "resource": RESOURCE,
-            },
-            timeout=30,
-        )
-        if response.status_code >= 400:
-            raise ValueError("siwc_refresh_failed: sign in again with `uv run ifd-login`")
-        tokens = response.json()
-        tokens.setdefault("id_token", record.get("id_token"))
-        tokens.setdefault("refresh_token", record["refresh_token"])
-        tokens.setdefault("scope", " ".join(record["scopes"]))
-        claims = {"email": record["email"], "iss": record["issuer"], "sub": record["subject"]}
-        return _save(tokens, record["client_id"], claims)["access_token"]
+        record = _refreshed(record)
+        _write_private(CREDENTIALS, json.dumps(record, indent=2))
+        return record["access_token"]
 
 
 class ChatGPTPlanModel(ChatOpenAI):
@@ -279,3 +339,62 @@ def chatgpt_model(model: str = "gpt-6-luna", effort: str = "low") -> ChatGPTPlan
 
 def main() -> None:
     print(json.dumps(login(), indent=2))
+
+
+def credentials_main() -> None:
+    """`ifd-credentials import --move` | `ifd-credentials status` (needs DATABASE_URL and key)."""
+    import argparse
+
+    import psycopg
+
+    parser = argparse.ArgumentParser(prog="ifd-credentials")
+    parser.add_argument("command", choices=["import", "status"])
+    parser.add_argument(
+        "--move",
+        action="store_true",
+        help="required for import: the local tokens are removed after import, because the "
+        "deployed host now owns refreshes (a rotated refresh token invalidates the other copy)",
+    )
+    args = parser.parse_args()
+    dsn = setting("DATABASE_URL")
+    if not dsn:
+        raise SystemExit("DATABASE_URL is not set (run under `doppler run`)")
+    if args.command == "status":
+        with psycopg.connect(dsn, prepare_threshold=None) as conn:
+            conn.execute(CREDENTIAL_DDL)
+            row = conn.execute(
+                "SELECT ciphertext, updated_at FROM siwc_credentials WHERE id = 'default'"
+            ).fetchone()
+        if not row:
+            raise SystemExit("no credentials imported")
+        record = json.loads(_fernet().decrypt(bytes(row[0])))
+        minutes = int((record["expires_at"] - time.time()) / 60)
+        print(
+            json.dumps(
+                {
+                    "client_id_prefix": record["client_id"][:7],
+                    "host_id_kind": record["ext_agent_host_id"].split(":")[1],
+                    "plan_scope": PLAN_SCOPE in record["scopes"],
+                    "access_token_minutes_left": minutes,
+                    "updated_at": row[1].isoformat(),
+                }
+            )
+        )
+        return
+    if not args.move:
+        raise SystemExit("import needs --move (see --help); nothing changed")
+    if not CREDENTIALS.exists():
+        raise SystemExit("not signed in locally; run `uv run ifd-login` first")
+    record = json.loads(CREDENTIALS.read_text())
+    if PLAN_SCOPE not in record["scopes"]:
+        raise SystemExit("local credentials lack ChatGPT plan usage permission")
+    record["ext_agent_host_id"] = f"urn:uuid:{uuid.uuid4()}"  # the deployed host's own ID
+    with psycopg.connect(dsn, prepare_threshold=None) as conn:
+        conn.execute(f"SELECT pg_advisory_xact_lock({CREDENTIAL_LOCK})")
+        _db_write(conn, record)
+    local = {k: record[k] for k in ("email", "issuer", "subject", "client_id")}
+    local["ext_agent_host_id"] = host_id()
+    _write_private(CREDENTIALS.with_name("siwc-registration.json"), json.dumps(local, indent=2))
+    CREDENTIALS.unlink()
+    print("imported for the deployed host; local tokens removed (registration kept).")
+    print("For local use again: `uv run ifd-login` (reuses the registered client).")
