@@ -2,9 +2,9 @@
 
 A personal flight-preparation agent accessible through MCP from ChatGPT, Claude, and Codex. Describe a flight idea, work with the harness to complete the necessary inputs, generate a SimBrief plan, and receive prominent manual spawn and takeoff-thrust instructions.
 
-**Status: partial local implementation.** Python MCP preparation, explicit SimBrief retrieval, and immutable snapshots work. Generation, neo validation, client-app acceptance, and aircraft support remain incomplete. No remote repository or deployment exists.
+**Status: partial local implementation.** A local Deep Agent (GPT-6 Luna via Sign in with ChatGPT) researches real flights through FlightAware, prepares legs after approval, and finalizes a briefing with a labeled N1 estimate from a user-generated SimBrief plan. SimBrief API generation, simulator stand mapping, client-app acceptance, and verified aircraft support remain incomplete. No remote repository or deployment exists.
 
-See [local setup and usage](docs/implementation/simbrief-usage.md).
+See [agent setup and evaluation](docs/implementation/agent-usage.md) and [MCP SimBrief usage](docs/implementation/simbrief-usage.md).
 
 ## Start here
 

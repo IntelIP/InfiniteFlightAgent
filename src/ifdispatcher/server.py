@@ -9,6 +9,7 @@ from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
 from ifdispatcher import thrust
+from ifdispatcher.config import setting
 from ifdispatcher.core import Dispatch, Identifier, Store, fetch
 
 mcp = FastMCP("InfiniteFlightDispatcher")
@@ -51,15 +52,12 @@ async def retrieve_simbrief_plan(
 ) -> dict[str, Any]:
     """Fetch once on explicit user request, then save against a prepared leg revision.
 
-    Never poll for generation. Requires SIMBRIEF_ALIAS configuration. A matching route
+    Never poll for generation. Requires SIMBRIEF_ALIAS or SIMBRIEF_USERID. A matching route
     does not prove generation succeeded; this tool imports an existing OFP only.
     """
     if not user_requested:
         raise ValueError("user_action_required: no automatic latest-plan polling")
-    alias = os.environ.get("SIMBRIEF_ALIAS")
-    if not alias:
-        raise ValueError("missing_configuration: set SIMBRIEF_ALIAS; no password required")
-    raw = await fetch(alias, static_id)
+    raw = await fetch(setting("SIMBRIEF_ALIAS"), static_id, userid=setting("SIMBRIEF_USERID"))
     return store().save(trip, leg, revision, raw, static_id)
 
 

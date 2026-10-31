@@ -104,6 +104,10 @@ class Store:
                 "CREATE TABLE IF NOT EXISTS snapshots (trip, leg, revision, raw BLOB, "
                 "sha256, normalized, retrieved_at, PRIMARY KEY(trip,leg,revision))"
             )
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS leg_meta (trip, leg, revision, payload, "
+                "PRIMARY KEY(trip,leg,revision))"
+            )
 
     @contextmanager
     def connect(self):
@@ -195,6 +199,39 @@ class Store:
             )
         return self.read(trip, leg, revision)
 
+    def save_meta(self, trip: str, leg: str, revision: int, meta: dict):
+        with self.connect() as db:
+            db.execute(
+                "INSERT OR REPLACE INTO leg_meta VALUES (?,?,?,?)",
+                (trip, leg, revision, encode(meta)),
+            )
+
+    def read_meta(self, trip: str, leg: str, revision: int) -> dict:
+        with self.connect() as db:
+            row = db.execute(
+                "SELECT payload FROM leg_meta WHERE trip=? AND leg=? AND revision=?",
+                (trip, leg, revision),
+            ).fetchone()
+        return json.loads(row[0]) if row else {}
+
+    def read_request(self, trip: str, leg: str, revision: int) -> dict | None:
+        with self.connect() as db:
+            row = db.execute(
+                "SELECT payload FROM requests WHERE trip=? AND leg=? AND revision=?",
+                (trip, leg, revision),
+            ).fetchone()
+        return json.loads(row[0]) if row else None
+
+    def read_raw(self, trip: str, leg: str, revision: int) -> dict:
+        with self.connect() as db:
+            row = db.execute(
+                "SELECT raw FROM snapshots WHERE trip=? AND leg=? AND revision=?",
+                (trip, leg, revision),
+            ).fetchone()
+        if not row:
+            raise ValueError("missing_snapshot: no saved plan for this leg revision")
+        return json.loads(row[0])
+
     def read(self, trip, leg, revision):
         with self.connect() as db:
             row = db.execute(
@@ -216,19 +253,48 @@ class Store:
         }
 
 
-async def fetch(alias: str, static_id: str | None = None, transport=None) -> bytes:
-    params = {"username": alias, "client": "InfiniteFlightDispatcher_0_1", "json": "v2"}
+FETCHER = "https://www.simbrief.com/api/xml.fetcher.php"
+
+
+def _fetch_params(alias: str | None, static_id: str | None, userid: str | None) -> dict:
+    if not alias and not userid:
+        raise ValueError("missing_configuration: set SIMBRIEF_ALIAS or SIMBRIEF_USERID")
+    params = {"client": "InfiniteFlightDispatcher_0_1", "json": "v2"}
+    params.update({"username": alias} if alias else {"userid": userid})
     if static_id:
         params["static_id"] = static_id
+    return params
+
+
+def _checked(response: httpx.Response) -> bytes:
     try:
-        async with httpx.AsyncClient(timeout=30, transport=transport) as client:
-            response = await client.get(
-                "https://www.simbrief.com/api/xml.fetcher.php", params=params
-            )
-            response.raise_for_status()
+        response.raise_for_status()
     except httpx.HTTPStatusError as exc:
         raise ValueError(f"http_error: {exc.response.status_code}; no retry performed") from exc
-    except httpx.RequestError as exc:
-        raise ValueError("network_error: retrieval failed; no retry performed") from exc
     normalize(response.content)
     return response.content
+
+
+async def fetch(
+    alias: str | None, static_id: str | None = None, transport=None, userid: str | None = None
+) -> bytes:
+    params = _fetch_params(alias, static_id, userid)
+    try:
+        async with httpx.AsyncClient(timeout=30, transport=transport) as client:
+            response = await client.get(FETCHER, params=params)
+    except httpx.RequestError as exc:
+        raise ValueError("network_error: retrieval failed; no retry performed") from exc
+    return _checked(response)
+
+
+def fetch_sync(
+    alias: str | None, static_id: str | None = None, transport=None, userid: str | None = None
+) -> bytes:
+    """One user-triggered latest-plan fetch (no polling), for synchronous agent tools."""
+    params = _fetch_params(alias, static_id, userid)
+    try:
+        with httpx.Client(timeout=30, transport=transport) as client:
+            response = client.get(FETCHER, params=params)
+    except httpx.RequestError as exc:
+        raise ValueError("network_error: retrieval failed; no retry performed") from exc
+    return _checked(response)

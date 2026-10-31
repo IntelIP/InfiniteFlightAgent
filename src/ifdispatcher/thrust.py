@@ -49,6 +49,12 @@ ENGINES = {
     ),
 }
 AIRCRAFT = {"A20N": "airbus", "A21N": "airbus", "B38M": "boeing"}
+# Engines certified per aircraft (EASA TCDS A.064 for the neo family; B38M uses LEAP-1B28).
+AIRCRAFT_ENGINES = {
+    "A20N": ("PW1124G", "PW1127G", "PW1129G", "LEAP-1A26"),
+    "A21N": ("PW1130G", "PW1133G", "LEAP-1A32", "LEAP-1A33", "LEAP-1A35A"),
+    "B38M": ("LEAP-1B28",),
+}
 # Boeing fixed derates as a fraction of rated thrust (assumed: TO-1 ~10%, TO-2 ~20%), +/-0.02.
 BOEING_DERATES = {"TO": 0.0, "TO1": 0.10, "TO2": 0.20}
 DERATE_TOLERANCE = 0.02
@@ -117,6 +123,35 @@ def fbw_leap1a26_n1(pa: float, oat: float, flex: float | None, packs: int, nacel
     return cn1 * math.sqrt((273.15 + oat) / 288.15) + bleed
 
 
+def supported_profiles() -> dict[str, Any]:
+    """Which aircraft/engines/thrust modes the estimator handles, and what it reads."""
+    return {
+        "label": LABEL,
+        "aircraft": {
+            icao: {
+                "engines": {
+                    ENGINES[k][0]: f"corner {ENGINES[k][1]:.0f} C, {ENGINES[k][2]}" for k in keys
+                },
+                "thrust_modes": ["TOGA", "FLEX"]
+                if AIRCRAFT[icao] == "airbus"
+                else ["TO", "TO-1", "TO-2", "optional D- (assumed temperature)"],
+            }
+            for icao, keys in AIRCRAFT_ENGINES.items()
+        },
+        "reads_from_simbrief": [
+            "aircraft.icao_code",
+            "aircraft.engines",
+            "tlr.takeoff.conditions: temperature, altimeter",
+            "selected runway: thrust_setting, flex_temperature, elevation, bleed/anti-ice",
+        ],
+        "optional_inputs": {
+            "engine_override": "engine of the Infinite Flight livery when it differs",
+            "full_thrust_n1": "N1 read in Infinite Flight at full throttle (calibration)",
+        },
+        "limits": f"pressure altitude {MIN_PA}..{MAX_PA} ft; other aircraft return unavailable",
+    }
+
+
 def _result(status: str, **fields) -> dict[str, Any]:
     return {"status": status, "label": LABEL, **fields}
 
@@ -155,7 +190,8 @@ def estimate_takeoff_n1(
         )
     engine_text = engine_override or engines
     profile = _engine(engine_text)
-    if not profile or profile[4] != family:
+    allowed = [ENGINES[k][0] for k in AIRCRAFT_ENGINES[aircraft_icao]]
+    if not profile or profile[0] not in allowed:
         return _result(
             "unsupported_profile",
             reason=f"no {aircraft_icao} engine profile for {engine_text!r}",
