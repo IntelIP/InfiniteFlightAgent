@@ -14,7 +14,14 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from deepagents import create_deep_agent
+from deepagents import (
+    GeneralPurposeSubagentProfile,
+    HarnessProfile,
+    create_deep_agent,
+    register_harness_profile,
+)
+from langchain.agents.middleware import HumanInTheLoopMiddleware
+from langchain_core.messages import AIMessage, ToolMessage
 from langchain.tools import tool
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
@@ -122,6 +129,16 @@ def thrust_support() -> dict:
 
 
 @tool(parse_docstring=True)
+def check_airports(codes: list[str]) -> dict:
+    """FlightAware's name for each airport code, to confirm a code is the airport you mean.
+
+    Args:
+        codes: ICAO airport codes, e.g. ["KIAD", "CYQX"].
+    """
+    return {code.upper(): _safe(flights.airport_name, code) for code in codes}
+
+
+@tool(parse_docstring=True)
 def dispatch_flight(
     trip: str,
     leg: str,
@@ -152,7 +169,7 @@ def dispatch_flight(
         engine: Only if the user explicitly wants thrust for an engine other than the one SimBrief plans with.
         units: KGS or LBS, matching the user's SimBrief settings.
         passengers: Optional passenger count.
-        private_callsign: Callsign for a private/GA flight (no airline flight number).
+        private_callsign: Callsign for a private/GA flight (no airline flight number), 2-7 letters or digits such as the registration N172HD.
     """
     return _safe(
         workflow.dispatch_flight,
@@ -238,6 +255,7 @@ TOOLS = [
     get_flight_by_number,
     recent_gates,
     thrust_support,
+    check_airports,
     dispatch_flight,
     generate_in_simbrief,
     finalize_dispatch,
@@ -245,12 +263,93 @@ TOOLS = [
 ]
 
 
+def _airport_line(code: str | None) -> str:
+    try:
+        return f"{code}: {flights.airport_name(code or '')}"
+    except ValueError as exc:
+        return f"{code}: name unavailable ({exc})"
+
+
+def approval_summary(tool_call, *_context) -> str:
+    """What the user checks before approving a dispatch, built from the call, not the chat."""
+    args = tool_call["args"]
+    flight = args.get("fa_flight_id") or f"private, callsign {args.get('private_callsign')}"
+    return "\n".join(
+        [
+            f"Leg {args.get('leg')} of {args.get('trip')}, {args.get('departure_local_date')}"
+            f" ({flight})",
+            f"From {_airport_line(args.get('origin'))}",
+            f"To   {_airport_line(args.get('destination'))}",
+            f"Simulator aircraft {args.get('sim_aircraft')}",
+            f"Takeoff thrust: {thrust.support_note(args.get('sim_aircraft'))}",
+        ]
+    )
+
+
+INTERRUPT_ON = {
+    "dispatch_flight": {
+        "allowed_decisions": ["approve", "edit", "reject"],
+        "description": approval_summary,
+    }
+}
+
+
+class DispatchApproval(HumanInTheLoopMiddleware):
+    """The dispatch approval gate, refusing several dispatches of one leg in one turn.
+
+    Replaces Deep Agents' HumanInTheLoopMiddleware in place (same name). Two calls for the same
+    trip, leg, and revision mean the model is offering alternatives; all dispatch calls in that
+    turn are refused (never executed) so it chooses one or asks the user.
+    """
+
+    @property
+    def name(self) -> str:
+        return "HumanInTheLoopMiddleware"
+
+    def _refuse_alternatives(self, state) -> dict | None:
+        last = next((m for m in reversed(state["messages"]) if isinstance(m, AIMessage)), None)
+        calls = [c for c in (last.tool_calls if last else []) if c["name"] == "dispatch_flight"]
+        legs = [
+            (c["args"].get("trip"), c["args"].get("leg"), c["args"].get("revision", 1))
+            for c in calls
+        ]
+        if len(set(legs)) == len(legs):
+            return None
+        reason = (
+            "Several dispatch_flight calls for the same leg. Dispatch exactly one flight per leg: "
+            "choose the best fit and say why in one line, or ask the user to choose."
+        )
+        content = json.dumps({"status": "refused", "reason": reason})
+        return {
+            "messages": [
+                ToolMessage(content, tool_call_id=c["id"], name=c["name"], status="error")
+                for c in calls
+            ]
+        }
+
+    def after_model(self, state, runtime):
+        return self._refuse_alternatives(state) or super().after_model(state, runtime)
+
+    async def aafter_model(self, state, runtime):
+        return self._refuse_alternatives(state) or await super().aafter_model(state, runtime)
+
+
+# No `task` tool: Deep Agents' general-purpose subagent would get dispatch_flight without these
+# instructions (observed in eval run 6, IFD-033). Profiles are per provider; the dispatcher's
+# model is OpenAI (ChatGPT plan).
+register_harness_profile(
+    "openai",
+    HarnessProfile(general_purpose_subagent=GeneralPurposeSubagentProfile(enabled=False)),
+)
+
+
 def build_agent(model=None, checkpointer=None):
     return create_deep_agent(
         model=model or chatgpt_model("gpt-6-luna", "low"),
         tools=TOOLS,
         system_prompt=INSTRUCTIONS,
-        interrupt_on={"dispatch_flight": True},
+        interrupt_on=INTERRUPT_ON,
+        middleware=[DispatchApproval(interrupt_on=INTERRUPT_ON)],
         checkpointer=checkpointer,
         name="infinite-flight-dispatcher",
     )
@@ -276,8 +375,8 @@ def checkpointer():
 def _approval(interrupts) -> dict:
     decisions = []
     for request in interrupts[0].value["action_requests"]:
-        print(f"\n[approval] {request['name']}:\n{json.dumps(request['args'], indent=2)}")
-        print(f"takeoff thrust: {thrust.support_note(request['args'].get('sim_aircraft'))}")
+        print(f"\n[approval] {request['name']}:\n{request['description']}")
+        print(json.dumps(request["args"], indent=2))
         answer = input("Approve? [y = approve / n = reject + reason]: ").strip()
         if answer.lower().startswith("y"):
             decisions.append({"type": "approve"})

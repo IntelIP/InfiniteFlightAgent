@@ -2,6 +2,8 @@
 # Copy the dispatcher's Worker secrets from Doppler to Cloudflare without printing values.
 #
 #   DOPPLER_PROJECT=... DOPPLER_CONFIG=... scripts/sync-secrets.sh
+#       Dry run: checks the required secrets and lists the key names it would sync.
+#   DOPPLER_PROJECT=... DOPPLER_CONFIG=... scripts/sync-secrets.sh --apply
 #       Pipes the secrets into `wrangler secret bulk` (creates and deploys a new
 #       Worker version immediately, keeping the current code).
 #   DOPPLER_PROJECT=... DOPPLER_CONFIG=... scripts/sync-secrets.sh --to-file PATH
@@ -24,11 +26,12 @@ keys=(
 )
 required='["DATABASE_URL","IFD_CREDENTIAL_KEY","IFD_INTERNAL_TOKEN"]'
 
-out_file=""
+out_file="" apply=""
 case "${1:-}" in
   "") ;;
+  --apply) apply=1 ;;
   --to-file) out_file="${2:?--to-file needs a path}" ;;
-  *) echo "usage: $0 [--to-file PATH]" >&2; exit 2 ;;
+  *) echo "usage: $0 [--apply | --to-file PATH]" >&2; exit 2 ;;
 esac
 
 wanted="$(printf '%s\n' "${keys[@]}" | jq -R . | jq -cs .)"
@@ -52,9 +55,14 @@ if ! printf '%s' "$filtered" | jq -e '(.IFD_PAID_OPERATIONS_ENABLED // "false") 
   exit 1
 fi
 
-echo "Syncing secrets: $(printf '%s' "$filtered" | jq -r 'keys | join(", ")')"
+names="$(printf '%s' "$filtered" | jq -r 'keys | join(", ")')"
 if [[ -n "$out_file" ]]; then
+  echo "Writing secrets: $names"
   (umask 077 && printf '%s' "$filtered" >"$out_file")
-else
+elif [[ -n "$apply" ]]; then
+  echo "Syncing secrets: $names"
   printf '%s' "$filtered" | (cd "$worker_dir" && npx wrangler secret bulk)
+else
+  echo "Dry run, would sync: $names"
+  echo "Rerun with --apply to upload them (deploys a new Worker version immediately)."
 fi

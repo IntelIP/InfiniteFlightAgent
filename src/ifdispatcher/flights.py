@@ -108,6 +108,16 @@ def airport_timezone(airport: str) -> str:
     return tz
 
 
+def airport_name(airport: str) -> str:
+    """FlightAware's name for an airport code, e.g. "St. John's Int'l (St. John's, CA)"."""
+    data = _get(f"/airports/{airport.upper()}")
+    name = data.get("name")
+    if not name:
+        raise ValueError(f"unknown_airport: FlightAware has no airport {airport}")
+    place = ", ".join(x for x in (data.get("city"), data.get("country_code")) if x)
+    return f"{name} ({place})" if place else name
+
+
 def _local(value: str | None, tz: str | None) -> str | None:
     moment = _parse(value)
     if not moment or not tz:

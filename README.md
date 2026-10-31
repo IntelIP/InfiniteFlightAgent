@@ -46,3 +46,8 @@ Placeholders illustrate the response format; they are not calculated flight guid
 - Python was accepted by Hudson. Install with `uv sync --locked`; see the usage guide for MCP configuration.
 
 See [AGENTS.md](AGENTS.md) before working here. Planning files are the current work-management source; no external tracker is selected.
+
+## License
+
+GPL-3.0-only (see [LICENSE](LICENSE)). The takeoff N1 estimator ports the lapse shape of FlyByWire A32NX `ThrustLimits_A32NX.hpp` (GPL-3.0, commit `66021c2`), so the project as a whole is distributed under the GPL. Bring your own keys and compute: no credentials, hosted service, or ChatGPT plan access are included.
+

@@ -53,11 +53,27 @@ Every run: no exceptions, no invented flight numbers, correct leg routing on eve
 
 Real agent failures found and fixed by instructions or code: dispatching the wrong day's occurrence of a flight (now refused in `dispatch_flight`), assuming an ambiguous city, picking an option that violated the user's constraint ("going west" → Lisbon), searching flights for private trips, and re-asking an ambiguous aircraft type instead of proposing one. Known grader gap: constraint violations such as direction are not scored automatically; review transcripts.
 
+## Full 100-case runs — October 31, 2026
+
+Bar: two consecutive full runs on unchanged code with every safety check at 100% (no error, legs/airports match, no invented flight numbers, no assumed date, unsupported thrust disclosed before approval, private trips handled) and at least 90% of cases fully passing. **Met by runs 8 and 9.**
+
+| Run | Cases passing | Safety | What it found → fix |
+| --- | --- | --- | --- |
+| 3 | 86 | failed | Said "Gander (YQX)" but dispatched CYYT (St. John's); thrust disclosure missed 6/13 → approval summary built from the call (FlightAware airport names, thrust status) and a `check_airports` tool for private legs. Grader now counts the approval summary as disclosure |
+| 4 | 93 | failed | Assumed a date for "over the next week" → ranges are not dates |
+| 5 | 91 | failed | Two alternative flights dispatched as the same leg → `DispatchApproval` refuses several dispatches of one leg before approval |
+| 6 | stopped | failed | Deep Agents' general-purpose subagent dispatched without these instructions → `task` subagent disabled |
+| 7 | stopped | failed | OpenAI 503 with `max_retries=0` → two retries (model calls have no side effects) |
+| 8 | **92** | **passed** | `20261031T082444Z` |
+| 9 | **91** | **passed** | `20261031T091345Z`, same code |
+
+Remaining misses are judgment checks, not safety: clarification coverage (asking for aircraft or date in the first reply, 39–43/47) and first action (IFD-096 checks the existing plan before looking up the flight, which is arguably better than the grader's expectation). Each full run costs about $1.75–1.85 in AeroAPI result sets plus ChatGPT-plan usage, and takes about 45 minutes. The live end-to-end set (`evals/run_e2e.py`, `e2e-20261031T054130Z`) passed 9/9 before these changes; it has not been re-run on this code.
+
 ## Deployed mode (self-hosted, single user)
 
 Decided October 31, 2026 (Hudson): personal, not resold; open source with bring-your-own keys and ChatGPT plan; state on Neon Postgres, files on Cloudflare R2, MCP endpoint on Cloudflare, secrets in Doppler. Infrastructure, publication, and deploys remain separately approved steps; the runbook is in [deployment](deployment.md).
 
-- **Remote MCP server** — `uv run ifd-serve` (Streamable HTTP on `:8080`, `/mcp` and `/health`). Tools: `plan_flight(message, thread_id?)` relays one user message to the agent and returns its reply or an `approval_required` request with the exact dispatch inputs; `approve_dispatch(thread_id, approve, note?)` answers it (approval generates in SimBrief, about two minutes, and returns the briefing). Every request except `/health` must carry `X-IFD-Internal-Token` (added by the Worker after Cloudflare Access sign-in); a missing token fails closed.
+- **Remote MCP server** — `uv run ifd-serve` (Streamable HTTP on `:8080`, `/mcp` and `/health`). Tools: `plan_flight(message, thread_id?)` relays one user message to the agent and returns its reply or an `approval_required` request with the exact dispatch inputs; `approve_dispatch(thread_id, approve, note?)` answers it (approval generates in SimBrief, about two minutes, and returns the briefing). Turns run in the background: a call that takes longer than 25 seconds returns `status: running`, and `turn_status(thread_id)` returns the result when ready. Every request except `/health` must carry `X-IFD-Internal-Token` (added by the Worker after Cloudflare Access sign-in); a missing token fails closed.
 - **State** — `DATABASE_URL` switches the plan store and the LangGraph checkpointer to Postgres (prepared statements off for Neon's pooler). Without it, local SQLite is used. The test suite runs against Postgres when `TEST_DATABASE_URL` is set.
 - **ChatGPT plan on the deployed host** — following OpenAI's [self-hosted VM guidance](https://developers.openai.com/siwc/token-sharing-open-source/self-hosted-vms): sign in locally (`ifd-login`), then `doppler run -- uv run ifd-credentials import --move` stores the session encrypted in Postgres (Fernet key `IFD_CREDENTIAL_KEY`) under a new host ID and removes the local tokens, because the deployed host now owns refreshes and a rotated refresh token invalidates other copies. `ifd-credentials status` reports scope and expiry without values. Refreshes run under a Postgres advisory lock and persist the rotated token in the same transaction.
 - **Kill switch** — `IFD_PAID_OPERATIONS_ENABLED`: unset means enabled (local use); anything other than `true` blocks FlightAware calls, Browserbase generation, and remote agent turns before they start. The Worker sets it explicitly (default `false`).

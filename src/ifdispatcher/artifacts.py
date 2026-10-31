@@ -17,6 +17,7 @@ def upload(paths: list[str], prefix: str) -> list[str]:
     if not r2_configured():
         return []
     import boto3
+    from botocore.config import Config
 
     client = boto3.client(
         "s3",
@@ -24,6 +25,11 @@ def upload(paths: list[str], prefix: str) -> list[str]:
         aws_access_key_id=setting("R2_ACCESS_KEY_ID"),
         aws_secret_access_key=setting("R2_SECRET_ACCESS_KEY"),
         region_name="auto",
+        # R2 rejects botocore's default CRC checksums.
+        config=Config(
+            request_checksum_calculation="when_required",
+            response_checksum_validation="when_required",
+        ),
     )
     keys = []
     for path in paths:

@@ -53,4 +53,35 @@ def test_mcp_client_lists_dispatcher_tools(server):
                 await session.initialize()
                 return sorted(t.name for t in (await session.list_tools()).tools)
 
-    assert asyncio.run(list_tools()) == ["approve_dispatch", "plan_flight"]
+    assert asyncio.run(list_tools()) == ["approve_dispatch", "plan_flight", "turn_status"]
+
+
+def test_long_turn_returns_running_then_result(monkeypatch):
+    release = threading.Event()
+
+    def slow_run(payload, thread_id):
+        release.wait(5)
+        return {"status": "reply", "thread_id": thread_id, "reply": payload}
+
+    monkeypatch.setattr(remote, "_run", slow_run)
+    monkeypatch.setattr(remote, "WAIT_SECONDS", 0.05)
+
+    async def scenario():
+        first = await remote.plan_flight("hello", thread_id="t-long")
+        busy = await remote.approve_dispatch("t-long", approve=True)
+        still = await remote.turn_status("t-long")
+        release.set()
+        monkeypatch.setattr(remote, "WAIT_SECONDS", 5)
+        return first, busy, still, await remote.turn_status("t-long")
+
+    first, busy, still, done = asyncio.run(scenario())
+    assert first["status"] == "running"
+    assert busy["status"] == "busy"
+    assert still["status"] == "running"
+    assert done["status"] == "reply"
+    assert done["reply"]["messages"][0]["content"] == "hello"
+
+
+def test_turn_status_for_unknown_thread():
+    result = asyncio.run(remote.turn_status("t-never-started"))
+    assert result["status"] == "not_found"

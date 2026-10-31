@@ -3,6 +3,8 @@ name = "infinite-flight-dispatcher"
 version = "0.1.0"
 description = "Local SimBrief preparation and snapshot MCP tools"
 requires-python = ">=3.11"
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
 dependencies = [
     "mcp==1.27.0",
     "httpx==0.28.1",

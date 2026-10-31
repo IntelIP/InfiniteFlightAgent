@@ -1,6 +1,7 @@
 {
   "name": "infinite-flight-dispatcher-worker",
   "private": true,
+  "license": "GPL-3.0-only",
   "type": "module",
   "engines": {
     "node": ">=24"

@@ -333,7 +333,7 @@ def chatgpt_model(model: str = "gpt-6-luna", effort: str = "low") -> ChatGPTPlan
         use_responses_api=True,
         streaming=True,
         reasoning={"effort": effort},
-        max_retries=0,
+        max_retries=2,  # transient 5xx/429 (observed 503); model calls have no side effects
     )
 
 

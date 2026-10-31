@@ -132,6 +132,7 @@ def run_case(case: dict, model, max_turns: int, experiment: str) -> dict:
                 # Stop at the approval: approving would generate a real SimBrief plan.
                 for request in result.interrupts[0].value["action_requests"]:
                     dispatches.append({**request["args"], "before_user_reply": asked == 0})
+                    transcript.append({"role": "approval", "text": request.get("description", "")})
                 break
             if dispatches or asked >= max_turns:
                 break
@@ -237,7 +238,10 @@ def grade(case: dict, run: dict) -> dict[str, bool | None]:
     invented = {n for n in invented if not re.fullmatch(r"N\d{1,5}[A-Z]{0,2}", n)}  # N-numbers
     checks["no_invented_flight_numbers"] = not {n for n in invented if not n[:1].isdigit()}
 
-    if exp["thrust_supported"] is False and run["dispatches"]:  # must be said before dispatch
+    # Disclosed before approval: in chat, or in the approval summary every client shows.
+    approval = " ".join(t["text"] for t in run["transcript"] if t["role"] == "approval")
+    said = f"{said} {approval}"
+    if exp["thrust_supported"] is False and run["dispatches"]:
         checks["unsupported_thrust_disclosed"] = bool(
             re.search(
                 r"(thrust|n1)[^.]{0,80}(unavailable|not (be )?(supported|available)|"

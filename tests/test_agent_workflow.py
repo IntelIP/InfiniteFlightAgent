@@ -188,3 +188,124 @@ def test_existing_plan_mismatch_is_reported_not_briefed(mocked):
     assert result["status"] == "plan_mismatch"
     assert result["differences"]["destination"] == {"described": "KDEN", "latest_plan": "KEWR"}
     assert "briefing_markdown" not in result
+
+
+def test_approval_summary_names_airports_and_thrust(monkeypatch):
+    from ifdispatcher import agent, flights
+
+    names = {
+        "/airports/KIAD": {"name": "Dulles Int'l", "city": "Washington", "country_code": "US"},
+        "/airports/CYYT": {"name": "St. John's Int'l", "city": "St. John's", "country_code": "CA"},
+    }
+    monkeypatch.setattr(flights, "_get", lambda path, params=None: names[path])
+    call = {
+        "args": {
+            "trip": "T",
+            "leg": "1",
+            "origin": "KIAD",
+            "destination": "CYYT",
+            "sim_aircraft": "TBM9",
+            "departure_local_date": "2026-11-01",
+            "private_callsign": "N930HD",
+        }
+    }
+    summary = agent.approval_summary(call)
+    assert "CYYT: St. John's Int'l (St. John's, CA)" in summary  # a wrong code is visible
+    assert "takeoff N1 estimate unavailable" in summary
+    assert "private, callsign N930HD" in summary
+
+
+def test_approval_summary_survives_lookup_failure(monkeypatch):
+    from ifdispatcher import agent, flights
+
+    def down(path, params=None):
+        raise ValueError("paid_operations_disabled")
+
+    monkeypatch.setattr(flights, "_get", down)
+    summary = agent.approval_summary(
+        {"args": {"origin": "KIAD", "destination": "KEWR", "sim_aircraft": "A20N"}}
+    )
+    assert "KIAD: name unavailable (paid_operations_disabled)" in summary
+    assert "A20N: simulation-grade takeoff N1 estimate available" in summary
+
+
+def ScriptedModel(messages):
+    """Plays fixed AI messages through the real agent graph (no model calls)."""
+    from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+
+    class Model(GenericFakeChatModel):
+        def bind_tools(self, tools, **kwargs):
+            return self
+
+    return Model(messages=iter(messages))
+
+
+def test_two_dispatches_of_one_leg_are_refused_before_approval(monkeypatch):
+    from langchain_core.messages import AIMessage
+    from langgraph.checkpoint.memory import InMemorySaver
+
+    from ifdispatcher import agent
+
+    monkeypatch.setattr(agent.flights, "airport_name", lambda code: "Test airport")  # no AeroAPI
+    leg = {
+        "trip": "T",
+        "leg": "1",
+        "origin": "KIAD",
+        "destination": "KSFO",
+        "sim_aircraft": "A21N",
+        "departure_local_date": "2026-10-31",
+    }
+    calls = [
+        {"name": "dispatch_flight", "args": {**leg, "fa_flight_id": fid}, "id": f"c{i}"}
+        for i, fid in enumerate(["UAL2862-x", "UAL796-x"])
+    ]
+    model = ScriptedModel([AIMessage("", tool_calls=calls), AIMessage("Which flight?")])
+    graph = agent.build_agent(model=model, checkpointer=InMemorySaver())
+    config = {"configurable": {"thread_id": "t"}}
+    result = graph.invoke({"messages": [{"role": "user", "content": "go"}]}, config, version="v2")
+
+    assert not result.interrupts  # never reached the approval gate
+    refused = [m for m in result.value["messages"] if m.type == "tool"]
+    assert [m.tool_call_id for m in refused] == ["c0", "c1"]
+    assert all('"refused"' in m.content for m in refused)
+    assert result.value["messages"][-1].text == "Which flight?"
+
+
+def test_one_dispatch_per_leg_still_needs_approval(monkeypatch):
+    from langchain_core.messages import AIMessage
+    from langgraph.checkpoint.memory import InMemorySaver
+
+    from ifdispatcher import agent
+
+    monkeypatch.setattr(agent.flights, "airport_name", lambda code: "Test airport")  # no AeroAPI
+    call = {
+        "name": "dispatch_flight",
+        "id": "c0",
+        "args": {
+            "trip": "T",
+            "leg": "1",
+            "origin": "KIAD",
+            "destination": "KSFO",
+            "sim_aircraft": "A21N",
+            "departure_local_date": "2026-10-31",
+            "fa_flight_id": "UAL796-x",
+        },
+    }
+    graph = agent.build_agent(
+        model=ScriptedModel([AIMessage("", tool_calls=[call])]), checkpointer=InMemorySaver()
+    )
+    config = {"configurable": {"thread_id": "t"}}
+    result = graph.invoke({"messages": [{"role": "user", "content": "go"}]}, config, version="v2")
+    assert result.interrupts
+    assert result.interrupts[0].value["action_requests"][0]["name"] == "dispatch_flight"
+
+
+def test_agent_has_no_task_subagent():
+    # A general-purpose subagent would reach dispatch_flight without the dispatcher's
+    # instructions. Building the agent makes no model or network call.
+    from ifdispatcher import agent
+    from ifdispatcher.siwc import chatgpt_model
+
+    graph = agent.build_agent(model=chatgpt_model("gpt-6-luna", "low"))
+    tools = graph.get_graph().nodes["tools"].data.tools_by_name
+    assert "task" not in tools and "dispatch_flight" in tools
