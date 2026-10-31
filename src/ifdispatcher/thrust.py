@@ -123,6 +123,14 @@ def fbw_leap1a26_n1(pa: float, oat: float, flex: float | None, packs: int, nacel
     return cn1 * math.sqrt((273.15 + oat) / 288.15) + bleed
 
 
+def support_note(aircraft_icao: str | None) -> str:
+    """One line for approval prompts: will a takeoff N1 estimate be available?"""
+    code = (aircraft_icao or "").upper()
+    if code in AIRCRAFT:
+        return f"{code}: simulation-grade takeoff N1 estimate available"
+    return f"{code or 'aircraft'}: takeoff N1 estimate unavailable (not modeled)"
+
+
 def supported_profiles() -> dict[str, Any]:
     """Which aircraft/engines/thrust modes the estimator handles, and what it reads."""
     return {

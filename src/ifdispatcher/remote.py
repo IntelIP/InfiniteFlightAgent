@@ -18,6 +18,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from ifdispatcher.config import export_tracing_settings, paid_operations_enabled, setting
+from ifdispatcher.thrust import support_note
 
 TOKEN_HEADER = "x-ifd-internal-token"
 _agent = None
@@ -48,6 +49,7 @@ def _turn(result, thread_id: str) -> dict[str, Any]:
             "thread_id": thread_id,
             "action": request["name"],
             "inputs": request["args"],
+            "takeoff_thrust": support_note(request["args"].get("sim_aircraft")),
             "next": "Show these inputs to the user, then call approve_dispatch with their answer.",
         }
     return {"status": "reply", "thread_id": thread_id, "reply": result.value["messages"][-1].text}

@@ -175,3 +175,10 @@ def test_tool_reads_saved_snapshot(tmp_path, monkeypatch):
     result = server.estimate_takeoff_n1("neo", "out", 1, full_thrust_n1=88.0)
     assert result["status"] == "estimated"
     assert result["data"]["calibration_full_thrust_n1"] == 88.0
+
+
+def test_support_note_for_approval_prompts():
+    from ifdispatcher.thrust import support_note
+
+    assert "available" in support_note("A21N") and "unavailable" not in support_note("A21N")
+    assert "unavailable" in support_note("B789")

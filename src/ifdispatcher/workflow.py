@@ -342,7 +342,11 @@ def finalize_dispatch(
 
 
 def analyze_existing_plan(
-    full_thrust_n1: float | None = None, engine: str | None = None
+    full_thrust_n1: float | None = None,
+    engine: str | None = None,
+    expected_origin: str | None = None,
+    expected_destination: str | None = None,
+    expected_flight_number: str | None = None,
 ) -> dict[str, Any]:
     """The user's latest SimBrief plan (already generated): thrust estimate and real-flight gate.
 
@@ -364,6 +368,24 @@ def analyze_existing_plan(
     general = raw.get("general", {})
     number = f"{general.get('icao_airline') or ''}{general.get('flight_number') or ''}"
     origin, destination = data["origin"], data["destination"]
+    described = {
+        "origin": (expected_origin, origin),
+        "destination": (expected_destination, destination),
+        "flight_number": (expected_flight_number, number),
+    }
+    differs = {
+        k: {"described": want, "latest_plan": got}
+        for k, (want, got) in described.items()
+        if want and want.upper().replace(" ", "") != (got or "").upper()
+    }
+    if differs:
+        return {
+            "status": "plan_mismatch",
+            "reason": "the latest SimBrief plan is not the flight the user described; ask them to "
+            "generate that plan (or confirm this one) before giving gate or thrust",
+            "differences": differs,
+            "latest_plan": _synopsis(raw),
+        }
     flight, flight_note, meta = None, None, {}
     if number and general.get("icao_airline"):
         planned = _utc(raw["times"]["sched_out"])

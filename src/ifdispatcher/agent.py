@@ -203,15 +203,32 @@ def finalize_dispatch(
 
 
 @tool(parse_docstring=True)
-def analyze_existing_plan(full_thrust_n1: float | None = None, engine: str | None = None) -> dict:
+def analyze_existing_plan(
+    full_thrust_n1: float | None = None,
+    engine: str | None = None,
+    expected_origin: str | None = None,
+    expected_destination: str | None = None,
+    expected_flight_number: str | None = None,
+) -> dict:
     """For a SimBrief plan the user ALREADY generated: fetch their latest plan once, estimate
     takeoff thrust, and look up the real flight's gate (or most recent gate). No dispatch needed.
+    Pass what the user described; a different latest plan returns plan_mismatch.
 
     Args:
         full_thrust_n1: Optional N1 the user read in Infinite Flight at full throttle.
         engine: Only if the user explicitly wants thrust for a different engine than the plan's.
+        expected_origin: Departure ICAO the user described, e.g. KIAD.
+        expected_destination: Arrival ICAO the user described, e.g. KEWR.
+        expected_flight_number: Flight number the user described, e.g. UA2408.
     """
-    return _safe(workflow.analyze_existing_plan, full_thrust_n1, engine)
+    return _safe(
+        workflow.analyze_existing_plan,
+        full_thrust_n1,
+        engine,
+        expected_origin,
+        expected_destination,
+        expected_flight_number,
+    )
 
 
 TOOLS = [
@@ -260,6 +277,7 @@ def _approval(interrupts) -> dict:
     decisions = []
     for request in interrupts[0].value["action_requests"]:
         print(f"\n[approval] {request['name']}:\n{json.dumps(request['args'], indent=2)}")
+        print(f"takeoff thrust: {thrust.support_note(request['args'].get('sim_aircraft'))}")
         answer = input("Approve? [y = approve / n = reject + reason]: ").strip()
         if answer.lower().startswith("y"):
             decisions.append({"type": "approve"})

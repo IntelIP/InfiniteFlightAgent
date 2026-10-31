@@ -180,3 +180,11 @@ def test_dispatch_reports_thrust_support(mocked):
         private_callsign="N172HD",
     )
     assert private["thrust_estimate"].startswith("unavailable: C172")
+
+
+def test_existing_plan_mismatch_is_reported_not_briefed(mocked):
+    mocked["plan"] = neo_plan(datetime.now(timezone.utc).isoformat())  # KIAD -> KEWR
+    result = workflow.analyze_existing_plan(expected_origin="KIAD", expected_destination="KDEN")
+    assert result["status"] == "plan_mismatch"
+    assert result["differences"]["destination"] == {"described": "KDEN", "latest_plan": "KEWR"}
+    assert "briefing_markdown" not in result

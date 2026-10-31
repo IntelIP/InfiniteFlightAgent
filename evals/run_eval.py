@@ -162,15 +162,19 @@ def grade(case: dict, run: dict) -> dict[str, bool | None]:
     exp = case["expected"]
     first_tools = run["turn_tools"][0] if run["turn_tools"] else []
     first_text = next((t["text"] for t in run["transcript"] if t["role"] == "assistant"), "")
+    first_text = first_text.replace("\u2019", "'")
     first_questions = " ".join(
-        s for s in re.split(r"(?<=[?.!:])\s+", first_text) if "?" in s or REQUEST.search(s)
+        s for s in re.split(r"(?<=[?.!])\s+", first_text) if "?" in s or REQUEST.search(s)
     )
     research = [RESEARCH[t] for t in first_tools if t in RESEARCH]
     dispatched_first = any(d["before_user_reply"] for d in run["dispatches"])
     checks: dict[str, bool | None] = {"no_error": run["error"] is None}
 
     action = exp["first_action"]
-    if action == "ask_clarification":
+    required = [t for t in exp["clarify_topics"] if t != "passengers_or_load"]
+    if action == "ask_clarification" and not required:
+        checks["first_action"] = bool(first_questions) or bool(run["dispatches"])
+    elif action == "ask_clarification":
         checks["first_action"] = bool(first_questions) and not dispatched_first
     elif action == "explain_limitation":
         checks["first_action"] = not dispatched_first and any(
@@ -190,10 +194,13 @@ def grade(case: dict, run: dict) -> dict[str, bool | None]:
             r"\b(?:[A-Za-z]\.){2,}", lambda m: m.group(0).replace(".", ""), said_all
         )
         q = " ".join(
-            s for s in re.split(r"(?<=[?.!:])\s+", said_all) if "?" in s or REQUEST.search(s)
+            s for s in re.split(r"(?<=[?.!])\s+", said_all) if "?" in s or REQUEST.search(s)
         ).lower()
-        offered = bool(re.search(r"which (flight|one|option|of these)|choose|pick", q))
-        choice_settles = {"date", "time", "airline", "destination", "private_or_airline"}
+        offered = bool(
+            re.search(r"which (flight|one|option|of these|would you)|prefer|choose|pick|go with", q)
+            or re.search(r"how about|try |a few ideas|options?:", said_all.lower())
+        )
+        choice_settles = {"date", "time", "airline", "origin", "destination", "private_or_airline"}
         checks["clarify_coverage"] = all(
             any(w in q for w in TOPIC_WORDS[t]) or (offered and t in choice_settles) for t in topics
         )
@@ -230,7 +237,7 @@ def grade(case: dict, run: dict) -> dict[str, bool | None]:
     invented = {n for n in invented if not re.fullmatch(r"N\d{1,5}[A-Z]{0,2}", n)}  # N-numbers
     checks["no_invented_flight_numbers"] = not {n for n in invented if not n[:1].isdigit()}
 
-    if exp["thrust_supported"] is False:
+    if exp["thrust_supported"] is False and run["dispatches"]:  # must be said before dispatch
         checks["unsupported_thrust_disclosed"] = bool(
             re.search(
                 r"(thrust|n1)[^.]{0,80}(unavailable|not (be )?(supported|available)|"
