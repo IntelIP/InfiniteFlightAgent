@@ -20,3 +20,13 @@ def setting(name: str) -> str | None:
 
 def data_dir() -> Path:
     return Path(setting("IFD_DATA_DIR") or Path(__file__).resolve().parents[2] / "data")
+
+
+def export_tracing_settings() -> bool:
+    """Copy LANGSMITH_* settings from .env into the process environment for LangChain tracing."""
+    if ENV_FILE.exists():
+        for line in ENV_FILE.read_text().splitlines():
+            key, _, value = line.partition("=")
+            if key.strip().startswith("LANGSMITH_") and value.strip():
+                os.environ.setdefault(key.strip(), value.strip())
+    return os.environ.get("LANGSMITH_TRACING", "").lower() == "true"

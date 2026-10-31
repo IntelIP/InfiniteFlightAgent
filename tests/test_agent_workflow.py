@@ -151,3 +151,32 @@ def test_briefing_falls_back_to_most_recent_completed_gate(mocked, monkeypatch):
     brief = workflow.finalize_dispatch("KIAD-KEWR-20261031", "1")["briefing_markdown"]
     assert brief.startswith("**SPAWN:** Gate C27 — used by the most recent completed UA1831")
     assert "today's gate is not assigned yet" in brief
+
+
+def test_private_callsign_must_fit_icao_limit(mocked):
+    result = workflow.dispatch_flight(
+        "T",
+        "1",
+        "KJYO",
+        "KFDK",
+        "C172",
+        "2026-10-31",
+        departure_utc="2026-10-31T16:00:00Z",
+        private_callsign="N172HUDSON",
+    )
+    assert result["status"] == "invalid_input"
+
+
+def test_dispatch_reports_thrust_support(mocked):
+    assert dispatch()["thrust_estimate"].startswith("supported")
+    private = workflow.dispatch_flight(
+        "T",
+        "1",
+        "KJYO",
+        "KFDK",
+        "C172",
+        "2026-10-31",
+        departure_utc="2026-10-31T16:00:00Z",
+        private_callsign="N172HD",
+    )
+    assert private["thrust_estimate"].startswith("unavailable: C172")

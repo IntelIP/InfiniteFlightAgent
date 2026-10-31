@@ -20,7 +20,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 
 from ifdispatcher import flights, thrust, workflow
-from ifdispatcher.config import data_dir
+from ifdispatcher.config import data_dir, export_tracing_settings
 from ifdispatcher.siwc import chatgpt_model
 
 INSTRUCTIONS = (Path(__file__).resolve().parents[2] / "instructions.md").read_text()
@@ -202,6 +202,18 @@ def finalize_dispatch(
     return _safe(workflow.finalize_dispatch, trip, leg, revision, full_thrust_n1)
 
 
+@tool(parse_docstring=True)
+def analyze_existing_plan(full_thrust_n1: float | None = None, engine: str | None = None) -> dict:
+    """For a SimBrief plan the user ALREADY generated: fetch their latest plan once, estimate
+    takeoff thrust, and look up the real flight's gate (or most recent gate). No dispatch needed.
+
+    Args:
+        full_thrust_n1: Optional N1 the user read in Infinite Flight at full throttle.
+        engine: Only if the user explicitly wants thrust for a different engine than the plan's.
+    """
+    return _safe(workflow.analyze_existing_plan, full_thrust_n1, engine)
+
+
 TOOLS = [
     current_time,
     find_route_flights,
@@ -212,6 +224,7 @@ TOOLS = [
     dispatch_flight,
     generate_in_simbrief,
     finalize_dispatch,
+    analyze_existing_plan,
 ]
 
 
@@ -248,6 +261,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Chat with the Infinite Flight Dispatcher")
     parser.add_argument("--thread", default=None, help="resume a saved conversation thread")
     args = parser.parse_args()
+    export_tracing_settings()
     thread = args.thread or f"chat-{uuid.uuid4().hex[:8]}"
     config = {"configurable": {"thread_id": thread}}
     agent = build_agent(checkpointer=checkpointer())

@@ -70,6 +70,11 @@ def dispatch_flight(
             "status": "missing_input",
             "missing_inputs": ["fa_flight_id from a flight search, or private_callsign"],
         }
+    if private_callsign and not re.fullmatch(r"[A-Z0-9]{2,7}", private_callsign.upper()):
+        return {
+            "status": "invalid_input",
+            "reason": "private_callsign must be 2-7 letters or digits (ICAO limit), e.g. N172HD",
+        }
     if not departure_utc:
         return {"status": "missing_input", "missing_inputs": ["departure_utc"]}
     departure = _utc(departure_utc)
@@ -114,7 +119,7 @@ def dispatch_flight(
         "simbrief_inputs": {
             "airline": airline,
             "flight_number": digits,
-            "callsign": private_callsign,
+            "callsign": private_callsign.upper() if private_callsign else None,
             "departure": origin,
             "arrival": destination,
             "date": departure.strftime("%d%b%y").upper(),
@@ -124,6 +129,9 @@ def dispatch_flight(
             "passengers": passengers,
             "takeoff_performance": "enable runway analysis (TLR)",
         },
+        "thrust_estimate": "supported (labeled simulation-grade estimate)"
+        if sim_aircraft in thrust.AIRCRAFT
+        else f"unavailable: {sim_aircraft} is not modeled; tell the user before generating",
         "next_step": (
             "Call generate_in_simbrief for this leg, then finalize_dispatch. If browser "
             "generation fails, show these inputs so the user can generate manually."
@@ -212,7 +220,12 @@ def _briefing(syn: dict, flight: dict | None, est: dict, takeoff: dict | None, m
         else:
             spawn = "Gate not assigned yet and no recent gate found; choose a suitable stand"
     else:
-        spawn = "Private flight: no assigned gate; choose an FBO/GA ramp (not verified)"
+        spawn = (
+            "No real flight matched: choose a stand or FBO/GA ramp that fits your aircraft "
+            "(not verified)"
+            if meta.get("private_callsign") is None
+            else "Private flight: no assigned gate; choose an FBO/GA ramp (not verified)"
+        )
     if est["status"] == "estimated":
         thrust_line = est["briefing"].split("): ", 1)[-1]
     else:
@@ -319,4 +332,70 @@ def finalize_dispatch(
         "recent_gates": meta.get("recent_gates"),
         "thrust": estimate,
         "snapshot": {"trip": trip, "leg": leg, "revision": revision, "sha256": saved["raw_sha256"]},
+    }
+
+
+def analyze_existing_plan(
+    full_thrust_n1: float | None = None, engine: str | None = None
+) -> dict[str, Any]:
+    """The user's latest SimBrief plan (already generated): thrust estimate and real-flight gate.
+
+    Read-only: one latest-plan fetch, nothing generated or saved. The plan's flight number is
+    checked against FlightAware on the plan's route; a mismatch is reported, never assumed.
+    """
+    body = fetch_sync(setting("SIMBRIEF_ALIAS"), userid=setting("SIMBRIEF_USERID"))
+    data = normalize(body)
+    raw = json.loads(body)
+    conditions = (data.get("tlr") or {}).get("takeoff", {}).get("conditions")
+    estimate = thrust.estimate_takeoff_n1(
+        data["aircraft"].get("icao_code"),
+        data["aircraft"].get("engines"),
+        conditions,
+        data.get("selected_takeoff"),
+        engine_override=engine,
+        full_thrust_n1=full_thrust_n1,
+    )
+    general = raw.get("general", {})
+    number = f"{general.get('icao_airline') or ''}{general.get('flight_number') or ''}"
+    origin, destination = data["origin"], data["destination"]
+    flight, flight_note, meta = None, None, {}
+    if number and general.get("icao_airline"):
+        planned = _utc(raw["times"]["sched_out"])
+        try:
+            found = (
+                flights.get_flight_by_number(number, planned.date().isoformat(), origin=origin).get(
+                    "data"
+                )
+                or []
+            )
+        except ValueError as exc:
+            found, flight_note = [], str(exc)
+        same_route = [f for f in found if f["destination"]["icao"] == destination]
+        if same_route:
+            flight = min(
+                same_route,
+                key=lambda f: abs(_utc(f["times"]["scheduled_out"]["utc"]) - planned),
+            )
+            if flight["departure_gate"] == "unavailable":
+                meta["recent_gates"] = flights.recent_gates(number, origin).get("data")
+        else:
+            flight_note = flight_note or (
+                f"{number} does not operate {origin}-{destination} around the plan's departure "
+                "in FlightAware data; the plan's flight number looks user-entered"
+            )
+    synopsis = _synopsis(raw)
+    briefing = _briefing(synopsis, flight, estimate, data.get("selected_takeoff"), meta)
+    if not flight:
+        briefing = briefing.replace(
+            "**Flight:** private, callsign None",
+            f"**Flight:** {number or 'no flight number'} (no matching real flight found)",
+        )
+    return {
+        "status": "complete",
+        "briefing_markdown": briefing,
+        "flight_note": flight_note,
+        "synopsis": synopsis,
+        "flight": flight,
+        "recent_gates": meta.get("recent_gates"),
+        "thrust": estimate,
     }
