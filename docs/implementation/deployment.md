@@ -1,6 +1,6 @@
 # Cloudflare deployment
 
-Status October 31, 2026: scaffolding only. Nothing has been deployed, no cloud resources exist, and the release workflows have not run. Owner decision: single-user personal deployment of the open-source app with the owner's own keys and ChatGPT plan. License: GPL-3.0-only (owner decision, October 31, 2026), because the thrust estimator ports GPL-3.0 FlyByWire tables.
+Status October 31, 2026: nothing has been deployed and the release workflows have not run. Created: Neon project `InfiniteFlightDispatcher` (`summer-fog-90424455`, aws-us-east-1, Postgres 18, database `neondb`). Owner decision: single-user personal deployment of the open-source app with the owner's own keys and ChatGPT plan. License: GPL-3.0-only (owner decision, October 31, 2026), because the thrust estimator ports GPL-3.0 FlyByWire tables.
 
 ## Architecture
 
@@ -86,7 +86,7 @@ Checked against the shared playbook's pitfalls (`AgenticEngineering/openwiki/dep
 
 - **R2 checksums:** fixed. `artifacts.py` now sets `request_checksum_calculation` and `response_checksum_validation` to `when_required`; R2 rejects botocore's default CRC checksums.
 - **R2 key scope:** at creation, round-trip an object in our bucket and confirm another bucket returns `AccessDenied`. The playbook observed an all-bucket key.
-- **Neon pooler:** our locks are transaction-scoped (`pg_advisory_xact_lock`) and every connection disables server-side prepared statements, which should work through the pooled endpoint. The playbook sends DDL and the LangGraph checkpointer to the direct endpoint. Verify checkpointer setup through the pooled URL on first deploy, or add a direct URL for setup.
+- **Neon pooler:** verified. Our locks are transaction-scoped (`pg_advisory_xact_lock`) and every connection disables server-side prepared statements. The playbook sends DDL and the LangGraph checkpointer to the direct endpoint; here the full Postgres suite (57 tests, including checkpointer setup and the credential refresh lock) passed through the pooled endpoint of a throwaway branch of the new project on October 31, 2026.
 - **Long MCP tool calls:** closed. `approve_dispatch` can take about two minutes (Browserbase generation), and the playbook observed client timeouts. Agent turns now run in a background thread; a tool returns its result within 25 seconds or `status: running`, and the client polls `turn_status`. A container restart loses the in-memory turn (the checkpoint survives), and `turn_status` then reports `not_found`.
 - **Cloudflare API token:** CLI OAuth cannot mint API tokens; create the release token in the dashboard.
 - **Rotating refresh token:** handled. `ifd-credentials import --move` gives the deployment its own host id, removes the local session, and refreshes under a database lock.
