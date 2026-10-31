@@ -1,0 +1,16 @@
+{
+  "prepared": true,
+  "retrieved": true,
+  "generation_verified": false,
+  "departure_note": "Test preparation input only; departure matching is not verified.",
+  "raw_sha256": "529f5fdff534fad6c0a66ec1454b6546524d82ada810d2b9c41ca813a1c57ea1",
+  "retrieved_at": "2026-10-30T21:36:35.043627+00:00",
+  "aircraft": {
+    "engines": "LEAP-1B28",
+    "icao_code": "B38M",
+    "name": "B737 MAX 8"
+  },
+  "origin": "KIAD",
+  "destination": "KEWR",
+  "target_status": "unavailable"
+}

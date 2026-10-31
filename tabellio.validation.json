@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "tabellio-validation/v0.2",
+  "id": "simbrief-integration",
+  "failFast": false,
+  "requireEntireCheckpoint": false,
+  "acceptance": {
+    "id": "BUILD-04",
+    "source": "docs/implementation/simbrief-build-spec.md",
+    "risk": "medium",
+    "outcomes": [
+      "MCP preparation and durable OFP retrieval",
+      "Live neo generation and correlated retrieval",
+      "Two live legs retained across latest-plan changes",
+      "Authentication and recovery observed"
+    ],
+    "invariants": [
+      "Preserve raw data and units",
+      "No latest-plan polling",
+      "No duplicate generation retries"
+    ],
+    "forbiddenOutcomes": [
+      "Claim live integration from fixtures",
+      "Invent engine targets"
+    ],
+    "requiredValidatorTypes": [
+      "workflow"
+    ]
+  },
+  "validators": [
+    {
+      "id": "simbrief-workflow",
+      "type": "workflow",
+      "argv": [
+        "uv",
+        "run",
+        "--locked",
+        "python",
+        "scripts/validate.py"
+      ],
+      "cwd": ".",
+      "timeoutMs": 180000,
+      "required": true,
+      "evidence": {
+        "path": "artifacts/validation/latest.json"
+      },
+      "policy": {
+        "metricThresholds": [],
+        "maxCostUsd": null,
+        "requireCostTelemetry": false
+      }
+    }
+  ]
+}

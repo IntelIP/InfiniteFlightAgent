@@ -1,0 +1,47 @@
+{
+  "source_url": "https://asrv.avinor.no/XmlFeed/v1.0?airport=OSL&TimeFrom=1&TimeTo=7&direction=D",
+  "research_date": "2026-10-30",
+  "kind": "selected fields extracted from one live XML response; not the complete raw feed",
+  "airport": "OSL",
+  "feed_last_update": "2026-10-30T20:44:55.876526Z",
+  "response_flight_count": 34,
+  "attribution": {
+    "text": "Flight data from Avinor",
+    "url": "https://www.avinor.no"
+  },
+  "selected_flights": [
+    {
+      "uniqueID": "1255377774",
+      "flight_id": "DY1310",
+      "airline": "DY",
+      "airport": "LGW",
+      "schedule_time": "2026-10-30T17:45:00Z",
+      "arr_dep": "D",
+      "gate": "F16",
+      "status": {
+        "code": "D",
+        "time": "2026-10-30T19:55:56Z"
+      },
+      "delayed": "Y"
+    },
+    {
+      "uniqueID": "1764890336",
+      "flight_id": "KL1206",
+      "airline": "KL",
+      "airport": "AMS",
+      "schedule_time": "2026-10-30T17:55:00Z",
+      "arr_dep": "D",
+      "gate": "E15",
+      "status": {
+        "code": "D",
+        "time": "2026-10-30T19:54:06Z"
+      },
+      "delayed": "Y"
+    }
+  ],
+  "limits": [
+    "No independent gate confirmation",
+    "No simulator stand mapping",
+    "No inference of historical or future assigned gates"
+  ]
+}

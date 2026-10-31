@@ -1,0 +1,23 @@
+{
+  "kind": "selected actual response fields; intentionally incomplete OFP",
+  "source_raw_sha256": "f897925f287617650b0a6c0c0ebde1a6685f78c51d57b41e66e4ca1e47bb386b",
+  "fixture_sha256": "c4c22b55a9db64ea533e57a229946fb88243f5480253ed5d96cb324a8dd0b3af",
+  "fixture": "simbrief-b38m-parser-fixture.json",
+  "preserved_top_level_fields": [
+    "fetch",
+    "params",
+    "aircraft",
+    "origin",
+    "destination",
+    "times",
+    "weights",
+    "tlr"
+  ],
+  "omitted": "All unlisted top-level fields and non-allowlisted identity fields; account IDs, request IDs, registration, personal details, download links excluded. No source values fabricated.",
+  "limitations": [
+    "Not a full OFP contract fixture",
+    "Not a neo response",
+    "No generation/correlation identity proof",
+    "Does not establish provider retention or import behavior"
+  ]
+}

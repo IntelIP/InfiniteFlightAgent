@@ -1,0 +1,26 @@
+[project]
+name = "infinite-flight-dispatcher"
+version = "0.1.0"
+description = "Local SimBrief preparation and snapshot MCP tools"
+requires-python = ">=3.11"
+dependencies = ["mcp==1.27.0", "httpx==0.28.1", "pydantic>=2.11,<3"]
+
+[dependency-groups]
+dev = ["pytest==8.4.2", "ruff==0.14.3", "vulture==2.16"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ifdispatcher"]
+
+[project.scripts]
+ifdispatcher = "ifdispatcher.server:main"

@@ -1,0 +1,48 @@
+{
+  "source_url": "https://www.simbrief.com/api/inputs.list.json",
+  "retrieved_at_utc": "2026-10-30T20:25:36.603091+00:00",
+  "complete_response_sha256": "4a341cc845ee7721a7a41b3a06f232fb4d0f653f840620bcf23aa690da1f2e5d",
+  "evidence_kind": "Selected unmodified entries from public aircraft catalog; not an OFP or calculated thrust target",
+  "aircraft": {
+    "A320": {
+      "id": "A320",
+      "name": "A320-200",
+      "accuracy": "high",
+      "chart_data": true,
+      "costindex_data": true,
+      "tlr_data": true,
+      "last_updated": "2024-07-14T16:39:26+00:00",
+      "popularity_pct": 15.9
+    },
+    "A20N": {
+      "id": "A20N",
+      "name": "A320-200N",
+      "accuracy": "fair",
+      "chart_data": true,
+      "costindex_data": true,
+      "tlr_data": true,
+      "last_updated": "2025-12-14T04:04:15+00:00",
+      "popularity_pct": 11.8
+    },
+    "A321": {
+      "id": "A321",
+      "name": "A321-200",
+      "accuracy": "high",
+      "chart_data": true,
+      "costindex_data": true,
+      "tlr_data": true,
+      "last_updated": "2024-07-14T16:39:26+00:00",
+      "popularity_pct": 4.8
+    },
+    "A21N": {
+      "id": "A21N",
+      "name": "A321-200N",
+      "accuracy": "fair",
+      "chart_data": true,
+      "costindex_data": true,
+      "tlr_data": true,
+      "last_updated": "2025-12-14T04:04:15+00:00",
+      "popularity_pct": 3.5
+    }
+  }
+}

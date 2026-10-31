@@ -1,0 +1,20 @@
+name: Product validation
+on: [pull_request]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: astral-sh/setup-uv@v7
+      - run: uv sync --locked
+      - run: uv run --locked python scripts/validate.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: simbrief-validation-${{ github.event.pull_request.head.sha }}
+          path: artifacts/validation/
+          if-no-files-found: error
