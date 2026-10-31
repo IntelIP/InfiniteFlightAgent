@@ -1,53 +1,106 @@
-# Infinite Flight Dispatcher
+# Infinite Flight Agent
 
-A personal flight-preparation agent accessible through MCP from ChatGPT, Claude, and Codex. Describe a flight idea, work with the harness to complete the necessary inputs, generate a SimBrief plan, and receive prominent manual spawn and takeoff-thrust instructions.
+<p align="center">
+  <strong>Tell it the flight you want to fly. Get a real-world flight, a SimBrief plan, and the gate and takeoff N1 to set in Infinite Flight.</strong>
+</p>
 
-**Status: partial local implementation.** A local Deep Agent (GPT-6 Luna via Sign in with ChatGPT) researches real flights through FlightAware, prepares legs after approval, and finalizes a briefing with a labeled N1 estimate from a user-generated SimBrief plan. SimBrief API generation, simulator stand mapping, client-app acceptance, and verified aircraft support remain incomplete. No remote repository or deployment exists.
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="docs/implementation/agent-usage.md">Agent guide</a> ·
+  <a href="docs/implementation/deployment.md">Self-host on Cloudflare</a> ·
+  <a href="docs/aircraft-coverage.md">Aircraft coverage</a> ·
+  <a href="CONTRIBUTING.md">Contribute</a>
+</p>
 
-See [agent setup and evaluation](docs/implementation/agent-usage.md), [MCP SimBrief usage](docs/implementation/simbrief-usage.md), and the [Cloudflare deployment scaffolding](docs/implementation/deployment.md) (not deployed).
+<p align="center">
+  <a href="https://github.com/IntelIP/InfiniteFlightAgent/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/IntelIP/InfiniteFlightAgent/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="License: GPL-3.0-only" src="https://img.shields.io/badge/license-GPL--3.0--only-blue"></a>
+  <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-blue">
+  <img alt="MCP server" src="https://img.shields.io/badge/MCP-server-black">
+</p>
 
-## Start here
+Infinite Flight Agent is an open-source AI dispatcher for [Infinite Flight](https://infiniteflight.com) pilots. It turns a plain-language idea like *"Dulles to Denver tomorrow evening in the A321neo"* into a briefing ready to fly. It runs on your own keys and your own ChatGPT plan, from the terminal or any MCP client.
 
-| Document | Purpose |
-| --- | --- |
-| [Goal](docs/goal.md) | Accepted user outcome, launch scope, and completion criteria |
-| [Roadmap](docs/roadmap.md) | Delivery sequence and milestone exit conditions |
-| [Backlog](docs/backlog.md) | Focused work items, dependencies, acceptance, and open decisions |
-| [Technical design](docs/technical-design.md) | Proposed architecture, workflow, contracts, and failure behavior |
-| [Aircraft coverage](docs/aircraft-coverage.md) | Aircraft-specific translation support and evidence |
+```text
+**SPAWN:** Gate C28 — used by the most recent completed UA599 (2026-10-30, FlightAware); today's gate is not assigned yet
+**TAKEOFF THRUST (simulation-grade estimate):** FLEX, LEAP-1A32: set N1 0.911 x full-thrust N1 (range 0.865-0.948)
 
-## Initial dependency research
+**Flight:** UA599 KIAD → KDEN · real aircraft A21N
+**Departure:** sched out 2026-11-01 17:20 EST (2026-11-01T22:20:00Z)
+**SimBrief plan confirmed:** KIAD 01R -> KDEN 16R · A21N LEAP-1A32 · FL360 · 1259 nm · ETE 03:27:38 · block fuel 11872 kgs
+**Takeoff:** rwy 01R · flaps 1 · V1/VR/V2 155/159/161 · bleeds ON
+```
 
-Public-source investigation completed October 30, 2026; live access and aircraft support remain unverified:
+<sub>A briefing from a live end-to-end run on October 31, 2026 (registration and codeshares removed).</sub>
 
-- [SimBrief MCP extension](docs/research/simbrief-extension.md): pinned upstream source, reuse/extension requirements, legacy versus API v2 access questions.
-- [Flight and gate data sources](docs/research/flight-data-sources.md): current, historical, and future data; provider costs, retention, and evaluation plan.
-- [Professional thrust sources](docs/research/professional-thrust-sources.md): current OEM/professional options, evidence limits, and aircraft-specific translation plan.
-- [Free-first strategy](docs/research/free-first-strategy.md): revised evaluation order prioritizing free/open sources and low operating overhead while retaining thrust-quality requirements.
-- [Integration blueprint](docs/research/integration-blueprint.md): concrete SimBrief extensions, other MCP/data tool boundaries, a pinned open-source N1 calculation candidate, and remaining access/validation gaps.
+## Why pilots use it
 
-- [Focused launch follow-up](docs/research/launch-dependencies-followup.md): current SimBrief retrieval rules, official neo engine families, observed free Avinor gates, and remaining reference/simulator gaps.
+- **Fly real flights.** It searches live and recent schedules through [FlightAware AeroAPI](https://www.flightaware.com/commercial/aeroapi/), so it never invents a flight number. If today's gate isn't assigned yet, it gives the gate from the most recent operation and labels it historical.
+- **Generate your SimBrief plan for you.** Once you approve, it fills SimBrief's dispatch form in a cloud browser, reads every field back, and generates exactly one plan per leg.
+- **Lead with what you set first.** Every briefing opens with where to spawn and what N1 to set, before the details.
+- **Know where the thrust number comes from.** Takeoff N1 is estimated from SimBrief's own takeoff solution (thrust mode, FLEX temperature, runway conditions), using the lapse shape of FlyByWire's open A32NX thrust model. It covers the A320neo, A321neo, and 737 MAX 8, each labeled as an estimate with a range. Other aircraft get a clear "unavailable" instead of a guess.
+- **You approve before anything happens.** Nothing is generated until you approve the exact flight, airports, aircraft, and thrust status shown back to you.
+- **Use it where you already chat.** Use the terminal chat, or connect ChatGPT, Claude, or Codex to the MCP server.
 
-## Intended briefing
+## How it works
 
-> **SPAWN: [Infinite Flight gate, FBO, or ramp position]**  
-> **TAKEOFF THRUST: [supported target and engine indication]**
->
-> Flight identity, departure time, SimBrief plan/import instructions, takeoff configuration, V-speeds, sources, and limitations follow.
+```mermaid
+flowchart LR
+  you([You]) -->|"flight idea"| agent["Dispatcher agent<br/>(Deep Agents + your ChatGPT plan)"]
+  agent -->|"real flights, gates"| fa[(FlightAware AeroAPI)]
+  agent -->|"approval"| you
+  agent -->|"fill and generate"| bb["Browserbase cloud browser"] --> sb[(SimBrief)]
+  sb -->|"OFP + takeoff performance"| agent
+  agent -->|"spawn + N1 briefing"| you
+```
 
-Placeholders illustrate the response format; they are not calculated flight guidance.
+One agent handles the conversation and judgment calls. Fixed tools handle the parts that must be exact: flight lookup, approval, plan generation, matching the generated plan to the leg, and the thrust estimate. Details are in the [agent guide](docs/implementation/agent-usage.md) and the [technical design](docs/technical-design.md).
 
-## Local project
+## Quick start
 
-- Home: `/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher`
-- Branch: `main`; no initial commit or remote is created by the planning setup.
-- This is a new project. It does not restore the retired InfiniteFlight repository or its tracker commitments.
-- Implementation, installations, external account changes, purchases, publication, and deployment are separate from this planning setup.
-- Python was accepted by Hudson. Install with `uv sync --locked`; see the usage guide for MCP configuration.
+You need [uv](https://docs.astral.sh/uv/), a ChatGPT plan, a [FlightAware AeroAPI](https://www.flightaware.com/commercial/aeroapi/) key (the Personal tier is enough), a [SimBrief](https://www.simbrief.com) account, and a [Browserbase](https://www.browserbase.com) API key.
 
-See [AGENTS.md](AGENTS.md) before working here. Planning files are the current work-management source; no external tracker is selected.
+```bash
+git clone https://github.com/IntelIP/InfiniteFlightAgent.git
+cd InfiniteFlightAgent
+uv sync --locked
+cp .env.example .env        # add AEROAPI_KEY, SIMBRIEF_USERID, BROWSERBASE_API_KEY
+uv run ifd-login            # Sign in with ChatGPT and approve plan usage
+uv run ifd-simbrief         # log in to SimBrief once in the cloud browser it opens
+uv run ifd-chat             # describe your flight
+```
+
+Approval prompts appear in the terminal. See the [agent guide](docs/implementation/agent-usage.md) for all settings, resuming conversations, and MCP client setup.
+
+## Choose how to run it
+
+| Path | Best for | Start |
+| --- | --- | --- |
+| Terminal chat | Trying it out, single machine | `uv run ifd-chat` |
+| Local MCP server | Claude Desktop, Codex, or other MCP clients on your machine | [MCP setup](docs/implementation/simbrief-usage.md) |
+| Self-hosted remote MCP | Using it from ChatGPT or your phone, behind Cloudflare Access | [Cloudflare deployment](docs/implementation/deployment.md) |
+
+The self-hosted path runs a Cloudflare Worker and container, with Neon Postgres for conversation state, R2 for screenshots, and Doppler for secrets. It is built for one owner and is not a shared or resold service.
+
+## Quality
+
+The agent is checked against [100 scripted first messages](evals/dispatch_prompts.jsonl) across 11 categories: vague requests, multi-leg trips, private flights, unsupported aircraft, and more. On October 31, 2026, two consecutive full runs on the same code passed every safety check 100% of the time, and fully passed 92 and 91 of the 100 cases. The safety checks are: no invented flight numbers, no assumed dates, correct airports, and unsupported thrust disclosed before approval. A separate live end-to-end set exercises approval, real SimBrief generation, and the final briefing. See [evaluation results](docs/implementation/agent-usage.md#full-100-case-runs--october-31-2026).
+
+## Status and limits
+
+- **Early, personal-use software.** It works end to end locally. The remote deployment is built but not yet live.
+- **Thrust targets are simulation-grade estimates**, shown with a range. No aircraft is yet marked as verified against reference data; see [aircraft coverage](docs/aircraft-coverage.md).
+- **FlightAware only sees about two days ahead.** Flights further out have no live schedule or gate.
+- **It does not control the simulator.** It never claims your plan was imported, your aircraft spawned, or your thrust was set.
+
+> For flight simulation only. Never use any output of this project for real-world flight planning or aircraft operation.
+
+## Contributing
+
+Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, tests, and the evaluation rules, and [SECURITY.md](SECURITY.md) to report a vulnerability privately. The [roadmap](docs/roadmap.md) and [backlog](docs/backlog.md) show what's next.
 
 ## License
 
-GPL-3.0-only (see [LICENSE](LICENSE)). The takeoff N1 estimator ports the lapse shape of FlyByWire A32NX `ThrustLimits_A32NX.hpp` (GPL-3.0, commit `66021c2`), so the project as a whole is distributed under the GPL. Bring your own keys and compute: no credentials, hosted service, or ChatGPT plan access are included.
+[GPL-3.0-only](LICENSE). The takeoff N1 estimator ports the thrust-limit lapse shape of FlyByWire A32NX `ThrustLimits_A32NX.hpp` (GPL-3.0, commit `66021c2`), so the whole project is distributed under the GPL. Bring your own keys and compute: no credentials, hosted service, or ChatGPT plan access are included.
 
+Infinite Flight Agent is an independent project. It is not affiliated with or endorsed by Infinite Flight LLC, FlightAware, SimBrief or Navigraph, Browserbase, OpenAI, or FlyByWire Simulations. All trademarks belong to their owners.
