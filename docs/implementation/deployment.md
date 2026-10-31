@@ -1,6 +1,14 @@
 # Cloudflare deployment
 
-Status October 31, 2026: nothing has been deployed and the release workflows have not run. Created: Neon project `InfiniteFlightDispatcher` (`summer-fog-90424455`, aws-us-east-1, Postgres 18, database `neondb`). Owner decision: single-user personal deployment of the open-source app with the owner's own keys and ChatGPT plan. License: GPL-3.0-only (owner decision, October 31, 2026), because the thrust estimator ports GPL-3.0 FlyByWire tables.
+Status October 31, 2026: nothing has been deployed and the release workflows have not run. Created so far (none are secrets):
+
+- GitHub repository [IntelIP/InfiniteFlightAgent](https://github.com/IntelIP/InfiniteFlightAgent) (public), `production` environment (owner review, `main` only), variables `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `ACCESS_ALLOWED_EMAIL`, secret `CLOUDFLARE_ACCOUNT_ID`.
+- Neon project `InfiniteFlightDispatcher` (`summer-fog-90424455`, aws-us-east-1, Postgres 18, database `neondb`).
+- R2 bucket `infinite-flight-dispatcher` (ENAM).
+- Access application "Infinite Flight Agent MCP" (`82c02dde-b5fa-4a48-b518-5c3256608d55`) for `infinite-flight-dispatcher.hudson-228.workers.dev`: managed OAuth with dynamic client registration on, one Allow policy for the owner's email, team domain `restless-mouse-67bc.cloudflareaccess.com`.
+- Workers Paid was already active on the account.
+
+Still needed: the Doppler config, the Cloudflare release API token and the bucket-scoped R2 key (account API tokens cannot be created with CLI OAuth), the ChatGPT credential import, then the bootstrap release. Owner decision: single-user personal deployment of the open-source app with the owner's own keys and ChatGPT plan. License: GPL-3.0-only (owner decision, October 31, 2026), because the thrust estimator ports GPL-3.0 FlyByWire tables.
 
 ## Architecture
 
