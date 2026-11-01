@@ -733,6 +733,7 @@ dependencies = [
     { name = "mcp" },
     { name = "playwright" },
     { name = "psycopg", extra = ["binary"] },
+    { name = "psycopg-pool" },
     { name = "pydantic" },
     { name = "pyjwt", extra = ["crypto"] },
 ]
@@ -756,6 +757,7 @@ requires-dist = [
     { name = "mcp", specifier = "==1.27.0" },
     { name = "playwright", specifier = ">=1.64.1" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.6" },
+    { name = "psycopg-pool", specifier = ">=3.2" },
     { name = "pydantic", specifier = ">=2.11,<3" },
     { name = "pyjwt", extras = ["crypto"], specifier = ">=2.15.1" },
 ]
