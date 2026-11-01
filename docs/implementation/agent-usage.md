@@ -20,7 +20,7 @@ The definition uses only fields Managed Deep Agents accepts (model, tools, `inte
 
 ## Setup
 
-Browser generation: `BROWSERBASE_API_KEY` in `.env` (the key identifies the project). `uv run ifd-simbrief` opens a cloud session and prints a Live View link where the user logs into SimBrief once; the Browserbase context id is saved as `BROWSERBASE_SIMBRIEF_CONTEXT_ID`. `uv run ifd-simbrief inspect` lists the dispatch form fields. SimBrief's `static_id` is a read-only debug field on that page, so plans are correlated by generation time after the click plus route, aircraft, units, and departure. Thrust estimates use the engine SimBrief planned with unless the user asks for another.
+Browser generation: `BROWSERBASE_API_KEY` in `.env` (the key identifies the project). The Browserbase context keeps the SimBrief login. With `NAVIGRAPH_USERNAME` and `NAVIGRAPH_PASSWORD` set, a session that finds SimBrief signed out signs in through Navigraph's email/password form by itself (not Google/Apple/Microsoft sign-in, and not past MFA). Without them, `uv run ifd-simbrief` opens a cloud session and prints a Live View link where the user logs in once. If Browserbase no longer has `BROWSERBASE_SIMBRIEF_CONTEXT_ID`, a new context is created and its id kept in the store. The deployed Worker runs a daily keep-alive (cron) that refreshes the login. `uv run ifd-simbrief inspect` lists the dispatch form fields. SimBrief's `static_id` is a read-only debug field on that page, so plans are correlated by generation time after the click plus route, aircraft, units, and departure. Thrust estimates use the engine SimBrief planned with unless the user asks for another.
 
 ```bash
 uv sync --locked

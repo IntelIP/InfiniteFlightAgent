@@ -1,26 +1,33 @@
 """SimBrief data entry on a Browserbase cloud browser with a persistent logged-in profile.
 
-The user logs into SimBrief once through the Browserbase live view (credentials and MFA never
-pass through this code); the context persists cookies for later sessions. Generation is an
-external write: callers must have the user's approval, fill once, verify the fields, and click
-Generate at most once per approved dispatch.
+The Browserbase context persists SimBrief's cookies between sessions. When a session finds
+SimBrief signed out, it signs in through Navigraph's email/password form with
+NAVIGRAPH_USERNAME / NAVIGRAPH_PASSWORD (never logged or returned); without them, the user signs
+in once through the live view (`ifd-simbrief`). If Browserbase no longer has the configured
+context, a new one is created and its id kept in the store. A daily keep-alive refreshes the
+login. Generation is an external write: callers must have the user's approval, fill once, verify
+the fields, and click Generate at most once per approved dispatch.
 """
 
 import json
-import os
+import re
 import time
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from browserbase import Browserbase
+from browserbase import Browserbase, NotFoundError
 from playwright.sync_api import sync_playwright
 
-from ifdispatcher.config import ENV_FILE, require_paid_operations, setting
+from ifdispatcher.config import require_paid_operations, setting
 
 HOME_URL = "https://www.simbrief.com/home/"
 DISPATCH_URL = "https://dispatch.simbrief.com/options/custom"
 CONTEXT_SETTING = "BROWSERBASE_SIMBRIEF_CONTEXT_ID"
+STORED_CONTEXT = "browserbase_simbrief_context_id"  # store key for a context this server created
+NAVIGRAPH_LOGIN = re.compile(r"identity\.api\.navigraph\.com")
+SIMBRIEF = re.compile(r"simbrief\.com")
 
 
 def _client() -> Browserbase:
@@ -30,14 +37,28 @@ def _client() -> Browserbase:
     return Browserbase(api_key=key)  # the key identifies the project
 
 
+def _context_exists(bb: Browserbase, context_id: str) -> bool:
+    try:
+        bb.contexts.retrieve(context_id)
+        return True
+    except NotFoundError:
+        return False
+
+
 def _context_id(bb: Browserbase) -> str:
-    existing = setting(CONTEXT_SETTING)
-    if existing:
-        return existing
+    """The configured profile, else the one this server last created, else a new one.
+
+    Browserbase keeps a context until it is deleted. A new context starts signed out;
+    ensure_logged_in signs it in on first use.
+    """
+    from ifdispatcher.core import open_store
+
+    store = open_store()
+    for candidate in (setting(CONTEXT_SETTING), store.read_setting(STORED_CONTEXT)):
+        if candidate and _context_exists(bb, candidate):
+            return candidate
     context = bb.contexts.create()
-    with open(ENV_FILE, "a") as handle:  # context id is an identifier, not a secret
-        handle.write(f"{CONTEXT_SETTING}={context.id}\n")
-    os.chmod(ENV_FILE, 0o600)
+    store.save_setting(STORED_CONTEXT, context.id)
     return context.id
 
 
@@ -66,6 +87,57 @@ def _logged_in(page) -> bool:
         return True
     except Exception:
         return False
+
+
+def _sign_in(page) -> bool:
+    """Sign in through Navigraph's email/password form, if credentials are configured.
+
+    Returns False without raising when there are no credentials, the password is refused, or
+    Navigraph asks for something else (MFA, a new prompt): the page then stays on Navigraph.
+    """
+    username, password = setting("NAVIGRAPH_USERNAME"), setting("NAVIGRAPH_PASSWORD")
+    if not (username and password):
+        return False
+    page.goto(DISPATCH_URL, wait_until="domcontentloaded", timeout=60_000)
+    try:  # the cookie banner can appear after load and would block the Sign In click
+        page.locator("#cookie-settings").get_by_text("Accept all cookies", exact=True).first.click(
+            timeout=8_000
+        )
+    except Exception:
+        pass  # no banner (already accepted in this profile)
+    page.click("#login-button")
+    page.wait_for_url(NAVIGRAPH_LOGIN, timeout=30_000)
+    page.fill("#username", username)
+    page.fill("#password", password)
+    page.click("#login-id")
+    try:
+        page.wait_for_url(SIMBRIEF, timeout=60_000)
+    except Exception:
+        return False
+    return _logged_in(page)
+
+
+def ensure_logged_in(page) -> bool:
+    """True when SimBrief's dispatch form is available, signing in first if needed."""
+    return _logged_in(page) or _sign_in(page)
+
+
+def keepalive() -> dict[str, Any]:
+    """Refresh the saved SimBrief login (daily): open the profile, sign in if it lapsed, save."""
+    require_paid_operations()  # Browserbase time
+    bb = _client()
+    session = open_session(bb, minutes=5)
+    try:
+        with sync_playwright() as pw:
+            browser = pw.chromium.connect_over_cdp(session.connect_url)
+            ok = ensure_logged_in(browser.contexts[0].pages[0])
+            browser.close()
+    finally:
+        release(bb, session.id)
+    return {
+        "status": "logged_in" if ok else "not_logged_in",
+        "session": f"https://www.browserbase.com/sessions/{session.id}",
+    }
 
 
 def login(minutes: int = 15) -> None:
@@ -111,7 +183,7 @@ def inspect_form() -> dict[str, Any]:
         with sync_playwright() as pw:
             browser = pw.chromium.connect_over_cdp(session.connect_url)
             page = browser.contexts[0].pages[0]
-            if not _logged_in(page):
+            if not ensure_logged_in(page):
                 return {"status": "not_logged_in"}
             fields = page.evaluate(
                 """() => [...document.querySelectorAll('input, select, textarea, button')]
@@ -183,11 +255,18 @@ def form_values(fields: dict[str, Any]) -> dict[str, str]:
     return values
 
 
-def generate(fields: dict[str, Any], click: bool, shots_dir: Path) -> dict[str, Any]:
+def generate(
+    fields: dict[str, Any],
+    click: bool,
+    shots_dir: Path,
+    before_click: Callable[[], None] | None = None,
+) -> dict[str, Any]:
     """Fill the dispatch form on the logged-in cloud browser; click Generate only if `click`.
 
-    Returns status "filled" (dry run), "generated", "error", "uncertain", "fill_mismatch", or
-    "not_logged_in", with screenshots and the full session replay link.
+    `before_click` runs immediately before the Generate click (callers record the attempt there,
+    so a failure earlier leaves the leg retryable). Returns status "filled" (dry run),
+    "generated", "error", "uncertain", "fill_mismatch", or "not_logged_in", with screenshots and
+    the full session replay link.
     """
     require_paid_operations()  # Browserbase time; a click also writes to SimBrief
     want = form_values(fields)
@@ -202,8 +281,13 @@ def generate(fields: dict[str, Any], click: bool, shots_dir: Path) -> dict[str, 
             browser = pw.chromium.connect_over_cdp(session.connect_url)
             page = browser.contexts[0].pages[0]
             page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
-            if not _logged_in(page):
-                return {"status": "not_logged_in", "session": replay}
+            if not ensure_logged_in(page):
+                return {
+                    "status": "not_logged_in",
+                    "session": replay,
+                    "reason": "SimBrief sign-in failed: check NAVIGRAPH_USERNAME and "
+                    "NAVIGRAPH_PASSWORD, or sign in once with ifd-simbrief",
+                }
             page.select_option("#basetype", want["basetype"])
             page.wait_for_function(
                 "a => document.querySelector('#type').value === a", arg=want["basetype"]
@@ -241,6 +325,8 @@ def generate(fields: dict[str, Any], click: bool, shots_dir: Path) -> dict[str, 
                 return {**result, "status": "needs_review", "prompts": open_prompts}
             if not click:
                 return {**result, "status": "filled"}
+            if before_click:
+                before_click()
             page.get_by_text("Generate Flight", exact=True).click()
             status = "uncertain"
             prompts: list[str] = []

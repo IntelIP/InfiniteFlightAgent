@@ -1,5 +1,6 @@
 // Edge Worker: verifies the Cloudflare Access JWT, then forwards /mcp and
-// /health to one Cloudflare Container running the Python MCP server.
+// /health to one Cloudflare Container running the Python MCP server. A daily
+// cron asks the container to refresh the SimBrief login.
 import { DurableObject } from "cloudflare:workers";
 import { checkAccess } from "./auth.ts";
 
@@ -9,6 +10,7 @@ const CONTAINER_INSTANCE = "standard-1";
 const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
 const INTERNAL_TOKEN_HEADER = "x-ifd-internal-token";
 const FORWARDED_PATHS = new Set(["/mcp", "/mcp/", "/health"]);
+const KEEPALIVE_URL = "http://container/internal/simbrief/keepalive"; // cron only, never forwarded
 
 // Passed from Worker secrets into the container environment at start.
 const CONTAINER_ENV_KEYS = [
@@ -19,6 +21,8 @@ const CONTAINER_ENV_KEYS = [
   "BROWSERBASE_API_KEY",
   "BROWSERBASE_SIMBRIEF_CONTEXT_ID",
   "SIMBRIEF_USERID",
+  "NAVIGRAPH_USERNAME",
+  "NAVIGRAPH_PASSWORD",
   "LANGSMITH_API_KEY",
   "LANGSMITH_PROJECT",
   "LANGSMITH_TRACING",
@@ -145,5 +149,19 @@ export default {
       console.error("Container request failed", error);
       return errorResponse(503, "Dispatcher container is unavailable");
     }
+  },
+
+  async scheduled(_controller, env): Promise<void> {
+    if (!env.IFD_INTERNAL_TOKEN) throw new Error("Internal token is not configured");
+    const response = await env.DISPATCHER.getByName(CONTAINER_NAME).fetch(
+      new Request(KEEPALIVE_URL, {
+        method: "POST",
+        headers: { [INTERNAL_TOKEN_HEADER]: env.IFD_INTERNAL_TOKEN },
+      }),
+    );
+    const body = await response.text();
+    // A thrown error marks the cron run failed in Workers observability.
+    if (!response.ok) throw new Error(`SimBrief keep-alive failed (${response.status}): ${body}`);
+    console.log("SimBrief keep-alive", body);
   },
 } satisfies ExportedHandler<Env>;

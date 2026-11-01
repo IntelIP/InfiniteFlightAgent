@@ -129,6 +129,7 @@ jobs:
           node-version: "24"
       - run: npm ci
       - run: npx wrangler versions deploy "$VERSION_ID@100%" -y
+      - run: npx wrangler triggers deploy
       - run: |
           mkdir -p "$RUNNER_TEMP/evidence"
           npx wrangler deployments status > "$RUNNER_TEMP/evidence/after-promote.txt"

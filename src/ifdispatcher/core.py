@@ -108,6 +108,7 @@ class Store:
                 "CREATE TABLE IF NOT EXISTS leg_meta (trip, leg, revision, payload, "
                 "PRIMARY KEY(trip,leg,revision))"
             )
+            db.execute("CREATE TABLE IF NOT EXISTS settings (name PRIMARY KEY, value)")
 
     @contextmanager
     def connect(self):
@@ -214,6 +215,20 @@ class Store:
             ).fetchone()
         return json.loads(row[0]) if row else {}
 
+    def save_setting(self, name: str, value: str):
+        """Server-owned state that must outlive the container (e.g. a recreated browser profile)."""
+        with self.connect() as db:
+            db.execute(
+                "INSERT INTO settings VALUES (?,?) "
+                "ON CONFLICT (name) DO UPDATE SET value = excluded.value",
+                (name, value),
+            )
+
+    def read_setting(self, name: str) -> str | None:
+        with self.connect() as db:
+            row = db.execute("SELECT value FROM settings WHERE name=?", (name,)).fetchone()
+        return row[0] if row else None
+
     def read_request(self, trip: str, leg: str, revision: int) -> dict | None:
         with self.connect() as db:
             row = db.execute(
@@ -260,6 +275,7 @@ PG_SCHEMA = (
     "sha256 TEXT, normalized TEXT, retrieved_at TEXT, PRIMARY KEY (trip, leg, revision))",
     "CREATE TABLE IF NOT EXISTS leg_meta (trip TEXT, leg TEXT, revision INTEGER, payload TEXT, "
     "PRIMARY KEY (trip, leg, revision))",
+    "CREATE TABLE IF NOT EXISTS settings (name TEXT PRIMARY KEY, value TEXT)",
 )
 LOCK_ID = 4242  # serializes Store writes, like SQLite's BEGIN IMMEDIATE
 
