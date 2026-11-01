@@ -1,0 +1,967 @@
+{
+  "covered": [
+    {
+      "id": "IFD-001",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-002",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-003",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 4,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-004",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 4,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-005",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 5,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-007",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-008",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-009",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-010",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-012",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-013",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-014",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 4,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-015",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-016",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 4,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-017",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-018",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 4,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-020",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-021",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-022",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {
+        "/airports/LFMN": [
+          "timezone"
+        ]
+      }
+    },
+    {
+      "id": "IFD-023",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-024",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-025",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-026",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-027",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-029",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-030",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-031",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-032",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-033",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {
+        "/airports/LFMN": [
+          "timezone"
+        ]
+      }
+    },
+    {
+      "id": "IFD-034",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-036",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-037",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-038",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 4,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-039",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-040",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 5,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-041",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T054803Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {
+        "/airports/EINN": [
+          "timezone"
+        ]
+      }
+    },
+    {
+      "id": "IFD-042",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 5,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-043",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 9,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-044",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 4,
+      "missing_airport_metadata": {
+        "/airports/MYEF": [
+          "timezone"
+        ]
+      }
+    },
+    {
+      "id": "IFD-045",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 6,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-046",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T054803Z/results.jsonl",
+      "requests": 5,
+      "missing_airport_metadata": {
+        "/airports/KJYO": [
+          "timezone"
+        ]
+      }
+    },
+    {
+      "id": "IFD-047",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 8,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-048",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 5,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-049",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 6,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-050",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T050804Z/results.jsonl",
+      "requests": 6,
+      "missing_airport_metadata": {
+        "/airports/KASE": [
+          "timezone"
+        ],
+        "/airports/KHEF": [
+          "timezone"
+        ],
+        "/airports/KVNY": [
+          "timezone"
+        ]
+      }
+    },
+    {
+      "id": "IFD-051",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 9,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-052",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T054803Z/results.jsonl",
+      "requests": 6,
+      "missing_airport_metadata": {
+        "/airports/KPBI": [
+          "timezone"
+        ]
+      }
+    },
+    {
+      "id": "IFD-053",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 5,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-054",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 4,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-056",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-057",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 44,
+      "missing_airport_metadata": {
+        "/airports/CYOW": [
+          "name"
+        ],
+        "/airports/CYTZ": [
+          "name"
+        ],
+        "/airports/KALB": [
+          "name"
+        ],
+        "/airports/KBDL": [
+          "name"
+        ],
+        "/airports/KBUF": [
+          "name"
+        ],
+        "/airports/KCAE": [
+          "name"
+        ],
+        "/airports/KCHS": [
+          "name"
+        ],
+        "/airports/KCLE": [
+          "name"
+        ],
+        "/airports/KCMH": [
+          "name"
+        ],
+        "/airports/KCVG": [
+          "name"
+        ],
+        "/airports/KDTW": [
+          "name"
+        ],
+        "/airports/KGSP": [
+          "name"
+        ],
+        "/airports/KITH": [
+          "name"
+        ],
+        "/airports/KMDT": [
+          "name"
+        ],
+        "/airports/KORF": [
+          "name"
+        ],
+        "/airports/KPHL": [
+          "name"
+        ],
+        "/airports/KPIT": [
+          "name"
+        ],
+        "/airports/KPVD": [
+          "name"
+        ],
+        "/airports/KPWM": [
+          "name"
+        ],
+        "/airports/KROC": [
+          "name"
+        ],
+        "/airports/KSAT": [
+          "name"
+        ],
+        "/airports/KSAV": [
+          "name"
+        ],
+        "/airports/KSDF": [
+          "name"
+        ],
+        "/airports/KSYR": [
+          "name"
+        ],
+        "/airports/TJSJ": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "IFD-058",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 39,
+      "missing_airport_metadata": {
+        "/airports/DXXX": [
+          "name"
+        ],
+        "/airports/EKCH": [
+          "name"
+        ],
+        "/airports/KALB": [
+          "name"
+        ],
+        "/airports/KBDL": [
+          "name"
+        ],
+        "/airports/KCLE": [
+          "name"
+        ],
+        "/airports/KCMH": [
+          "name"
+        ],
+        "/airports/KCVG": [
+          "name"
+        ],
+        "/airports/KGSO": [
+          "name"
+        ],
+        "/airports/KHSV": [
+          "name"
+        ],
+        "/airports/KITH": [
+          "name"
+        ],
+        "/airports/KMHT": [
+          "name"
+        ],
+        "/airports/KORF": [
+          "name"
+        ],
+        "/airports/KPHL": [
+          "name"
+        ],
+        "/airports/KPIT": [
+          "name"
+        ],
+        "/airports/KROC": [
+          "name"
+        ],
+        "/airports/KSYR": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "IFD-059",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-060",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 39,
+      "missing_airport_metadata": {
+        "/airports/DXXX": [
+          "name"
+        ],
+        "/airports/EKCH": [
+          "name"
+        ],
+        "/airports/KALB": [
+          "name"
+        ],
+        "/airports/KBDL": [
+          "name"
+        ],
+        "/airports/KCLE": [
+          "name"
+        ],
+        "/airports/KCMH": [
+          "name"
+        ],
+        "/airports/KCVG": [
+          "name"
+        ],
+        "/airports/KGSO": [
+          "name"
+        ],
+        "/airports/KHSV": [
+          "name"
+        ],
+        "/airports/KITH": [
+          "name"
+        ],
+        "/airports/KMHT": [
+          "name"
+        ],
+        "/airports/KORF": [
+          "name"
+        ],
+        "/airports/KPHL": [
+          "name"
+        ],
+        "/airports/KPIT": [
+          "name"
+        ],
+        "/airports/KROC": [
+          "name"
+        ],
+        "/airports/KSYR": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "IFD-061",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-062",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 28,
+      "missing_airport_metadata": {
+        "/airports/CYTZ": [
+          "name"
+        ],
+        "/airports/HAAB": [
+          "name"
+        ],
+        "/airports/KALB": [
+          "name"
+        ],
+        "/airports/KHSV": [
+          "name"
+        ],
+        "/airports/KSAN": [
+          "name"
+        ],
+        "/airports/KSAV": [
+          "name"
+        ],
+        "/airports/KTYS": [
+          "name"
+        ],
+        "/airports/OJAI": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "IFD-064",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {
+        "/airports/PAJN": [
+          "timezone"
+        ]
+      }
+    },
+    {
+      "id": "IFD-065",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 6,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-066",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T032652Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {
+        "/airports/KHEF": [
+          "timezone"
+        ]
+      }
+    },
+    {
+      "id": "IFD-067",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T042918Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {
+        "/airports/KASE": [
+          "timezone"
+        ]
+      }
+    },
+    {
+      "id": "IFD-068",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T054803Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {
+        "/airports/KJYO": [
+          "timezone"
+        ]
+      }
+    },
+    {
+      "id": "IFD-069",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T050804Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {
+        "/airports/KVNY": [
+          "timezone"
+        ]
+      }
+    },
+    {
+      "id": "IFD-070",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T050804Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {
+        "/airports/KHEF": [
+          "timezone"
+        ],
+        "/airports/KMVY": [
+          "timezone"
+        ]
+      }
+    },
+    {
+      "id": "IFD-074",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 4,
+      "missing_airport_metadata": {
+        "/airports/KBDL": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "IFD-075",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-076",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-077",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 16,
+      "missing_airport_metadata": {
+        "/airports/KBDL": [
+          "name"
+        ],
+        "/airports/KCVG": [
+          "name"
+        ],
+        "/airports/KMCI": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "IFD-078",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-079",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-081",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 12,
+      "missing_airport_metadata": {
+        "/airports/KALB": [
+          "name"
+        ],
+        "/airports/KCMH": [
+          "name"
+        ],
+        "/airports/KCVG": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "IFD-082",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 20,
+      "missing_airport_metadata": {
+        "/airports/KBDL": [
+          "name"
+        ],
+        "/airports/KCVG": [
+          "name"
+        ],
+        "/airports/KFLL": [
+          "name"
+        ],
+        "/airports/KMCI": [
+          "name"
+        ],
+        "/airports/KMEM": [
+          "name"
+        ],
+        "/airports/KSAV": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "IFD-083",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 12,
+      "missing_airport_metadata": {
+        "/airports/KDTW": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "IFD-084",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-085",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 11,
+      "missing_airport_metadata": {
+        "/airports/KBUF": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "IFD-086",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-087",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-088",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-089",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-090",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-091",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-092",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 34,
+      "missing_airport_metadata": {
+        "/airports/KCAK": [
+          "name"
+        ],
+        "/airports/KCHS": [
+          "name"
+        ],
+        "/airports/KCLE": [
+          "name"
+        ],
+        "/airports/KDAY": [
+          "name"
+        ],
+        "/airports/KDJT": [
+          "name"
+        ],
+        "/airports/KDTW": [
+          "name"
+        ],
+        "/airports/KLIT": [
+          "name"
+        ],
+        "/airports/KMCI": [
+          "name"
+        ],
+        "/airports/KMKE": [
+          "name"
+        ],
+        "/airports/KPHL": [
+          "name"
+        ],
+        "/airports/KPIT": [
+          "name"
+        ],
+        "/airports/KSAT": [
+          "name"
+        ],
+        "/airports/KSGF": [
+          "timezone"
+        ],
+        "/airports/KTLH": [
+          "name"
+        ],
+        "/airports/KXNA": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "IFD-094",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 4,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-095",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 5,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-096",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 1,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-097",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 4,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-098",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 4,
+      "missing_airport_metadata": {}
+    },
+    {
+      "id": "IFD-099",
+      "source": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+      "requests": 3,
+      "missing_airport_metadata": {}
+    }
+  ],
+  "uncovered": [
+    {
+      "id": "IFD-006",
+      "reasons": [
+        "no reconstructable flight HTTP source references"
+      ]
+    },
+    {
+      "id": "IFD-011",
+      "reasons": [
+        "no reconstructable flight HTTP source references"
+      ]
+    },
+    {
+      "id": "IFD-019",
+      "reasons": [
+        "no reconstructable flight HTTP source references"
+      ]
+    },
+    {
+      "id": "IFD-028",
+      "reasons": [
+        "no reconstructable flight HTTP source references"
+      ]
+    },
+    {
+      "id": "IFD-035",
+      "reasons": [
+        "no reconstructable flight HTTP source references"
+      ]
+    },
+    {
+      "id": "IFD-055",
+      "reasons": [
+        "no reconstructable flight HTTP source references"
+      ]
+    },
+    {
+      "id": "IFD-063",
+      "reasons": [
+        "no reconstructable flight HTTP source references"
+      ]
+    },
+    {
+      "id": "IFD-071",
+      "reasons": [
+        "no reconstructable flight HTTP source references"
+      ]
+    },
+    {
+      "id": "IFD-072",
+      "reasons": [
+        "no reconstructable flight HTTP source references"
+      ]
+    },
+    {
+      "id": "IFD-073",
+      "reasons": [
+        "no reconstructable flight HTTP source references"
+      ]
+    },
+    {
+      "id": "IFD-080",
+      "reasons": [
+        "no reconstructable flight HTTP source references"
+      ]
+    },
+    {
+      "id": "IFD-093",
+      "reasons": [
+        "no reconstructable flight HTTP source references"
+      ]
+    },
+    {
+      "id": "IFD-100",
+      "reasons": [
+        "no reconstructable flight HTTP source references"
+      ]
+    }
+  ],
+  "meaning": "Covered means some reconstructable requests, NOT full conversation replay coverage.",
+  "covered_count": 87,
+  "uncovered_count": 13,
+  "cases_with_missing_airport_metadata": 24
+}

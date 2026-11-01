@@ -38,6 +38,7 @@ def test_recent_gates_none_found(monkeypatch):
 
 
 def test_kill_switch_blocks_flightaware_and_fails_closed(monkeypatch):
+    monkeypatch.setenv("IFD_AIRPORT_CACHE_DIR", "disabled")
     flights._cache.clear()
     for value in ("false", "maybe"):
         monkeypatch.setenv("IFD_PAID_OPERATIONS_ENABLED", value)

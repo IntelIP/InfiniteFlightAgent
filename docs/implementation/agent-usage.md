@@ -37,7 +37,12 @@ The ChatGPT-plan route accepts only `store: false`, streamed Responses requests 
 
 `evals/dispatch_prompts.jsonl` holds 100 first-message cases across 11 categories (domestic/international specific and vague, multi-leg, not-sure, private/GA, flight number, departure window, unsupported aircraft, edge cases) with expected first action, clarification topics, legs, and must-not behaviors; `python3 evals/validate_dataset.py` checks it.
 
-`uv run python evals/run_eval.py [--per-category N | --ids ... ]` runs the live agent with a simulated user (scripted follow-ups, auto-approval) up to the dispatch approval request (never approved, so nothing is generated) and scores deterministic heuristic checks. Results go to Git-ignored `artifacts/evals/<timestamp>/`. Each run spends ChatGPT-plan usage and AeroAPI result sets; finalize and SimBrief generation are not exercised. Heuristic check failures need transcript review before they are treated as agent failures.
+`uv run python evals/run_eval.py` now runs the synthetic FlightAware replay suite by default,
+with $0 FlightAware usage and live ChatGPT-plan model usage. Existing prompts and derived
+historical snapshots remain available with `--dataset evals/dispatch_prompts.jsonl`.
+Paid FlightAware checks require `--live`, an explicit sample, and a batch budget (default $1).
+The runner stops at dispatch approval and disables SimBrief actions. See
+[the evaluation guide](../../evals/README.md) for replay, recording, costs and coverage limits.
 
 ## Pilot results — October 30–31, 2026
 

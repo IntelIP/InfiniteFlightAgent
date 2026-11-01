@@ -84,7 +84,7 @@ The self-hosted path runs a Cloudflare Worker and container, with Neon Postgres 
 
 ## Quality
 
-The agent is checked against [100 scripted first messages](evals/dispatch_prompts.jsonl) across 11 categories: vague requests, multi-leg trips, private flights, unsupported aircraft, and more. On October 31, 2026, two consecutive full runs on the same code passed every safety check 100% of the time, and fully passed 92 and 91 of the 100 cases. The safety checks are: no invented flight numbers, no assumed dates, correct airports, and unsupported thrust disclosed before approval. A separate live end-to-end set exercises approval, real SimBrief generation, and the final briefing. See [evaluation results](docs/implementation/agent-usage.md#full-100-case-runs--october-31-2026).
+The agent is checked against [100 scripted first messages](evals/dispatch_prompts.jsonl) across 11 categories: vague requests, multi-leg trips, private flights, unsupported aircraft, and more. On October 31, 2026, two consecutive full runs on the same code passed every safety check 100% of the time, and fully passed 92 and 91 of the 100 cases. The safety checks are: no invented flight numbers, no assumed dates, correct airports, and unsupported thrust disclosed before approval. A separate live end-to-end set exercises approval, real SimBrief generation, and the final briefing. See [evaluation results](docs/implementation/agent-usage.md#full-100-case-runs--october-31-2026). Routine evaluation runs replay synthetic or recorded FlightAware responses, so they cost nothing in FlightAware fees; live provider checks are opt-in and capped at $1 per batch by default ([how to run them](evals/README.md)).
 
 ## Status and limits
 

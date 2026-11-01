@@ -1,11 +1,15 @@
 """FlightAware AeroAPI v4 research: real flights, departure windows, gates, equipment.
 
 Plan and limits: docs/implementation/flight-tools-plan.md. Read-only GETs, max 3 result sets
-per call, 60 s in-memory cache, no polling. Values are FlightAware observations, never
+per call, 60 s flight cache, seven-day persistent airport metadata cache, no polling. Values are FlightAware observations, never
 simulator positions; a missing gate or aircraft stays "unavailable".
 """
 
+import json
+import re
 import time
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -30,9 +34,62 @@ TIME_FIELDS = (
 CARGO_OPERATORS = {"FDX", "UPS", "MTN", "GTI", "ABX", "ATN", "CKS", "PAC", "GEC", "CLX"}
 
 _cache: dict[str, tuple[float, dict]] = {}
-usage = {"requests": 0, "result_sets": 0}
+usage = {"requests": 0, "result_sets": 0, "cost_milliusd": 0, "cache_hits": 0}
 RATE_LIMIT = 10  # Personal tier: 10 result sets per minute
 _recent: list[tuple[float, int]] = []  # (monotonic time, result sets) in the last minute
+
+
+# Published list rates, checked 2026-11-01: flightaware.com/commercial/aeroapi/.
+# Integer thousandths of a dollar avoid rounding while accumulating small charges.
+def price_milliusd(path: str) -> int:
+    if re.fullmatch(r"/airports/[^/]+/flights/to/[^/]+", path):
+        return 50
+    if re.fullmatch(r"/airports/[^/]+", path):
+        return 15
+    if re.fullmatch(r"/flights/[^/]+", path) or re.fullmatch(
+        r"/airports/[^/]+/flights/(scheduled_departures|departures)", path
+    ):
+        return 5
+    raise ValueError(f"unpriced_endpoint: {path}")
+
+
+def _airport_cache_path(path: str) -> Path | None:
+    if not re.fullmatch(r"/airports/[A-Z0-9]{3,4}", path):
+        return None
+    directory = setting("IFD_AIRPORT_CACHE_DIR")
+    if directory == "disabled":
+        return None
+    root = (
+        Path(directory) if directory else Path.home() / ".cache/InfiniteFlightDispatcher/airports"
+    )
+    return root / (path.rsplit("/", 1)[1] + ".json")
+
+
+def _airport_cached(path: str) -> dict | None:
+    file = _airport_cache_path(path)
+    if file is None:
+        return None
+    try:
+        entry = json.loads(file.read_text())
+        age = time.time() - entry["saved_at"]
+        if 0 <= age < 7 * 86400 and isinstance(entry["body"], dict):
+            return entry["body"]
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return None
+
+
+def _save_airport(path: str, data: dict) -> None:
+    file = _airport_cache_path(path)
+    if file is None:
+        return
+    try:
+        file.parent.mkdir(parents=True, exist_ok=True)
+        with NamedTemporaryFile(mode="w", dir=file.parent, delete=False) as temp:
+            json.dump({"saved_at": time.time(), "body": data}, temp)
+        Path(temp.name).replace(file)
+    except OSError:
+        pass  # An optional metadata cache must not break flight research.
 
 
 def _wait_for_rate_limit(sets: int) -> None:
@@ -57,7 +114,13 @@ def _get(path: str, params: dict | None = None, transport=None) -> dict:
     cache_key = path + "?" + "&".join(f"{k}={v}" for k, v in sorted(query.items()))
     hit = _cache.get(cache_key)
     if hit and time.monotonic() - hit[0] < CACHE_TTL:
+        usage["cache_hits"] += 1
         return hit[1]
+    stored = _airport_cached(path) if not query and transport is None else None
+    if stored is not None:
+        usage["cache_hits"] += 1
+        return stored
+    rate = price_milliusd(path)
     require_paid_operations()
     _wait_for_rate_limit(int(query.get("max_pages") or 1))
     try:
@@ -74,8 +137,11 @@ def _get(path: str, params: dict | None = None, transport=None) -> dict:
     data = response.json()
     usage["requests"] += 1
     usage["result_sets"] += int(data.get("num_pages") or 1)
+    usage["cost_milliusd"] += rate * int(data.get("num_pages") or 1)
     _recent.append((time.monotonic(), int(data.get("num_pages") or 1)))
     _cache[cache_key] = (time.monotonic(), data)
+    if not query and transport is None:
+        _save_airport(path, data)
     return data
 
 
