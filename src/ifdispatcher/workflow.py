@@ -173,10 +173,14 @@ def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) ->
         "departure_utc": request["departure"],
         "tag": _tag(trip, leg, revision),
     }
-    if click:
+
+    def mark_clicking() -> None:  # just before the click: earlier failures leave the leg retryable
         meta["generation"] = {"status": "clicking", "at": datetime.now(timezone.utc).isoformat()}
         store.save_meta(trip, leg, revision, meta)
-    result = simbrief_browser.generate(fields, click, data_dir() / "screens")
+
+    result = simbrief_browser.generate(
+        fields, click, data_dir() / "screens", before_click=mark_clicking if click else None
+    )
     try:
         result["r2_keys"] = artifacts.upload(
             result.get("screenshots") or [], f"screens/{fields['tag']}"
@@ -184,7 +188,7 @@ def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) ->
     except Exception as exc:  # screenshots are evidence, not required for the dispatch
         result["r2_error"] = type(exc).__name__
     if click:
-        meta["generation"] = {**meta["generation"], **result, "status": result["status"]}
+        meta["generation"] = {**meta.get("generation", {}), **result, "status": result["status"]}
         store.save_meta(trip, leg, revision, meta)
     return result
 

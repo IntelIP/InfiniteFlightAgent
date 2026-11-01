@@ -115,7 +115,8 @@ def test_generation_clicks_at_most_once_per_revision(mocked, monkeypatch):
     dispatch()
     calls = []
 
-    def fake_generate(fields, click, shots_dir):
+    def fake_generate(fields, click, shots_dir, before_click=None):
+        before_click()
         calls.append((fields["origin"], fields["destination"], fields["airline"], click))
         return {"status": "generated", "session": "https://www.browserbase.com/sessions/x"}
 
@@ -127,10 +128,45 @@ def test_generation_clicks_at_most_once_per_revision(mocked, monkeypatch):
     assert calls == [("KIAD", "KEWR", None, True)]  # mocked flight has no ICAO ident
 
 
+def test_failure_before_the_click_leaves_the_leg_retryable(mocked, monkeypatch):
+    dispatch()
+
+    def lost_profile(fields, click, shots_dir, before_click=None):
+        raise RuntimeError("Context ID not found")  # session never opened, nothing clicked
+
+    monkeypatch.setattr(workflow.simbrief_browser, "generate", lost_profile)
+    with pytest.raises(RuntimeError):
+        workflow.generate_plan("KIAD-KEWR-20261031", "1", 1)
+
+    def clicks(fields, click, shots_dir, before_click=None):
+        before_click()
+        return {"status": "generated", "session": "s"}
+
+    monkeypatch.setattr(workflow.simbrief_browser, "generate", clicks)
+    assert workflow.generate_plan("KIAD-KEWR-20261031", "1", 1)["status"] == "generated"
+
+
+def test_failure_after_the_click_blocks_a_second_click(mocked, monkeypatch):
+    dispatch()
+
+    def disconnects_after_click(fields, click, shots_dir, before_click=None):
+        before_click()
+        raise RuntimeError("browser disconnected")
+
+    monkeypatch.setattr(workflow.simbrief_browser, "generate", disconnects_after_click)
+    with pytest.raises(RuntimeError):
+        workflow.generate_plan("KIAD-KEWR-20261031", "1", 1)
+    second = workflow.generate_plan("KIAD-KEWR-20261031", "1", 1)
+    assert second["status"] == "already_attempted"
+    assert second["generation"]["status"] == "clicking"
+
+
 def test_finalize_refuses_plan_older_than_the_generate_click(mocked, monkeypatch):
     dispatch()
     monkeypatch.setattr(
-        workflow.simbrief_browser, "generate", lambda *a: {"status": "generated", "session": "s"}
+        workflow.simbrief_browser,
+        "generate",
+        lambda *a, before_click: (before_click(), {"status": "generated", "session": "s"})[1],
     )
     workflow.generate_plan("KIAD-KEWR-20261031", "1", 1)
     mocked["plan"] = neo_plan((datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat())

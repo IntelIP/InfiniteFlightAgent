@@ -17,6 +17,6 @@ def database(monkeypatch):
 
     monkeypatch.setenv("DATABASE_URL", TEST_DSN)
     with psycopg.connect(TEST_DSN) as conn:
-        for table in ("requests", "snapshots", "leg_meta"):
+        for table in ("requests", "snapshots", "leg_meta", "settings"):
             conn.execute(f"DROP TABLE IF EXISTS {table}")
     yield

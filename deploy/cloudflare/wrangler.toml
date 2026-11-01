@@ -7,6 +7,11 @@ upload_source_maps = true
 [observability]
 enabled = true
 
+# Daily SimBrief login keep-alive (scheduled handler in src/index.ts). Applied by
+# `wrangler triggers deploy` in the Release workflow; version uploads skip triggers.
+[triggers]
+crons = ["17 9 * * *"]
+
 # Non-secret settings. The release workflow fills these from GitHub repository
 # variables with --var, so this open-source file stays account-neutral.
 # An empty value fails closed: every request is rejected.

@@ -148,6 +148,20 @@ async def health(_: Request) -> JSONResponse:
     )
 
 
+@mcp.custom_route("/internal/simbrief/keepalive", methods=["POST"])
+async def simbrief_keepalive(_: Request) -> JSONResponse:
+    """Daily Worker cron: keep the SimBrief login fresh, signing in again if it lapsed."""
+    if not paid_operations_enabled():
+        return JSONResponse({"status": "paid_operations_disabled"})
+    from ifdispatcher import simbrief_browser
+
+    try:
+        result = await asyncio.get_running_loop().run_in_executor(_pool, simbrief_browser.keepalive)
+    except Exception as exc:
+        return JSONResponse({"status": "error", "error": type(exc).__name__}, status_code=500)
+    return JSONResponse(result, status_code=200 if result["status"] == "logged_in" else 500)
+
+
 def create_app():
     app = mcp.streamable_http_app()
     expected = setting("IFD_INTERNAL_TOKEN") or ""
