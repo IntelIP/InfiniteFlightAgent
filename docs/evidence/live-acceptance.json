@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "ifd-live-acceptance/v1",
+  "acceptance": "BUILD-04",
+  "recorded_at": "2026-11-01T23:35:03.409315+00:00",
+  "deployment": {
+    "commit": "73312a3ffddb60145170ad5f7f74c709f79f692d",
+    "worker_version": "d6a74c48-0d6a-416f-84ec-e21149601195"
+  },
+  "integration_digest": "6335247da45bc10b27967befe0d31e02c1a29078bac16274130741f3cb85edea",
+  "outcomes": {
+    "generation_through_mcp": {
+      "passed": true,
+      "detail": "KIAD-KDEN-KSFO-20261102 leg 1, KIAD-KDEN-KSFO-20261102 leg 2"
+    },
+    "neo_response": {
+      "passed": true,
+      "detail": "KIAD-KDEN-KSFO-20261102 leg 1 (A21N), KIAD-KDEN-KSFO-20261102 leg 2 (A21N)"
+    },
+    "two_legs_retained": {
+      "passed": true,
+      "detail": "KIAD-KDEN-KSFO-20261102 legs 1 and 2"
+    },
+    "authentication_and_resumption": {
+      "passed": true,
+      "detail": "approval wait, resume and signed-in generation: KIAD-KDEN-KSFO-20261102"
+    }
+  },
+  "cases": [
+    {
+      "thread": "trip-0049f56a41",
+      "trip": "KIAD-KDEN-KSFO-20261102",
+      "interrupts": 2,
+      "resumes": 4,
+      "legs": [
+        {
+          "leg": "1",
+          "revision": 1,
+          "requested": {
+            "origin": "KIAD",
+            "destination": "KDEN",
+            "aircraft": "A21N",
+            "departure": "2026-11-02T13:20:00Z"
+          },
+          "generation": {
+            "status": "generated",
+            "clicked_at": "2026-11-01T23:33:06.946540+00:00",
+            "browser_session": true
+          },
+          "snapshot": {
+            "sha256": "a64b5485edab6c52bc0a4170112b6e8cd9b71d3829715d69f73a986392439fb9",
+            "retrieved_at": "2026-11-01T23:33:19.585449+00:00",
+            "generated_at": "2026-11-01T23:33:08Z",
+            "origin": "KIAD",
+            "destination": "KDEN",
+            "aircraft": "A21N",
+            "takeoff_status": "available"
+          }
+        },
+        {
+          "leg": "2",
+          "revision": 1,
+          "requested": {
+            "origin": "KDEN",
+            "destination": "KSFO",
+            "aircraft": "A21N",
+            "departure": "2026-11-02T22:37:00Z"
+          },
+          "generation": {
+            "status": "generated",
+            "clicked_at": "2026-11-01T23:34:16.092891+00:00",
+            "browser_session": true
+          },
+          "snapshot": {
+            "sha256": "778cbbb86a99dc7f2d10f267b85224c1d3259f6c999af8bc66adaee95bb14205",
+            "retrieved_at": "2026-11-01T23:34:29.016141+00:00",
+            "generated_at": "2026-11-01T23:34:17Z",
+            "origin": "KDEN",
+            "destination": "KSFO",
+            "aircraft": "A21N",
+            "takeoff_status": "available"
+          }
+        }
+      ]
+    }
+  ]
+}
