@@ -1,4 +1,9 @@
-"""Record local checks and explicit live acceptance gaps on every invocation."""
+"""Record local checks and live acceptance on every invocation.
+
+Passes only when the local checks pass and docs/evidence/live-acceptance.json shows every BUILD-04
+outcome for the current integration code (see scripts/acceptance.py); otherwise "blocked" with
+the reason, or "failed" when a local check fails.
+"""
 
 import hashlib
 import json
@@ -6,6 +11,8 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+import acceptance
 
 root = Path(__file__).resolve().parents[1]
 out = root / "artifacts/validation"
@@ -15,7 +22,7 @@ result = {
     "schemaVersion": "tabellio-validator-evidence/v0.1",
     "validatorId": "simbrief-workflow",
     "status": "blocked",
-    "summary": "Live generation, neo response, two provider legs, authentication and exact commit remain unverified.",
+    "summary": "Validation did not finish.",
     "metrics": [],
     "artifacts": [],
     "cost": {"telemetry": "not_applicable", "usd": None, "modelCalls": None, "toolCalls": None},
@@ -53,9 +60,17 @@ try:
     log = out / f"{stamp}-checks.json"
     log.write_text(json.dumps(logs, indent=2) + "\n")
     passed = all(x["exit_code"] == 0 for x in logs)
+    live_gap = acceptance.gap()
     if not passed:
         result["status"] = "failed"
-        result["summary"] = "Local checks failed; live acceptance also remains unverified."
+        result["summary"] = "Local checks failed."
+    elif live_gap:
+        result["summary"] = live_gap
+    else:
+        result["status"] = "passed"
+        result["summary"] = (
+            "Local checks pass and recorded live acceptance covers this integration code."
+        )
     for p in [candidate, log]:
         data = p.read_bytes()
         result["artifacts"].append(
@@ -67,7 +82,10 @@ try:
                 "bytes": len(data),
             }
         )
-    result["metrics"] = [{"name": "local_checks_pass", "value": int(passed), "unit": "boolean"}]
+    result["metrics"] = [
+        {"name": "local_checks_pass", "value": int(passed), "unit": "boolean"},
+        {"name": "live_acceptance", "value": int(live_gap is None), "unit": "boolean"},
+    ]
 except Exception as exc:
     result["status"] = "failed"
     result["summary"] = f"Validator could not finish: {type(exc).__name__}"
