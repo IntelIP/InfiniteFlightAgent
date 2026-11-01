@@ -1,13 +1,11 @@
-"""Run the dispatcher agent over evals/dispatch_prompts.jsonl with a simulated user.
+"""Evaluate conversation through dispatch approval, with FlightAware replay by default.
 
-Live: GPT-6 Luna via Sign in with ChatGPT and FlightAware AeroAPI (costs plan usage and
-AeroAPI result sets). Each case runs until the agent requests dispatch approval (the request is
-recorded and never approved, so nothing is generated) or the turn budget ends.
-Checks are deterministic heuristics over the transcript; read failures before trusting rates.
+    uv run python evals/run_eval.py --ids SYNTH-001
+    uv run python evals/run_eval.py --dataset evals/fixtures/synthetic_cases.jsonl
+    uv run python evals/run_eval.py --dataset evals/dispatch_prompts.jsonl --live --ids IFD-001 --budget-usd 1.00
 
-    uv run python evals/run_eval.py --per-category 1        # stratified pilot
-    uv run python evals/run_eval.py --ids IFD-001,IFD-042   # specific cases
-    uv run python evals/run_eval.py                          # all 100
+Replay still uses ChatGPT plan usage; it makes no FlightAware calls. Missing fixtures
+invalidate a case and never fall back to live. Live mode records responses for reuse.
 """
 
 import argparse
@@ -20,16 +18,20 @@ import time
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import patch
+
+from flight_data import FlightData
 
 from langgraph.checkpoint.memory import InMemorySaver
 
-from ifdispatcher import flights
+from ifdispatcher import flights, workflow
+from ifdispatcher.core import Store
 from ifdispatcher.agent import build_agent
 from ifdispatcher.config import export_tracing_settings
 from ifdispatcher.siwc import chatgpt_model
 
 ROOT = Path(__file__).resolve().parents[1]
-DATASET = ROOT / "evals" / "dispatch_prompts.jsonl"
+DATASET = ROOT / "evals" / "fixtures" / "synthetic_cases.jsonl"
 RESEARCH = {
     "find_route_flights": "search_route",
     "get_flight_by_number": "lookup_flight_number",
@@ -99,17 +101,18 @@ def simulated_reply(case: dict, asked: int) -> str:
     return "Yes, go ahead."
 
 
-AEROAPI_USD_PER_RESULT_SET = 0.005
-
-
-def run_case(case: dict, model, max_turns: int, experiment: str) -> dict:
-    os.environ["IFD_DATA_DIR"] = tempfile.mkdtemp(prefix="ifd-eval-")
+def _run_case(case: dict, model, max_turns: int, experiment: str) -> dict:
     agent = build_agent(model=model, checkpointer=InMemorySaver())
     config = {
         "configurable": {"thread_id": f"{experiment}-{case['id']}"},
         "run_name": f"{case['id']} {case['category']}",
         "tags": ["eval", experiment, case["category"]],
-        "metadata": {"case_id": case["id"], "category": case["category"], "experiment": experiment},
+        "metadata": {
+            "case_id": case["id"],
+            "category": case["category"],
+            "experiment": experiment,
+            "flight_data_mode": case.get("_flight_data_mode", "replay"),
+        },
     }
     before = dict(flights.usage)
     transcript, dispatches, turn_tools = [], [], []
@@ -123,9 +126,17 @@ def run_case(case: dict, model, max_turns: int, experiment: str) -> dict:
             seen = len(messages)
             calls = [c for m in new for c in (getattr(m, "tool_calls", None) or [])]
             turn_tools.append([c["name"] for c in calls])
+            call_args = {c["id"]: c["args"] for c in calls}
             for m in new:
                 if m.type == "tool":
-                    transcript.append({"role": "tool", "name": m.name, "text": str(m.content)})
+                    transcript.append(
+                        {
+                            "role": "tool",
+                            "name": m.name,
+                            "text": str(m.content),
+                            "args": call_args.get(m.tool_call_id),
+                        }
+                    )
                 elif m.type == "ai" and m.text:
                     transcript.append({"role": "assistant", "text": m.text})
             if result.interrupts:
@@ -153,10 +164,71 @@ def run_case(case: dict, model, max_turns: int, experiment: str) -> dict:
         "transcript": transcript,
         "error": error,
         "aeroapi_result_sets": flights.usage["result_sets"] - before["result_sets"],
-        "aeroapi_usd": round(
-            (flights.usage["result_sets"] - before["result_sets"]) * AEROAPI_USD_PER_RESULT_SET, 4
-        ),
+        "aeroapi_usd": (flights.usage["cost_milliusd"] - before["cost_milliusd"]) / 1000,
+        "aeroapi_cache_hits": flights.usage["cache_hits"] - before["cache_hits"],
     }
+
+
+def run_case(
+    case: dict,
+    model,
+    max_turns: int,
+    experiment: str,
+    flight_data: FlightData | None = None,
+    fixture: Path | None = None,
+) -> dict:
+    data = flight_data or FlightData()
+    fixture = fixture or ROOT / case.get("fixture", f"evals/fixtures/recorded/{case['id']}.json")
+    before = data.report()
+    run = {
+        "id": case["id"],
+        "category": case["category"],
+        "prompt": case["prompt"],
+        "seconds": 0,
+        "user_replies": 0,
+        "turn_tools": [],
+        "dispatches": [],
+        "transcript": [],
+        "error": None,
+        "aeroapi_result_sets": 0,
+        "aeroapi_cache_hits": 0,
+    }
+
+    def blocked(*args, **kwargs):
+        raise ValueError("eval_scope: SimBrief actions are disabled in research evaluations")
+
+    try:
+        with (
+            tempfile.TemporaryDirectory(prefix="ifd-eval-") as directory,
+            patch.dict(os.environ, {"IFD_DATA_DIR": directory}),
+            data.case(fixture),
+            patch.object(workflow, "_store", lambda: Store(Path(os.environ["IFD_DATA_DIR"]))),
+            patch.object(workflow, "generate_plan", blocked),
+            patch.object(workflow, "finalize_dispatch", blocked),
+            patch.object(workflow, "analyze_existing_plan", blocked),
+        ):
+            run = _run_case({**case, "_flight_data_mode": data.mode}, model, max_turns, experiment)
+    except (OSError, ValueError) as exc:
+        run["error"] = f"{type(exc).__name__}: {exc}"
+    after = data.report()
+    misses = after["fixture_misses"][len(before["fixture_misses"]) :]
+    run.update(
+        flight_data_mode=data.mode,
+        fixture_kind=data.fixture_kind,
+        fixture_clock=data.fixture_clock,
+        fixture=str(fixture),
+        fixture_misses=misses,
+        aeroapi_usd=round(after["aeroapi_usd"] - before["aeroapi_usd"], 6),
+        aeroapi_held_usd=round(after["aeroapi_held_usd"] - before["aeroapi_held_usd"], 6),
+        aeroapi_calls=after["aeroapi_calls"][len(before["aeroapi_calls"]) :],
+        replay_hits=after["replay_hits"] - before["replay_hits"],
+        invalid=bool(misses or run["error"] or data.budget_blocked),
+    )
+    if misses:
+        run["error"] = "fixture_miss: evaluation environment lacks requested data"
+    if data.budget_blocked:
+        run["error"] = "aeroapi_budget_exceeded: batch stopped"
+    return run
 
 
 def grade(case: dict, run: dict) -> dict[str, bool | None]:
@@ -264,20 +336,52 @@ def grade(case: dict, run: dict) -> dict[str, bool | None]:
         )
     else:
         checks["private_handled"] = None
+    if exp.get("disallow_dispatch"):
+        checks["no_dispatch_without_operating_flight"] = not run["dispatches"]
+    observed = {}
+    for item in run["transcript"]:
+        if item["role"] != "tool":
+            continue
+        try:
+            envelope = json.loads(item["text"])
+        except (ValueError, TypeError):
+            continue
+        rows = envelope.get("data") if isinstance(envelope, dict) else None
+        rows = [rows] if isinstance(rows, dict) else rows
+        for flight in rows if isinstance(rows, list) else []:
+            if isinstance(flight, dict) and flight.get("fa_flight_id"):
+                observed[flight["fa_flight_id"]] = flight
+    checks["dispatch_flight_grounded"] = (
+        all(
+            bool(observed.get(d.get("fa_flight_id")))
+            and not observed[d["fa_flight_id"]].get("cancelled")
+            if d.get("fa_flight_id")
+            else exp["real_flight_expected"] is not True
+            for d in run["dispatches"]
+        )
+        if run["dispatches"]
+        else None
+    )
     return checks
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--ids", default="")
+    parser.add_argument("--dataset", type=Path, default=DATASET)
+    parser.add_argument("--live", action="store_true", help="Explicitly enable paid FlightAware")
+    parser.add_argument("--budget-usd", default="1.00", help="Whole-batch FlightAware ceiling")
+    parser.add_argument("--fixture-dir", type=Path, default=ROOT / "evals/fixtures/recorded")
     parser.add_argument("--per-category", type=int, default=0)
     parser.add_argument("--model", default="gpt-6-luna")
     parser.add_argument("--effort", default="low")
     parser.add_argument("--max-turns", type=int, default=3)
     parser.add_argument("--seed", type=int, default=7)
     args = parser.parse_args()
+    if args.max_turns < 1 or args.per_category < 0:
+        parser.error("max-turns must be positive; per-category must be nonnegative")
 
-    cases = [json.loads(line) for line in DATASET.read_text().splitlines() if line.strip()]
+    cases = [json.loads(line) for line in args.dataset.read_text().splitlines() if line.strip()]
     if args.ids:
         wanted = set(args.ids.split(","))
         cases = [c for c in cases if c["id"] in wanted]
@@ -288,8 +392,17 @@ def main() -> None:
         rng = random.Random(args.seed)
         cases = [c for cat in sorted(by_cat) for c in rng.sample(by_cat[cat], args.per_category)]
 
+    if args.live and not (args.ids or args.per_category):
+        parser.error(
+            "live mode requires --ids or --per-category; full live suites are not implicit"
+        )
+    if not cases:
+        parser.error("no matching cases")
+    if args.live and any(c.get("fixture") for c in cases):
+        parser.error("synthetic/fixture-specific cases must not be sent to live providers")
+    data = FlightData("live" if args.live else "replay", args.budget_usd)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    experiment = f"eval-{stamp}"
+    experiment = f"eval-{data.mode}-{stamp}"
     tracing = export_tracing_settings()
     print(f"experiment {experiment}; LangSmith tracing {'on' if tracing else 'off'}", flush=True)
     out = ROOT / "artifacts" / "evals" / stamp
@@ -299,31 +412,55 @@ def main() -> None:
     by_category: dict[str, list] = defaultdict(list)
     with open(out / "results.jsonl", "w") as handle:
         for n, case in enumerate(cases, 1):
-            run = run_case(case, model, args.max_turns, experiment)
+            fixture = (
+                (out / "recordings" / f"{case['id']}.json")
+                if args.live
+                else (
+                    ROOT / case["fixture"]
+                    if case.get("fixture")
+                    else args.fixture_dir / f"{case['id']}.json"
+                )
+            )
+            run = run_case(case, model, args.max_turns, experiment, data, fixture)
             run["checks"] = grade(case, run)
             handle.write(json.dumps(run) + "\n")
             handle.flush()
             scored = {k: v for k, v in run["checks"].items() if v is not None}
             passed = all(scored.values())
-            by_category[case["category"]].append(passed)
-            for k, v in scored.items():
-                totals[k].append(v)
+            if not run["invalid"]:
+                by_category[case["category"]].append(passed)
+                for k, v in scored.items():
+                    totals[k].append(v)
             failed = [k for k, v in scored.items() if not v]
             print(
                 f"[{n}/{len(cases)}] {case['id']} {case['category']:<22} "
                 f"{'PASS' if passed else 'FAIL ' + ','.join(failed)} "
-                f"({run['seconds']}s, {run['aeroapi_result_sets']} sets)",
+                f"({run['seconds']}s, ${run['aeroapi_usd']:.3f}, invalid={run['invalid']})",
                 flush=True,
             )
+
+            if data.budget_blocked:
+                break
 
     runs = [json.loads(line) for line in (out / "results.jsonl").read_text().splitlines()]
     summary = {
         "experiment": experiment,
+        **data.report(),
         "langsmith_tracing": tracing,
         "model": args.model,
         "effort": args.effort,
         "cases": len(runs),
-        "case_pass_rate": round(sum(sum(v) for v in by_category.values()) / max(len(runs), 1), 3),
+        "valid_cases": sum(not r["invalid"] for r in runs),
+        "invalid_cases": [r["id"] for r in runs if r["invalid"]],
+        "case_pass_rate": (
+            round(
+                sum(sum(v) for v in by_category.values())
+                / sum(len(v) for v in by_category.values()),
+                3,
+            )
+            if any(by_category.values())
+            else None
+        ),
         "checks": {k: f"{sum(v)}/{len(v)}" for k, v in totals.items()},
         "by_category": {k: f"{sum(v)}/{len(v)}" for k, v in sorted(by_category.items())},
         "median_seconds": sorted(r["seconds"] for r in runs)[len(runs) // 2] if runs else None,
@@ -334,6 +471,10 @@ def main() -> None:
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=2))
     print(json.dumps(summary, indent=2))
+    if summary["invalid_cases"] or any(
+        not all(v for v in r["checks"].values() if v is not None) for r in runs
+    ):
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

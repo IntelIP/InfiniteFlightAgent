@@ -15,6 +15,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+from flight_data import FlightData
+
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
@@ -183,7 +185,14 @@ def run_case(case: dict, experiment: str) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--ids", default="")
+    parser.add_argument(
+        "--live", action="store_true", help="Authorize live SimBrief/Browserbase E2E"
+    )
+    parser.add_argument("--budget-usd", default="1.00", help="FlightAware-only batch ceiling")
     args = parser.parse_args()
+    if not args.live or not args.ids:
+        parser.error("E2E writes real plans: requires --live and explicit --ids")
+    data = FlightData("live", args.budget_usd)
     cases = [c for c in CASES if not args.ids or c["id"] in args.ids.split(",")]
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     experiment = f"e2e-{stamp}"
@@ -194,7 +203,11 @@ def main() -> None:
     passed = 0
     with open(out / "results.jsonl", "w") as handle:
         for case in cases:
-            run = run_case(case, experiment)
+            before_cost = data.charged
+            with data.case(out / "recordings" / f"{case['id']}.json"):
+                run = run_case(case, experiment)
+            run["aeroapi_usd"] = (data.charged - before_cost) / 1000
+            run["aeroapi_budget_blocked"] = data.budget_blocked
             handle.write(json.dumps(run) + "\n")
             handle.flush()
             failed = [k for k, v in run["checks"].items() if not v]
@@ -206,8 +219,10 @@ def main() -> None:
                 f"final={run['final_status']}, thrust={run['thrust_status']}) {sessions}",
                 flush=True,
             )
+            if data.budget_blocked:
+                break
     print(
-        json.dumps({"experiment": experiment, "passed": f"{passed}/{len(cases)}", "out": str(out)})
+        json.dumps({"experiment": experiment, "passed": passed, "out": str(out), **data.report()})
     )
 
 

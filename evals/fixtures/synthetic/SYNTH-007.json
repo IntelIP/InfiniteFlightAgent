@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "kind": "synthetic",
+  "clock": "2026-10-31T09:13:00+00:00",
+  "provenance": {
+    "generator": "GPT-6-Astra",
+    "sources": [
+      {
+        "path": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+        "sha256": "714374a7af67958c863938de981f89ed8dbdfa520a9e684dde2840e64897663c",
+        "case_id": "IFD-001"
+      }
+    ],
+    "description": "Invented test scenario, not a live schedule. Normalized capture supplies field-shape inspiration and airport names only. Only returned flight is cancelled; disclose cancellation before planning.",
+    "metadata": "America/New_York test timezone follows tests/test_flights.py; flight numbers, IDs, dates, gates, registrations, equipment and statuses are invented."
+  },
+  "requests": [
+    {
+      "path": "/airports/KIAD",
+      "params": {},
+      "status_code": 200,
+      "body": {
+        "name": "Washington Dulles Intl",
+        "city": "Washington",
+        "country_code": "US",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "path": "/airports/KEWR",
+      "params": {},
+      "status_code": 200,
+      "body": {
+        "name": "Newark Liberty Intl",
+        "city": "Newark",
+        "country_code": "US",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "path": "/airports/KIAD/flights/to/KEWR",
+      "params": {
+        "type": "Airline",
+        "connection": "nonstop",
+        "start": "2026-10-31T04:00:00Z",
+        "end": "2026-11-01T04:00:00Z",
+        "max_pages": 3
+      },
+      "status_code": 200,
+      "body": {
+        "flights": [
+          {
+            "segments": [
+              {
+                "ident": "UAL9101",
+                "ident_icao": "UAL9101",
+                "ident_iata": "UA9101",
+                "operator": "UAL",
+                "operator_iata": "UA",
+                "codeshares_iata": [],
+                "fa_flight_id": "SYNTH-UA9101-2026-10-31",
+                "origin": {
+                  "code_icao": "KIAD",
+                  "code_iata": "IAD",
+                  "timezone": "America/New_York"
+                },
+                "destination": {
+                  "code_icao": "KEWR",
+                  "code_iata": "EWR",
+                  "timezone": "America/New_York"
+                },
+                "scheduled_out": "2026-10-31T23:30:00Z",
+                "estimated_out": "2026-10-31T23:30:00Z",
+                "actual_out": null,
+                "scheduled_off": "2026-10-31T23:45:00Z",
+                "scheduled_in": "2026-11-01T00:55:00Z",
+                "estimated_in": "2026-11-01T00:55:00Z",
+                "gate_origin": "C17",
+                "terminal_origin": "C",
+                "gate_destination": "C81",
+                "aircraft_type": "B38M",
+                "registration": "SYNTH-N9101",
+                "status": "Cancelled",
+                "cancelled": true
+              }
+            ]
+          }
+        ],
+        "num_pages": 1,
+        "links": null
+      }
+    },
+    {
+      "path": "/flights/SYNTH-UA9101-2026-10-31",
+      "params": {},
+      "status_code": 200,
+      "body": {
+        "flights": [
+          {
+            "ident": "UAL9101",
+            "ident_icao": "UAL9101",
+            "ident_iata": "UA9101",
+            "operator": "UAL",
+            "operator_iata": "UA",
+            "codeshares_iata": [],
+            "fa_flight_id": "SYNTH-UA9101-2026-10-31",
+            "origin": {
+              "code_icao": "KIAD",
+              "code_iata": "IAD",
+              "timezone": "America/New_York"
+            },
+            "destination": {
+              "code_icao": "KEWR",
+              "code_iata": "EWR",
+              "timezone": "America/New_York"
+            },
+            "scheduled_out": "2026-10-31T23:30:00Z",
+            "estimated_out": "2026-10-31T23:30:00Z",
+            "actual_out": null,
+            "scheduled_off": "2026-10-31T23:45:00Z",
+            "scheduled_in": "2026-11-01T00:55:00Z",
+            "estimated_in": "2026-11-01T00:55:00Z",
+            "gate_origin": "C17",
+            "terminal_origin": "C",
+            "gate_destination": "C81",
+            "aircraft_type": "B38M",
+            "registration": "SYNTH-N9101",
+            "status": "Cancelled",
+            "cancelled": true
+          }
+        ],
+        "num_pages": 1,
+        "links": null
+      }
+    }
+  ]
+}

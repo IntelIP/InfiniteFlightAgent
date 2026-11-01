@@ -22,3 +22,9 @@ coverage/
 
 # Wrangler local state
 .wrangler/
+
+# Local derived FlightAware observations; do not publish provider data.
+/evals/fixtures/recorded/
+
+# Wrangler local account cache
+.cloudflare/

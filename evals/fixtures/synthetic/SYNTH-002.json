@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "kind": "synthetic",
+  "clock": "2026-10-31T09:13:00+00:00",
+  "provenance": {
+    "generator": "GPT-6-Astra",
+    "sources": [
+      {
+        "path": "/Users/hudson/Documents/GitHub/Products/InfiniteFlightDispatcher/artifacts/evals/20261031T091345Z/results.jsonl",
+        "sha256": "714374a7af67958c863938de981f89ed8dbdfa520a9e684dde2840e64897663c",
+        "case_id": "IFD-001"
+      }
+    ],
+    "description": "Invented test scenario, not a live schedule. Normalized capture supplies field-shape inspiration and airport names only. Explicit successful empty result: do not fabricate a flight or silently dispatch.",
+    "metadata": "America/New_York test timezone follows tests/test_flights.py; flight numbers, IDs, dates, gates, registrations, equipment and statuses are invented."
+  },
+  "requests": [
+    {
+      "path": "/airports/KIAD",
+      "params": {},
+      "status_code": 200,
+      "body": {
+        "name": "Washington Dulles Intl",
+        "city": "Washington",
+        "country_code": "US",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "path": "/airports/KEWR",
+      "params": {},
+      "status_code": 200,
+      "body": {
+        "name": "Newark Liberty Intl",
+        "city": "Newark",
+        "country_code": "US",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "path": "/airports/KIAD/flights/to/KEWR",
+      "params": {
+        "type": "Airline",
+        "connection": "nonstop",
+        "start": "2026-10-31T04:00:00Z",
+        "end": "2026-11-01T04:00:00Z",
+        "max_pages": 3
+      },
+      "status_code": 200,
+      "body": {
+        "flights": [],
+        "num_pages": 1,
+        "links": null
+      }
+    }
+  ]
+}
