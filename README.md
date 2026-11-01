@@ -58,19 +58,19 @@ One agent handles the conversation and judgment calls. Fixed tools handle the pa
 
 ## Quick start
 
-You need [uv](https://docs.astral.sh/uv/), a ChatGPT plan, a [FlightAware AeroAPI](https://www.flightaware.com/commercial/aeroapi/) key (the Personal tier is enough), a [SimBrief](https://www.simbrief.com) account, and a [Browserbase](https://www.browserbase.com) API key.
+You need [uv](https://docs.astral.sh/uv/), a ChatGPT plan, a [FlightAware AeroAPI](https://www.flightaware.com/commercial/aeroapi/) key (the Personal tier is enough), a [SimBrief](https://www.simbrief.com) account with a Navigraph email and password, and a [Browserbase](https://www.browserbase.com) API key.
 
 ```bash
 git clone https://github.com/IntelIP/InfiniteFlightAgent.git
 cd InfiniteFlightAgent
 uv sync --locked
-cp .env.example .env        # add AEROAPI_KEY, SIMBRIEF_USERID, BROWSERBASE_API_KEY
+cp .env.example .env        # add AEROAPI_KEY, SIMBRIEF_USERID, BROWSERBASE_API_KEY,
+                            # NAVIGRAPH_USERNAME and NAVIGRAPH_PASSWORD
 uv run ifd-login            # Sign in with ChatGPT and approve plan usage
-uv run ifd-simbrief         # log in to SimBrief once in the cloud browser it opens
 uv run ifd-chat             # describe your flight
 ```
 
-Approval prompts appear in the terminal. See the [agent guide](docs/implementation/agent-usage.md) for all settings, resuming conversations, and MCP client setup.
+The cloud browser signs in to SimBrief by itself with your Navigraph email and password, and keeps that login between runs. If you sign in to Navigraph with Google, Apple or Microsoft, set a Navigraph password first, or run `uv run ifd-simbrief` to sign in once by hand. Approval prompts appear in the terminal. See the [agent guide](docs/implementation/agent-usage.md) for all settings, resuming conversations, and MCP client setup.
 
 ## Choose how to run it
 
@@ -88,7 +88,7 @@ The agent is checked against [100 scripted first messages](evals/dispatch_prompt
 
 ## Status and limits
 
-- **Early, personal-use software.** It works end to end locally. The remote deployment is built but not yet live.
+- **Early, personal-use software.** It works end to end locally and on the self-hosted Cloudflare deployment, which planned its first live private flight on November 1, 2026.
 - **Thrust targets are simulation-grade estimates**, shown with a range. No aircraft is yet marked as verified against reference data; see [aircraft coverage](docs/aircraft-coverage.md).
 - **FlightAware only sees about two days ahead.** Flights further out have no live schedule or gate.
 - **It does not control the simulator.** It never claims your plan was imported, your aircraft spawned, or your thrust was set.
@@ -97,7 +97,14 @@ The agent is checked against [100 scripted first messages](evals/dispatch_prompt
 
 ## Contributing
 
-Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, tests, and the evaluation rules, and [SECURITY.md](SECURITY.md) to report a vulnerability privately. The [roadmap](docs/roadmap.md) and [backlog](docs/backlog.md) show what's next.
+Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, tests, and the evaluation rules, and the [code of conduct](CODE_OF_CONDUCT.md). Checks that need no provider keys:
+
+```bash
+uv run ruff check src tests
+uv run pytest -q
+```
+
+Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md). The [roadmap](docs/roadmap.md) and [backlog](docs/backlog.md) show what's next.
 
 ## License
 
