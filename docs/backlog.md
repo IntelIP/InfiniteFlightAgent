@@ -112,12 +112,16 @@ Owner convention: Hudson owns product, cost, and authority decisions; the implem
 
 ### BUILD-02 — Add Deep Agents dispatcher and MCP run management
 
+- **Progress October 30:** Deep Agent implemented (`src/ifdispatcher/agent.py`, root `instructions.md`): AeroAPI research tools, `dispatch_flight` (approval interrupt, verified flight occurrence/date) and `finalize_dispatch` (single fetch, stale/mismatch refusal, thrust, gate refresh, deterministic briefing). Runs locally with a SQLite checkpointer (`uv run ifd-chat`). One live scripted run reached the SimBrief handoff and correctly refused a stale plan. MCP run-management tools and hosting remain open; Managed Deep Agents deployment is not compatible with ChatGPT-plan usage (local-only) and is not attempted.
+
 - **Outcome:** A client can request preparation, answer clarification, and resume a saved run.
 - **Dependencies:** BUILD-01, DISC-05; selected provider/budget and execution authority.
 - **Acceptance/evidence:** One coordinator uses bounded tools; persistent run/leg identity; prepare/status/resume/briefing/refresh/cancel contract; a real low-risk host request and interruption recovery. Record model/API costs and latency.
 - **Boundary:** No arbitrary shell access, automatic purchases, infinite research loops, or extra agent hierarchy without demonstrated need.
 
 ### BUILD-03 — Implement flight research and spawn guidance
+
+- **Progress October 30:** AeroAPI tools implemented in `src/ifdispatcher/flights.py` per the [flight tools plan](implementation/flight-tools-plan.md); live checks: KIAD→KEWR route, IATA designator lookup (UA495), past departure window, out-of-window refusal. Simulator stand mapping still unverified.
 
 - **Outcome:** The user receives flight identity, schedule, and actionable airport-position guidance.
 - **Dependencies:** BUILD-01–02, DISC-04; selected source access.
@@ -185,7 +189,7 @@ These are unresolved, not implementation blockers for writing the plans. Researc
 | --- | --- | --- | --- |
 | D-01 | Implementation language/runtime; Python accepted by Hudson October 30, 2026 | Hudson, informed by implementing agent | SETUP-01 |
 | D-02 | Exact launch variant set and matching profiles | Hudson after DISC-01 | Launch resolver implementation |
-| D-03 | Model provider, development budget, and permitted paid calls | Hudson | Live agent runs |
+| D-03 | Model provider, development budget, and permitted paid calls. **Decided October 30, 2026:** OpenAI GPT-6 Luna through Sign in with ChatGPT (Hudson's ChatGPT plan; local personal use only), see [agent usage](implementation/agent-usage.md) | Hudson | Live agent runs |
 | D-04 | Flight-data provider/access and budget. **Decided October 30, 2026:** FlightAware AeroAPI Personal tier (no minimum, monthly free credit, personal use only). Live KIAD tests and tool plan in [flight tools plan](implementation/flight-tools-plan.md) | Hudson after DISC-04 | Provider-dependent live research |
 | D-05 | Intended weather/time default and handling of real-versus-simulator differences | Hudson | Final dispatch/performance defaults |
 | D-06 | Local/hosted access, authentication, hosting budget, first development client | Hudson after DISC-05 | Host access/deployment |

@@ -1,0 +1,52 @@
+name: Emergency stop
+# Sets the Worker secret IFD_PAID_OPERATIONS_ENABLED to "false". `wrangler secret put`
+# creates a new version from the currently deployed code with the changed secret
+# and deploys it immediately; nothing is built. The next request restarts the
+# container with the new value. Limits: docs/implementation/deployment.md.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type STOP to disable paid operations
+        type: string
+        required: true
+permissions:
+  contents: read
+jobs:
+  stop:
+    if: ${{ inputs.confirm == 'STOP' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deploy/cloudflare
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+      - run: npm ci
+      - name: Disable paid operations
+        run: printf 'false' | npx wrangler secret put IFD_PAID_OPERATIONS_ENABLED
+      - name: Explain failure
+        if: failure()
+        run: |
+          {
+            echo "### Emergency stop FAILED"
+            echo "If Wrangler reported that the latest version isn't deployed, an uploaded release is"
+            echo "pending. Set IFD_PAID_OPERATIONS_ENABLED=false in the Cloudflare dashboard"
+            echo "(Worker > Settings > Variables and Secrets) and deploy, or revoke provider keys."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Record deployment
+        run: |
+          {
+            echo "### Paid operations disabled"
+            echo "Also set IFD_PAID_OPERATIONS_ENABLED=false in Doppler, or the next release restores it."
+            echo '```'
+            npx wrangler deployments status
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

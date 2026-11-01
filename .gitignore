@@ -16,3 +16,9 @@ coverage/
 # Keep sanitized, deliberate validation evidence in docs/evidence/.
 
 /artifacts/validation/
+
+# Eval runs contain FlightAware observations; storage terms not yet confirmed.
+/artifacts/evals/
+
+# Wrangler local state
+.wrangler/

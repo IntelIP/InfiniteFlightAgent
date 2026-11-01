@@ -1,9 +1,24 @@
 [project]
 name = "infinite-flight-dispatcher"
 version = "0.1.0"
-description = "Local SimBrief preparation and snapshot MCP tools"
+description = "AI dispatcher for Infinite Flight: real flights, SimBrief plans, and takeoff N1 estimates over MCP"
 requires-python = ">=3.11"
-dependencies = ["mcp==1.27.0", "httpx==0.28.1", "pydantic>=2.11,<3"]
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
+dependencies = [
+    "mcp==1.27.0",
+    "httpx==0.28.1",
+    "pydantic>=2.11,<3",
+    "deepagents>=0.7.32",
+    "langchain-openai>=1.7.3",
+    "langgraph-checkpoint-sqlite>=3.1.3",
+    "pyjwt[crypto]>=2.15.1",
+    "browserbase>=1.23.0",
+    "playwright>=1.64.1",
+    "psycopg[binary]>=3.3.6",
+    "langgraph-checkpoint-postgres>=3.2.0",
+    "boto3>=1.43.123",
+]
 
 [dependency-groups]
 dev = ["pytest==8.4.2", "ruff==0.14.3", "vulture==2.16"]
@@ -22,5 +37,14 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/ifdispatcher"]
 
+[project.urls]
+Homepage = "https://github.com/IntelIP/InfiniteFlightAgent"
+Issues = "https://github.com/IntelIP/InfiniteFlightAgent/issues"
+
 [project.scripts]
 ifdispatcher = "ifdispatcher.server:main"
+ifd-login = "ifdispatcher.siwc:main"
+ifd-credentials = "ifdispatcher.siwc:credentials_main"
+ifd-serve = "ifdispatcher.remote:main"
+ifd-chat = "ifdispatcher.agent:main"
+ifd-simbrief = "ifdispatcher.simbrief_browser:main"

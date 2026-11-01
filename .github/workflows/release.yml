@@ -1,0 +1,191 @@
+name: Release
+# Manual release of deploy/cloudflare. Normal runs upload a Worker version with
+# no traffic; promotion and the one-time bootstrap need `production` approval.
+# Only the current main commit can be released. Each job keeps its Wrangler
+# output and deployment status as a release-evidence artifact.
+# See docs/implementation/deployment.md.
+on:
+  workflow_dispatch:
+    inputs:
+      promote:
+        description: After upload, route 100% of traffic to the new version (production approval)
+        type: boolean
+        default: false
+      bootstrap:
+        description: First deploy only. Runs `wrangler deploy`, which takes traffic (production approval)
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: cloudflare-release
+  cancel-in-progress: false
+env:
+  DOPPLER_PROJECT: ${{ vars.DOPPLER_PROJECT }}
+  DOPPLER_CONFIG: ${{ vars.DOPPLER_CONFIG }}
+  ACCESS_TEAM_DOMAIN: ${{ vars.ACCESS_TEAM_DOMAIN }}
+  ACCESS_AUD: ${{ vars.ACCESS_AUD }}
+  ACCESS_ALLOWED_EMAIL: ${{ vars.ACCESS_ALLOWED_EMAIL }}
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release only the current main commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [[ "$GITHUB_REF" == refs/heads/main ]] || { echo "Release from main only (got $GITHUB_REF)" >&2; exit 1; }
+          head="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          [[ "$head" == "$GITHUB_SHA" ]] || { echo "main is now $head; rerun the release on it" >&2; exit 1; }
+
+  checks:
+    needs: guard
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ github.sha }}
+
+  upload:
+    if: ${{ !inputs.bootstrap }}
+    needs: checks
+    runs-on: ubuntu-latest
+    outputs:
+      version_id: ${{ steps.upload.outputs.version_id }}
+    defaults:
+      run:
+        working-directory: deploy/cloudflare
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+      - uses: dopplerhq/cli-action@12f29f902bf9279a3888501b9d27ba9f968a07c2 # v4.0.1
+      - run: npm ci
+      - name: Record traffic before upload
+        run: |
+          mkdir -p "$RUNNER_TEMP/evidence"
+          npx wrangler deployments status > "$RUNNER_TEMP/evidence/previous.txt"
+      - run: bash ../../scripts/sync-secrets.sh --to-file "$RUNNER_TEMP/worker-secrets.json"
+      - id: upload
+        name: Build image and upload version (no traffic)
+        env:
+          WRANGLER_OUTPUT_FILE_PATH: ${{ runner.temp }}/wrangler-output.ndjson
+        run: |
+          npx wrangler versions upload \
+            --secrets-file "$RUNNER_TEMP/worker-secrets.json" \
+            --var "ACCESS_TEAM_DOMAIN:$ACCESS_TEAM_DOMAIN" \
+            --var "ACCESS_AUD:$ACCESS_AUD" \
+            --var "ACCESS_ALLOWED_EMAIL:$ACCESS_ALLOWED_EMAIL" \
+            --tag "${GITHUB_SHA::12}" \
+            --message "Release $GITHUB_SHA"
+          version_id="$(jq -r 'select(.type == "version-upload") | .version_id' "$WRANGLER_OUTPUT_FILE_PATH" | tail -1)"
+          [[ "$version_id" =~ ^[0-9a-f-]{36}$ ]] || { echo "Could not read the uploaded version id" >&2; exit 1; }
+          echo "version_id=$version_id" >> "$GITHUB_OUTPUT"
+          cp "$WRANGLER_OUTPUT_FILE_PATH" "$RUNNER_TEMP/evidence/wrangler-upload.ndjson"
+          npx wrangler versions view "$version_id" --json > "$RUNNER_TEMP/evidence/candidate.json"
+          jq -n --arg commit "$GITHUB_SHA" --arg version "$version_id" --arg run "$GITHUB_RUN_ID" \
+            '{commit: $commit, version_id: $version, run_id: $run}' > "$RUNNER_TEMP/evidence/release.json"
+          {
+            echo "### Uploaded Worker version (no traffic)"
+            echo "- Version: \`$version_id\`"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Promote: \`npx wrangler versions deploy $version_id@100% -y\` or rerun with promote=true"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        run: rm -f "$RUNNER_TEMP/worker-secrets.json"
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-upload-${{ github.sha }}
+          path: ${{ runner.temp }}/evidence/
+          if-no-files-found: error
+
+  promote:
+    if: ${{ inputs.promote && !inputs.bootstrap }}
+    needs: upload
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: deploy/cloudflare
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      VERSION_ID: ${{ needs.upload.outputs.version_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+      - run: npm ci
+      - run: npx wrangler versions deploy "$VERSION_ID@100%" -y
+      - run: |
+          mkdir -p "$RUNNER_TEMP/evidence"
+          npx wrangler deployments status > "$RUNNER_TEMP/evidence/after-promote.txt"
+          {
+            echo "### Promoted \`$VERSION_ID\` to 100%"
+            echo '```'
+            cat "$RUNNER_TEMP/evidence/after-promote.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-promote-${{ github.sha }}
+          path: ${{ runner.temp }}/evidence/
+          if-no-files-found: error
+
+  bootstrap:
+    if: ${{ inputs.bootstrap }}
+    needs: checks
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: deploy/cloudflare
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+      - uses: dopplerhq/cli-action@12f29f902bf9279a3888501b9d27ba9f968a07c2 # v4.0.1
+      - run: npm ci
+      - run: bash ../../scripts/sync-secrets.sh --to-file "$RUNNER_TEMP/worker-secrets.json"
+      - name: First deploy (creates Worker, Durable Object class, container app)
+        env:
+          WRANGLER_OUTPUT_FILE_PATH: ${{ runner.temp }}/evidence/wrangler-deploy.ndjson
+        run: |
+          mkdir -p "$RUNNER_TEMP/evidence"
+          npx wrangler deploy \
+            --secrets-file "$RUNNER_TEMP/worker-secrets.json" \
+            --var "ACCESS_TEAM_DOMAIN:$ACCESS_TEAM_DOMAIN" \
+            --var "ACCESS_AUD:$ACCESS_AUD" \
+            --var "ACCESS_ALLOWED_EMAIL:$ACCESS_ALLOWED_EMAIL" \
+            --tag "${GITHUB_SHA::12}" \
+            --message "Bootstrap $GITHUB_SHA"
+          npx wrangler deployments status > "$RUNNER_TEMP/evidence/after-bootstrap.txt"
+          echo "### Bootstrapped from \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        run: rm -f "$RUNNER_TEMP/worker-secrets.json"
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-bootstrap-${{ github.sha }}
+          path: ${{ runner.temp }}/evidence/
+          if-no-files-found: error
