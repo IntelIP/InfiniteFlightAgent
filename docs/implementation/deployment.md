@@ -7,8 +7,11 @@ Status October 31, 2026: nothing has been deployed and the release workflows hav
 - R2 bucket `infinite-flight-dispatcher` (ENAM).
 - Access application "Infinite Flight Agent MCP" (`82c02dde-b5fa-4a48-b518-5c3256608d55`) for `infinite-flight-dispatcher.hudson-228.workers.dev`: managed OAuth with dynamic client registration on, one Allow policy for the owner's email, team domain `restless-mouse-67bc.cloudflareaccess.com`.
 - Workers Paid was already active on the account.
+- Doppler project `infinite-flight-agent`, config `prd`: every key above, with `IFD_PAID_OPERATIONS_ENABLED=false`. `IFD_INTERNAL_TOKEN` and `IFD_CREDENTIAL_KEY` were generated directly into Doppler; `DATABASE_URL` is the Neon pooled endpoint (connection checked). The R2 keys come from an account API token limited to Object Read & Write on `infinite-flight-dispatcher`; write, read and delete there succeeded, and listing all buckets or reading two other buckets was denied. Read-only service token `github-release-readonly` is the GitHub secret `DOPPLER_TOKEN`; variables `DOPPLER_PROJECT` and `DOPPLER_CONFIG` are set.
 
-Still needed: the Doppler config, the Cloudflare release API token and the bucket-scoped R2 key (account API tokens cannot be created with CLI OAuth), the ChatGPT credential import, then the bootstrap release. Owner decision: single-user personal deployment of the open-source app with the owner's own keys and ChatGPT plan. License: GPL-3.0-only (owner decision, October 31, 2026), because the thrust estimator ports GPL-3.0 FlyByWire tables.
+- GitHub secret `CLOUDFLARE_API_TOKEN`: account API token with Workers Scripts Edit, Workers Containers Edit and Account Settings Read (verified active; R2 access refused). Account API tokens cannot be created with CLI OAuth, so it and the R2 token were made in the dashboard.
+
+Still needed: merge to `main`, the ChatGPT credential import, then the bootstrap release. Owner decision: single-user personal deployment of the open-source app with the owner's own keys and ChatGPT plan. License: GPL-3.0-only (owner decision, October 31, 2026), because the thrust estimator ports GPL-3.0 FlyByWire tables.
 
 ## Architecture
 
@@ -103,7 +106,7 @@ Checked against the shared playbook's pitfalls (`AgenticEngineering/openwiki/dep
 Open owner decisions this raises:
 
 - **CI provider.** Condere's repository CI and release run on Buildkite, using workload identity federation instead of stored cloud keys. This repository uses GitHub Actions. Either works with Wrangler. Buildkite would match the portfolio; GitHub Actions avoids another agent queue for a single-user app.
-- **Doppler layout.** Condere uses one Doppler project per deployable with `dev`/`stg`/`prd` configs (`intelip-agent-mcp`, `intelip_api`). The workplace is at its 10-project limit, so this deployment still needs a freed slot, a config in an existing project, or a plan upgrade.
+- **Doppler layout.** Condere uses one Doppler project per deployable with `dev`/`stg`/`prd` configs (`intelip-agent-mcp`, `intelip_api`). This deployment follows that pattern with its own `infinite-flight-agent` project, created after the October 31 consolidation freed slots.
 
 ## Kill switch and emergency stop
 
