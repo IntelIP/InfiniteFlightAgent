@@ -356,15 +356,27 @@ def build_agent(model=None, checkpointer=None):
 
 
 def checkpointer():
-    """Postgres (Neon) when DATABASE_URL is set, else a local SQLite file."""
+    """Postgres (Neon) when DATABASE_URL is set, else a local SQLite file.
+
+    Neon closes idle connections, so the saver uses a pool that checks each connection
+    before handing it out and reconnects instead of holding one connection forever.
+    """
     dsn = setting("DATABASE_URL")
     if dsn:
-        import psycopg
         from langgraph.checkpoint.postgres import PostgresSaver
         from psycopg.rows import dict_row
+        from psycopg_pool import ConnectionPool
 
-        conn = psycopg.connect(dsn, autocommit=True, prepare_threshold=None, row_factory=dict_row)
-        saver = PostgresSaver(conn)
+        pool = ConnectionPool(
+            dsn,
+            min_size=1,
+            max_size=4,
+            max_idle=60,
+            kwargs={"autocommit": True, "prepare_threshold": None, "row_factory": dict_row},
+            check=ConnectionPool.check_connection,
+            open=True,
+        )
+        saver = PostgresSaver(pool)
         saver.setup()
         return saver
     directory = data_dir()
