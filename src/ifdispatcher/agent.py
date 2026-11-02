@@ -165,7 +165,7 @@ def dispatch_flight(
         departure_local_date: Agreed departure date at the origin, local, YYYY-MM-DD.
         revision: 1 for a new leg; increase when material inputs change.
         fa_flight_id: FlightAware id of the verified airline flight (from a search result).
-        departure_utc: ISO UTC departure; required for private flights.
+        departure_utc: ISO UTC departure the user approves: the occurrence's scheduled_out utc from the search result, or the agreed time of a private flight.
         engine: Only if the user explicitly wants thrust for an engine other than the one SimBrief plans with.
         units: KGS or LBS, matching the user's SimBrief settings.
         passengers: Optional passenger count.
@@ -270,6 +270,31 @@ def _airport_line(code: str | None) -> str:
         return f"{code}: name unavailable ({exc})"
 
 
+def _local_line(value: str, airport: str | None) -> str:
+    try:
+        return f"{flights.local_time(value, airport or '')} ({value})"
+    except ValueError:
+        return value
+
+
+def _timing_lines(args: dict) -> list[str]:
+    """Departure and, for a later leg, the connection, so the user can check both."""
+    departure = args.get("departure_utc")
+    if not departure:
+        return ["Departs: time not given"]
+    lines = [f"Departs {_local_line(departure, args.get('origin'))}"]
+    try:
+        follows = workflow.connection(args.get("trip"), args.get("leg"), departure).get("follows")
+    except ValueError as exc:
+        return [*lines, f"Connection: unavailable ({exc})"]
+    if follows:
+        arrived = _local_line(follows["arrival_utc"], args.get("origin"))
+        lines.append(
+            f"Connection: {follows['connection']} after leg {follows['leg']} arrives {arrived}"
+        )
+    return lines
+
+
 def approval_summary(tool_call, *_context) -> str:
     """What the user checks before approving a dispatch, built from the call, not the chat."""
     args = tool_call["args"]
@@ -280,6 +305,7 @@ def approval_summary(tool_call, *_context) -> str:
             f" ({flight})",
             f"From {_airport_line(args.get('origin'))}",
             f"To   {_airport_line(args.get('destination'))}",
+            *_timing_lines(args),
             f"Simulator aircraft {args.get('sim_aircraft')}",
             f"Takeoff thrust: {thrust.support_note(args.get('sim_aircraft'))}",
         ]
@@ -295,30 +321,52 @@ INTERRUPT_ON = {
 
 
 class DispatchApproval(HumanInTheLoopMiddleware):
-    """The dispatch approval gate, refusing several dispatches of one leg in one turn.
+    """The dispatch approval gate, refusing dispatches the user should never be asked to approve.
 
-    Replaces Deep Agents' HumanInTheLoopMiddleware in place (same name). Two calls for the same
-    trip, leg, and revision mean the model is offering alternatives; all dispatch calls in that
-    turn are refused (never executed) so it chooses one or asks the user.
+    Replaces Deep Agents' HumanInTheLoopMiddleware in place (same name). Refused before approval:
+    several calls for one trip, leg, and revision (the model is offering alternatives), a call
+    without departure_utc (the user could not check the time), and a leg that leaves too soon
+    after the trip's previous leg arrives. Every dispatch call in that turn is refused (never
+    executed), so none runs without approval, and the model fixes the call or asks the user.
     """
 
     @property
     def name(self) -> str:
         return "HumanInTheLoopMiddleware"
 
-    def _refuse_alternatives(self, state) -> dict | None:
-        last = next((m for m in reversed(state["messages"]) if isinstance(m, AIMessage)), None)
-        calls = [c for c in (last.tool_calls if last else []) if c["name"] == "dispatch_flight"]
+    @staticmethod
+    def _problem(calls) -> str | None:
         legs = [
             (c["args"].get("trip"), c["args"].get("leg"), c["args"].get("revision", 1))
             for c in calls
         ]
-        if len(set(legs)) == len(legs):
+        if len(set(legs)) != len(legs):
+            return (
+                "Several dispatch_flight calls for the same leg. Dispatch exactly one flight per "
+                "leg: choose the best fit and say why in one line, or ask the user to choose."
+            )
+        for call in calls:
+            args = call["args"]
+            if not args.get("departure_utc"):
+                return (
+                    "dispatch_flight needs departure_utc (the flight's scheduled_out utc from the "
+                    "search result, or the agreed time of a private flight) so the user can check "
+                    "the departure time before approving."
+                )
+            try:
+                fit = workflow.connection(args.get("trip"), args.get("leg"), args["departure_utc"])
+            except ValueError as exc:
+                return f"invalid departure_utc: {exc}"
+            if "conflict" in fit:
+                return fit["conflict"]
+        return None
+
+    def _refuse(self, state) -> dict | None:
+        last = next((m for m in reversed(state["messages"]) if isinstance(m, AIMessage)), None)
+        calls = [c for c in (last.tool_calls if last else []) if c["name"] == "dispatch_flight"]
+        reason = self._problem(calls)
+        if reason is None:
             return None
-        reason = (
-            "Several dispatch_flight calls for the same leg. Dispatch exactly one flight per leg: "
-            "choose the best fit and say why in one line, or ask the user to choose."
-        )
         content = json.dumps({"status": "refused", "reason": reason})
         return {
             "messages": [
@@ -328,10 +376,10 @@ class DispatchApproval(HumanInTheLoopMiddleware):
         }
 
     def after_model(self, state, runtime):
-        return self._refuse_alternatives(state) or super().after_model(state, runtime)
+        return self._refuse(state) or super().after_model(state, runtime)
 
     async def aafter_model(self, state, runtime):
-        return self._refuse_alternatives(state) or await super().aafter_model(state, runtime)
+        return self._refuse(state) or await super().aafter_model(state, runtime)
 
 
 # No `task` tool: Deep Agents' general-purpose subagent would get dispatch_flight without these

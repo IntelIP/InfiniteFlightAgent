@@ -16,6 +16,7 @@ EVIDENCE = ROOT / "docs/evidence/live-acceptance.json"
 # Code whose change invalidates a live run: the service, its Worker, its image and dependencies.
 INTEGRATION = (
     "src/ifdispatcher",
+    "instructions.md",
     "deploy/cloudflare/src",
     "deploy/cloudflare/wrangler.toml",
     "Dockerfile",

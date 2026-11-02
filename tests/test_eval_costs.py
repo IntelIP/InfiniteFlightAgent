@@ -133,7 +133,7 @@ def test_replay_reaches_approval_without_generating(monkeypatch, tmp_path):
     )
     assert not result["invalid"], result
     assert len(result["dispatches"]) == 1 and result["aeroapi_usd"] == 0
-    assert result["replay_hits"] == 2
+    assert result["replay_hits"] == 3  # airport name, its timezone, and the approval summary
 
 
 def test_live_prices_pages_records_and_replays_without_network(tmp_path, monkeypatch):
