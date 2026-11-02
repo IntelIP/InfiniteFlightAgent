@@ -424,16 +424,18 @@ def test_approval_summary_shows_departure_and_connection(mocked, monkeypatch):
     assert "Connection: 1 h 30 min after leg 1 arrives 2026-10-31 19:00 EDT" in summary
 
 
-def test_approval_summary_warns_when_the_airport_is_too_high(mocked, monkeypatch):
+def test_approval_summary_thrust_note_follows_the_airport_elevation(mocked, monkeypatch):
     from ifdispatcher import agent
 
-    denver = {"name": "Denver Intl", "city": "Denver", "timezone": "America/Denver"}
-    monkeypatch.setattr(
-        agent.flights, "_get", lambda path, params=None: {**denver, "elevation": 5434}
-    )
+    airport = {"name": "Test Intl", "city": "Test", "timezone": "America/Denver"}
     call = gate_call(origin="KDEN", destination="KIAD", departure_utc="2026-11-01T00:30:00Z")
-    summary = agent.approval_summary(call)
-    assert "Takeoff thrust: A20N at KDEN (5,434 ft): takeoff N1 estimate unavailable" in summary
+    for elevation, note in (
+        (5434, "A20N at KDEN (5,434 ft): simulation-grade takeoff N1 estimate available"),
+        (18000, "A20N at KDEN (18,000 ft): takeoff N1 estimate unavailable"),
+    ):
+        record = {**airport, "elevation": elevation}
+        monkeypatch.setattr(agent.flights, "_get", lambda path, params=None, r=record: r)
+        assert f"Takeoff thrust: {note}" in agent.approval_summary(call)
 
 
 def test_briefings_finished_in_a_turn_are_returned_with_the_next_approval():

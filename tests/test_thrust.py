@@ -138,7 +138,8 @@ def test_calibration_gives_absolute_target():
         ({"flex": "25"}, "estimated"),
         ({"mode": "D04"}, "unsupported_thrust_mode"),
         ({"flex": ""}, "missing_input"),
-        ({"elev": "5434"}, "unsupported_conditions"),
+        ({"elev": "5434"}, "estimated"),  # Denver: inside FlyByWire's -2000..16600 ft table
+        ({"elev": "18000"}, "unsupported_conditions"),
         ({"qnh": "50"}, "unsupported_conditions"),
         ({"engines": "CFM56-5B4"}, "unsupported_profile"),
     ],
@@ -182,9 +183,11 @@ def test_support_note_depends_on_the_departure_airport():
 
     assert "estimate available" in support_note("A21N", "KIAD", 312)
     denver = support_note("A21N", "KDEN", 5434)
-    assert "unavailable" in denver and "KDEN (5,434 ft)" in denver
-    edge = support_note("A20N", "KXXX", 1600)
+    assert "estimate available" in denver and "KDEN (5,434 ft)" in denver
+    edge = support_note("A20N", "SLLP", 16000)
     assert "may be unavailable" in edge and "day's pressure" in edge
+    too_high = support_note("A20N", "XXXX", 18000)
+    assert "unavailable (outside the modeled -2,000..16,600 ft" in too_high
     assert "elevation of KIAD unknown" in support_note("A21N", "KIAD", None)
     assert "not modeled" in support_note("C172", "KDEN", 5434)
 
@@ -194,3 +197,83 @@ def test_support_note_for_approval_prompts():
 
     assert "available" in support_note("A21N") and "unavailable" not in support_note("A21N")
     assert "unavailable" in support_note("B789")
+
+
+def fbw_limit_n1_reference(altitude, oat, flex, packs, nacelle, wing):
+    """FlyByWire ThrustLimits_A32NX::limitN1 for TO at Mach 0, transcribed line by line."""
+    from ifdispatcher.thrust import FBW_TO as limits
+
+    rows = range(len(limits))
+    if altitude <= limits[0][0]:
+        lo = hi = 0
+    elif altitude >= limits[-1][0]:
+        lo = hi = len(limits) - 1
+    else:
+        hi = next(r for r in rows if limits[r][0] > altitude)
+        lo = hi - 1
+
+    def interp(col):
+        x0, x1 = limits[lo][0], limits[hi][0]
+        if x0 == x1:
+            return limits[lo][col]
+        return limits[lo][col] + (altitude - x0) * (limits[hi][col] - limits[lo][col]) / (x1 - x0)
+
+    cp, lp, cn1_flat, cn1_last, cn1_flex = (interp(c) for c in range(1, 6))
+    if flex > 0:
+        if flex <= cp:
+            cn1 = cn1_flat
+        elif flex > lp:
+            m = (cn1_flex - cn1_last) / (100 - lp)
+            cn1 = m * flex + (cn1_flex - m * 100)
+        else:
+            m = (cn1_last - cn1_flat) / (lp - cp)
+            cn1 = m * flex + (cn1_last - m * lp)
+    elif oat <= cp:
+        cn1 = cn1_flat
+    else:
+        m = (cn1_last - cn1_flat) / (lp - cp)
+        cn1 = m * oat + (cn1_last - m * lp)
+    if flex > lp:
+        bleed = packs * -0.6 + nacelle * -0.7 + wing * -0.7
+    else:
+        table = {
+            (True, True): (-0.4, -0.6, -0.7),
+            (True, False): (-0.5, -0.6, -0.7),
+            (False, True): (-0.6, -0.8, -0.8),
+            (False, False): (-0.7, -0.8, -0.8),
+        }
+        p, n, w = table[(altitude < 8000, oat < cp)]
+        bleed = packs * p + nacelle * n + wing * w
+    return cn1 * ((273.15 + oat) / 288.15) ** 0.5 + bleed
+
+
+@pytest.mark.parametrize("altitude", [-1500, 0, 1500, 2500, 5456, 7999, 8000, 9500, 13000, 16600])
+@pytest.mark.parametrize(("oat", "flex"), [(-10, 0), (15, 0), (35, 0), (10, 30), (20, 60)])
+@pytest.mark.parametrize("bleeds", [(0, 0, 0), (1, 1, 1)])
+def test_fbw_port_matches_flybywire_formula_at_every_altitude(altitude, oat, flex, bleeds):
+    from ifdispatcher.thrust import fbw_leap1a26_n1
+
+    ours = fbw_leap1a26_n1(altitude, oat, flex or None, *bleeds)
+    assert ours == pytest.approx(fbw_limit_n1_reference(altitude, oat, flex, *bleeds), abs=1e-9)
+
+
+def test_high_altitude_estimate_is_labeled_and_wider_than_sea_level():
+    sea = estimate(synthetic_neo(elev="300", flex="40", oat="10"))
+    denver = estimate(synthetic_neo(elev="5434", flex="40", oat="10"))
+    assert sea["status"] == denver["status"] == "estimated"
+    width = {
+        k: r["data"]["n1_ratio_range"][1] - r["data"]["n1_ratio_range"][0]
+        for k, r in (("sea", sea), ("denver", denver))
+    }
+    assert width["denver"] > width["sea"]
+    assert any("extrapolated with FlyByWire's LEAP-1A26 lapse" in n for n in denver["notes"])
+    assert any("EASA E.110" in a for a in denver["assumptions"])
+    assert not any("EASA E.110" in a for a in sea["assumptions"])
+
+
+def test_no_high_altitude_widening_at_or_below_2000_ft():
+    # Below 2,000 ft v0.3.0 matches v0.2.1 exactly (270 cases compared when the table grew).
+    for elev in ("-1500", "300", "1900"):
+        result = estimate(synthetic_neo(elev=elev))
+        assert result["status"] == "estimated"
+        assert not any("EASA E.110" in a for a in result["assumptions"])
