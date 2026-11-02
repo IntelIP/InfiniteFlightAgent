@@ -52,8 +52,9 @@ jobs:
         run: |
           version="$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
           python3 scripts/release_notes.py "$version" > /dev/null
-          tagged="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$version" --jq .object.sha 2>/dev/null || true)"
-          if [[ -n "$tagged" && "$tagged" != "$GITHUB_SHA" ]]; then
+          # A missing tag makes `gh api` fail (and print its error JSON), so test the exit status.
+          if tagged="$(gh api "repos/$GITHUB_REPOSITORY/commits/v$version" --jq .sha 2>/dev/null)" \
+            && [[ "$tagged" != "$GITHUB_SHA" ]]; then
             echo "v$version is already released from $tagged; bump the version in pyproject.toml and CHANGELOG.md" >&2
             exit 1
           fi
