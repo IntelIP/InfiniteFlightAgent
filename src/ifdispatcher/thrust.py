@@ -331,17 +331,22 @@ def estimate_takeoff_n1(
     temp_thrust = temp_ratio(0.0, 1.0) ** n_mid  # vs the (derated) rating; AC 25-13 applies here
 
     notes = []
+    # Warnings also go into the briefing line, so they reach the pilot without relying on the
+    # model to relay them; the most serious first.
+    warnings = []
     if temp_used is not None and temp_ratio(0.0, 1.0) == 1.0:
         notes.append("assumed temperature at or below the flat rating or OAT: no extra reduction")
+    if temp_thrust < 0.75:
+        notes.append(
+            "assumed-temperature reduction exceeds 25% of the rating (FAA AC 25-13); treat as suspect"
+        )
+        warnings.append("SUSPECT: thrust reduction over the 25% FAA AC 25-13 limit")
     if high_altitude:
         notes.append(
             f"pressure altitude {pa:,.0f} ft: above {HIGH_ALTITUDE_PA:,} ft the engine's corner "
             f"point is extrapolated with FlyByWire's LEAP-1A26 lapse, so the range is wider"
         )
-    if temp_thrust < 0.75:
-        notes.append(
-            "assumed-temperature reduction exceeds 25% of the rating (FAA AC 25-13); treat as suspect"
-        )
+        warnings.append(f"high altitude ({pa:,.0f} ft): engine behavior extrapolated, wider range")
 
     data: dict[str, Any] = {
         "engine": model,
@@ -370,6 +375,8 @@ def estimate_takeoff_n1(
         if "fbw_model_n1" in data:
             target += f"; FlyByWire model N1 {data['fbw_model_n1']}%"
     briefing = f"TAKEOFF THRUST ({LABEL.lower()}): {mode}, {model}: {target}"
+    if warnings:
+        briefing += " — " + "; ".join(warnings)
 
     assumptions = [
         f"corner point {corner_sl:.0f} C at sea level ({corner_source}), +/-{corner_tolerance:.0f} C",
@@ -405,5 +412,6 @@ def estimate_takeoff_n1(
         ),
         assumptions=assumptions,
         notes=notes,
+        warnings=warnings,
         sources=[corner_source, FBW_REF, "FAA AC 25-13 (75% minimum reduced thrust)"],
     )
