@@ -123,12 +123,32 @@ def fbw_leap1a26_n1(pa: float, oat: float, flex: float | None, packs: int, nacel
     return cn1 * math.sqrt((273.15 + oat) / 288.15) + bleed
 
 
-def support_note(aircraft_icao: str | None) -> str:
-    """One line for approval prompts: will a takeoff N1 estimate be available?"""
+# Pressure altitude differs from field elevation with the day's pressure (roughly +/-1,000 ft
+# across normal QNH), so an airport this close to the band edge can fall on either side.
+PA_MARGIN_FT = 1000
+
+
+def support_note(
+    aircraft_icao: str | None, airport: str | None = None, elevation_ft: float | None = None
+) -> str:
+    """One line for approval prompts: will a takeoff N1 estimate be available here?"""
     code = (aircraft_icao or "").upper()
-    if code in AIRCRAFT:
-        return f"{code}: simulation-grade takeoff N1 estimate available"
-    return f"{code or 'aircraft'}: takeoff N1 estimate unavailable (not modeled)"
+    if code not in AIRCRAFT:
+        return f"{code or 'aircraft'}: takeoff N1 estimate unavailable (not modeled)"
+    if elevation_ft is None:
+        return f"{code}: simulation-grade takeoff N1 estimate available" + (
+            f" (elevation of {airport} unknown)" if airport else ""
+        )
+    where = f"{code} at {airport} ({elevation_ft:,.0f} ft)"
+    band = f"the modeled {MIN_PA:,}..{MAX_PA:,} ft pressure-altitude band"
+    if not MIN_PA - PA_MARGIN_FT <= elevation_ft <= MAX_PA + PA_MARGIN_FT:
+        return f"{where}: takeoff N1 estimate unavailable (outside {band})"
+    if not MIN_PA + PA_MARGIN_FT <= elevation_ft <= MAX_PA - PA_MARGIN_FT:
+        return (
+            f"{where}: takeoff N1 estimate may be unavailable (near the edge of {band}; "
+            "depends on the day's pressure)"
+        )
+    return f"{where}: simulation-grade takeoff N1 estimate available"
 
 
 def supported_profiles() -> dict[str, Any]:

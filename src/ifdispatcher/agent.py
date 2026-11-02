@@ -295,6 +295,15 @@ def _timing_lines(args: dict) -> list[str]:
     return lines
 
 
+def _thrust_line(args: dict) -> str:
+    origin = args.get("origin")
+    try:
+        elevation = flights.airport_elevation(origin or "")
+    except ValueError:
+        elevation = None
+    return f"Takeoff thrust: {thrust.support_note(args.get('sim_aircraft'), origin, elevation)}"
+
+
 def approval_summary(tool_call, *_context) -> str:
     """What the user checks before approving a dispatch, built from the call, not the chat."""
     args = tool_call["args"]
@@ -307,7 +316,7 @@ def approval_summary(tool_call, *_context) -> str:
             f"To   {_airport_line(args.get('destination'))}",
             *_timing_lines(args),
             f"Simulator aircraft {args.get('sim_aircraft')}",
-            f"Takeoff thrust: {thrust.support_note(args.get('sim_aircraft'))}",
+            _thrust_line(args),
         ]
     )
 
@@ -432,6 +441,29 @@ def checkpointer():
     return SqliteSaver(sqlite3.connect(directory / "agent.sqlite", check_same_thread=False))
 
 
+def message_ids(state) -> set:
+    return {m.id for m in (state.values or {}).get("messages", [])}
+
+
+def new_briefings(messages, seen: set) -> list[str]:
+    """Briefings that finalize_dispatch completed in messages not in `seen`, in order.
+
+    A turn can finish one leg and stop at the next leg's approval before the model writes a
+    reply, so callers show these with the approval prompt instead of losing them until later.
+    """
+    found = []
+    for message in messages:
+        if message.id in seen or message.type != "tool" or message.name != "finalize_dispatch":
+            continue
+        try:
+            result = json.loads(message.content)
+        except (TypeError, ValueError):
+            continue
+        if result.get("status") == "complete" and result.get("briefing_markdown"):
+            found.append(result["briefing_markdown"])
+    return found
+
+
 def _approval(interrupts) -> dict:
     decisions = []
     for request in interrupts[0].value["action_requests"]:
@@ -463,8 +495,11 @@ def main() -> None:
             continue
         payload: Any = {"messages": [{"role": "user", "content": text}]}
         while True:
+            seen = message_ids(agent.get_state(config))
             result = agent.invoke(payload, config=config, version="v2")
             if result.interrupts:
+                for briefing in new_briefings(result.value["messages"], seen):
+                    print("\ndispatcher>", briefing)
                 payload = Command(resume=_approval(result.interrupts))
                 continue
             print("\ndispatcher>", result.value["messages"][-1].text)

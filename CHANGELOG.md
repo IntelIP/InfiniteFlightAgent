@@ -11,6 +11,27 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-02
+
+### Fixed
+
+- **Tool calls keep their arguments when the model makes several at once.** For a multi-call
+  response the ChatGPT-plan route sends each call's arguments only on its final stream event,
+  and langchain-openai builds arguments from incremental deltas alone, so every call arrived
+  empty. In the v0.2.0 live test the dispatcher's first four flight searches failed this way
+  before a single search succeeded. The model adapter now passes those final arguments
+  through.
+- **A finished leg's briefing is no longer held back.** When the dispatcher finished a leg and
+  went straight to the next leg's approval, the first briefing only appeared at the very end.
+  An approval prompt now carries the briefings finished earlier in the same turn (a
+  `briefings` field in the MCP response; the terminal chat prints them first).
+- **The approval prompt's takeoff thrust note checks the departure airport.** It said
+  "estimate available" for any supported aircraft, even at Denver, where the thrust model has
+  no data. It now uses the airport's elevation: available, "may be unavailable" near the edge
+  of the modeled band, or unavailable, for example `A21N at KDEN (5,434 ft)`.
+- **Tests cannot reach the internet.** A local test run had made one real FlightAware airport
+  lookup through a missed stub; tests now fail on any request that leaves the machine.
+
 ## [0.2.0] - 2026-11-01
 
 ### Fixed
@@ -69,6 +90,7 @@ First public release, and the first version live on the self-hosted Cloudflare d
 - A SimBrief generation that fails before the Generate click leaves the leg retryable instead
   of blocking it permanently ([#3](https://github.com/IntelIP/InfiniteFlightAgent/pull/3)).
 
-[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/IntelIP/InfiniteFlightAgent/releases/tag/v0.1.0

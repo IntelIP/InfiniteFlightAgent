@@ -177,6 +177,18 @@ def test_tool_reads_saved_snapshot(tmp_path, monkeypatch):
     assert result["data"]["calibration_full_thrust_n1"] == 88.0
 
 
+def test_support_note_depends_on_the_departure_airport():
+    from ifdispatcher.thrust import support_note
+
+    assert "estimate available" in support_note("A21N", "KIAD", 312)
+    denver = support_note("A21N", "KDEN", 5434)
+    assert "unavailable" in denver and "KDEN (5,434 ft)" in denver
+    edge = support_note("A20N", "KXXX", 1600)
+    assert "may be unavailable" in edge and "day's pressure" in edge
+    assert "elevation of KIAD unknown" in support_note("A21N", "KIAD", None)
+    assert "not modeled" in support_note("C172", "KDEN", 5434)
+
+
 def test_support_note_for_approval_prompts():
     from ifdispatcher.thrust import support_note
 

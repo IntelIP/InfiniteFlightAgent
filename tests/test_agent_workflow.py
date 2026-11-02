@@ -424,6 +424,59 @@ def test_approval_summary_shows_departure_and_connection(mocked, monkeypatch):
     assert "Connection: 1 h 30 min after leg 1 arrives 2026-10-31 19:00 EDT" in summary
 
 
+def test_approval_summary_warns_when_the_airport_is_too_high(mocked, monkeypatch):
+    from ifdispatcher import agent
+
+    denver = {"name": "Denver Intl", "city": "Denver", "timezone": "America/Denver"}
+    monkeypatch.setattr(
+        agent.flights, "_get", lambda path, params=None: {**denver, "elevation": 5434}
+    )
+    call = gate_call(origin="KDEN", destination="KIAD", departure_utc="2026-11-01T00:30:00Z")
+    summary = agent.approval_summary(call)
+    assert "Takeoff thrust: A20N at KDEN (5,434 ft): takeoff N1 estimate unavailable" in summary
+
+
+def test_briefings_finished_in_a_turn_are_returned_with_the_next_approval():
+    from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+
+    from ifdispatcher.agent import new_briefings
+
+    done = json.dumps({"status": "complete", "briefing_markdown": "**SPAWN:** Gate E7"})
+    earlier = ToolMessage(done, tool_call_id="a", name="finalize_dispatch", id="old")
+    messages = [
+        HumanMessage("go", id="h"),
+        earlier,
+        AIMessage("", id="ai"),
+        ToolMessage(
+            json.dumps({"status": "stale_plan"}), tool_call_id="b", name="finalize_dispatch", id="b"
+        ),
+        ToolMessage(done.replace("E7", "B17"), tool_call_id="c", name="finalize_dispatch", id="c"),
+        ToolMessage(done, tool_call_id="d", name="generate_in_simbrief", id="d"),
+    ]
+    # Only briefings completed in this turn, not ones already shown or other tools' results.
+    assert new_briefings(messages, {"h", "old"}) == ["**SPAWN:** Gate B17"]
+
+
+def test_approval_response_carries_finished_briefings(monkeypatch):
+    from types import SimpleNamespace
+
+    from langchain_core.messages import ToolMessage
+
+    from ifdispatcher import remote
+
+    done = json.dumps({"status": "complete", "briefing_markdown": "**SPAWN:** Gate E7"})
+    request = {"name": "dispatch_flight", "args": {"leg": "2"}, "description": "Leg 2 of T"}
+    result = SimpleNamespace(
+        interrupts=[SimpleNamespace(value={"action_requests": [request]})],
+        value={"messages": [ToolMessage(done, tool_call_id="a", name="finalize_dispatch", id="n")]},
+    )
+    turn = remote._turn(result, "t", seen=set())
+    assert turn["status"] == "approval_required"
+    assert turn["briefings"] == ["**SPAWN:** Gate E7"]
+    assert turn["next"].startswith("Show these finished briefings first")
+    assert "briefings" not in remote._turn(result, "t", seen={"n"})
+
+
 def test_agent_has_no_task_subagent():
     # A general-purpose subagent would reach dispatch_flight without the dispatcher's
     # instructions. Building the agent makes no model or network call.
