@@ -1,34 +1,34 @@
 {
   "schemaVersion": "ifd-live-acceptance/v1",
   "acceptance": "BUILD-04",
-  "recorded_at": "2026-11-02T02:44:28.283479+00:00",
+  "recorded_at": "2026-11-02T03:20:01.839479+00:00",
   "deployment": {
-    "commit": "d34151df06de49a5e04bfa4894cdd5dee81a23cd",
-    "worker_version": "0de0c876-5953-451d-86e5-7ba4680647cc"
+    "commit": "b74af7faf2855351713fbd0396209348911edabd",
+    "worker_version": "1e9d0d5a-e91f-4520-95c3-7bf041159189"
   },
-  "integration_digest": "5dff4acb392d63b329974a0d4fc495f8df077e1067efe12139e22be08c5eb0b4",
+  "integration_digest": "977ff06d0224746088f0989fa41c4c11b1eb80a930d7e7e70281f366af320caf",
   "outcomes": {
     "generation_through_mcp": {
       "passed": true,
-      "detail": "KDEN-KSFO-20261103 leg 1, KDEN-KSFO-20261103 leg 2"
+      "detail": "KDEN-KLAX-20261103 leg 1, KDEN-KLAX-20261103 leg 2"
     },
     "neo_response": {
       "passed": true,
-      "detail": "KDEN-KSFO-20261103 leg 1 (A21N), KDEN-KSFO-20261103 leg 2 (A21N)"
+      "detail": "KDEN-KLAX-20261103 leg 1 (A21N), KDEN-KLAX-20261103 leg 2 (A21N)"
     },
     "two_legs_retained": {
       "passed": true,
-      "detail": "KDEN-KSFO-20261103 legs 1 and 2"
+      "detail": "KDEN-KLAX-20261103 legs 1 and 2"
     },
     "authentication_and_resumption": {
       "passed": true,
-      "detail": "approval wait, resume and signed-in generation: KDEN-KSFO-20261103"
+      "detail": "approval wait, resume and signed-in generation: KDEN-KLAX-20261103"
     }
   },
   "cases": [
     {
-      "thread": "trip-ecf8995a5a",
-      "trip": "KDEN-KSFO-20261103",
+      "thread": "trip-7c3379a49f",
+      "trip": "KDEN-KLAX-20261103",
       "interrupts": 2,
       "resumes": 4,
       "legs": [
@@ -37,21 +37,21 @@
           "revision": 1,
           "requested": {
             "origin": "KDEN",
-            "destination": "KSFO",
+            "destination": "KLAX",
             "aircraft": "A21N",
-            "departure": "2026-11-03T13:00:00Z"
+            "departure": "2026-11-03T16:50:00Z"
           },
           "generation": {
             "status": "generated",
-            "clicked_at": "2026-11-02T02:40:54.949775+00:00",
+            "clicked_at": "2026-11-02T03:17:21.719751+00:00",
             "browser_session": true
           },
           "snapshot": {
-            "sha256": "a97b9d461fd8881997a193ee6861e58421f5c9a99b5ad9287e10d16aebbc5902",
-            "retrieved_at": "2026-11-02T02:41:06.915722+00:00",
-            "generated_at": "2026-11-02T02:40:56Z",
+            "sha256": "6b91cf6b141bda10b6b6e6f3fe6b6d6c83f76d384ee52696739619038f78c450",
+            "retrieved_at": "2026-11-02T03:17:33.555922+00:00",
+            "generated_at": "2026-11-02T03:17:22Z",
             "origin": "KDEN",
-            "destination": "KSFO",
+            "destination": "KLAX",
             "aircraft": "A21N",
             "takeoff_status": "available"
           }
@@ -60,21 +60,21 @@
           "leg": "2",
           "revision": 1,
           "requested": {
-            "origin": "KSFO",
+            "origin": "KLAX",
             "destination": "KDEN",
             "aircraft": "A21N",
-            "departure": "2026-11-03T17:01:00Z"
+            "departure": "2026-11-03T20:45:00Z"
           },
           "generation": {
             "status": "generated",
-            "clicked_at": "2026-11-02T02:41:33.368167+00:00",
+            "clicked_at": "2026-11-02T03:18:02.538350+00:00",
             "browser_session": true
           },
           "snapshot": {
-            "sha256": "383681331f702de749cfc645a50e8b930afc35d484825852e028b95e6cabda09",
-            "retrieved_at": "2026-11-02T02:41:44.856603+00:00",
-            "generated_at": "2026-11-02T02:41:34Z",
-            "origin": "KSFO",
+            "sha256": "ac9711335eaa129670897d17e07c92f4ded735ee57cfddb84bbd307dfc5a20d5",
+            "retrieved_at": "2026-11-02T03:18:13.899820+00:00",
+            "generated_at": "2026-11-02T03:18:03Z",
+            "origin": "KLAX",
             "destination": "KDEN",
             "aircraft": "A21N",
             "takeoff_status": "available"
