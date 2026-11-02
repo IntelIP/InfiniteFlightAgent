@@ -49,10 +49,12 @@ mcp = FastMCP(
 )
 
 
-def _turn(result, thread_id: str) -> dict[str, Any]:
+def _turn(result, thread_id: str, seen: set) -> dict[str, Any]:
     if result.interrupts:
+        from ifdispatcher.agent import new_briefings
+
         request = result.interrupts[0].value["action_requests"][0]
-        return {
+        turn = {
             "status": "approval_required",
             "thread_id": thread_id,
             "action": request["name"],
@@ -60,14 +62,26 @@ def _turn(result, thread_id: str) -> dict[str, Any]:
             "summary": request["description"],
             "next": "Show the summary to the user, then call approve_dispatch with their answer.",
         }
+        briefings = new_briefings(result.value["messages"], seen)
+        if briefings:
+            turn["briefings"] = briefings
+            turn["next"] = (
+                "Show these finished briefings first, then the summary, then call "
+                "approve_dispatch with the user's answer."
+            )
+        return turn
     return {"status": "reply", "thread_id": thread_id, "reply": result.value["messages"][-1].text}
 
 
 def _run(payload, thread_id: str) -> dict[str, Any]:
     if not paid_operations_enabled():
         return {"status": "paid_operations_disabled", "thread_id": thread_id}
+    from ifdispatcher.agent import message_ids
+
     config = {"configurable": {"thread_id": thread_id}, "tags": ["remote"]}
-    return _turn(_get_agent().invoke(payload, config=config, version="v2"), thread_id)
+    agent = _get_agent()
+    seen = message_ids(agent.get_state(config))
+    return _turn(agent.invoke(payload, config=config, version="v2"), thread_id, seen)
 
 
 async def _wait(thread_id: str) -> dict[str, Any]:
@@ -101,8 +115,9 @@ async def plan_flight(message: str, thread_id: str | None = None) -> dict[str, A
 
     Start a conversation without thread_id; pass the returned thread_id on every later message
     of the same trip. Relay the reply to the user as written. If the status is
-    approval_required, show the summary and ask the user before calling approve_dispatch. If the
-    status is running, call turn_status with the thread_id until it returns the reply.
+    approval_required, show any "briefings" (legs already finished) and then the summary, and ask
+    the user before calling approve_dispatch. If the status is running, call turn_status with the
+    thread_id until it returns the reply.
     """
     thread_id = thread_id or f"trip-{uuid.uuid4().hex[:10]}"
     payload = {"messages": [{"role": "user", "content": message}]}

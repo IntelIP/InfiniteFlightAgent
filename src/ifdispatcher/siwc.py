@@ -23,6 +23,8 @@ from urllib.parse import parse_qs, urlencode, urlparse
 import httpx
 import jwt
 from langchain_openai import ChatOpenAI
+from openai.types.responses import ResponseFunctionCallArgumentsDeltaEvent
+from pydantic import model_validator
 
 from ifdispatcher.config import setting
 
@@ -291,8 +293,80 @@ def access_token() -> str:
         return record["access_token"]
 
 
+def _with_missing_delta(event, streamed: set[str]):
+    """Yield the event, preceded by one argument delta when the route sent none for the call."""
+    if event.type == "response.function_call_arguments.delta":
+        streamed.add(event.item_id)
+    elif (
+        event.type == "response.function_call_arguments.done"
+        and event.item_id not in streamed
+        and event.arguments
+    ):
+        yield ResponseFunctionCallArgumentsDeltaEvent.model_construct(
+            type="response.function_call_arguments.delta",
+            item_id=event.item_id,
+            output_index=event.output_index,
+            sequence_number=event.sequence_number,
+            delta=event.arguments,
+        )
+    yield event
+
+
+class _ArgumentsFromDone:
+    """Response stream that keeps function-call arguments sent only on their `done` event.
+
+    The ChatGPT-plan route can stream a function call with no argument deltas, only
+    `response.function_call_arguments.done` (observed for every call in a multi-call
+    response). langchain-openai builds arguments from deltas alone, so those calls reached
+    the tools with empty arguments. Re-emitting the final arguments as one delta keeps them.
+    """
+
+    def __init__(self, stream):
+        self._stream = stream
+
+    def __enter__(self):
+        self._stream.__enter__()
+        return self
+
+    def __exit__(self, *exc):
+        return self._stream.__exit__(*exc)
+
+    def __iter__(self):
+        streamed: set[str] = set()
+        for event in self._stream:
+            yield from _with_missing_delta(event, streamed)
+
+    async def __aenter__(self):
+        await self._stream.__aenter__()
+        return self
+
+    async def __aexit__(self, *exc):
+        return await self._stream.__aexit__(*exc)
+
+    async def __aiter__(self):
+        streamed: set[str] = set()
+        async for event in self._stream:
+            for item in _with_missing_delta(event, streamed):
+                yield item
+
+
 class ChatGPTPlanModel(ChatOpenAI):
     """ChatOpenAI shaped for the ChatGPT-plan Responses route (preview rules)."""
+
+    @model_validator(mode="after")
+    def _keep_arguments_sent_on_done(self):
+        sync, aio = self.root_client, self.root_async_client
+        if sync is not None:
+            create = sync.responses.create
+            sync.responses.create = lambda **kw: _ArgumentsFromDone(create(**kw))
+        if aio is not None:
+            acreate = aio.responses.create
+
+            async def wrapped(**kw):
+                return _ArgumentsFromDone(await acreate(**kw))
+
+            aio.responses.create = wrapped
+        return self
 
     def _get_request_payload(self, input_, *, stop=None, **kwargs) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)

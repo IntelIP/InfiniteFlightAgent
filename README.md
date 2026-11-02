@@ -17,8 +17,8 @@ your own ChatGPT plan, from the terminal or any MCP client.
 [Self-host on Cloudflare](docs/implementation/deployment.md) ·
 [Aircraft coverage](docs/aircraft-coverage.md) · [Changelog](CHANGELOG.md)
 
-> **Early release (v0.2.0).** It works end to end locally and on the self-hosted Cloudflare
-> deployment. Thrust targets are simulation-grade estimates. For flight simulation only: never
+> **Early release.** It works end to end locally and on the self-hosted Cloudflare
+> deployment. See the [changelog](CHANGELOG.md) for the current version. Thrust targets are simulation-grade estimates. For flight simulation only: never
 > use any output of this project for real-world flight planning or aircraft operation. See
 > [status and limits](#status-and-limits).
 
