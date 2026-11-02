@@ -11,6 +11,19 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-02
+
+### Fixed
+
+- **Thrust warnings are printed in the briefing.** The estimator's warnings only appeared in
+  its structured notes, so whether a pilot saw them depended on the model relaying them. In the
+  v0.3.0 live test it didn't, for a Denver estimate that was flagged as suspect. The TAKEOFF
+  THRUST line now ends with them, most serious first, for example:
+  `set N1 0.880 x full-thrust N1 (range 0.825-0.934) — SUSPECT: thrust reduction over the 25%
+  FAA AC 25-13 limit; high altitude (5,511 ft): engine behavior extrapolated, wider range`.
+  The thrust result also gains a `warnings` list. Informational notes stay out of the line,
+  and N1 values are unchanged.
+
 ## [0.3.0] - 2026-11-02
 
 ### Added
@@ -119,7 +132,8 @@ First public release, and the first version live on the self-hosted Cloudflare d
 - A SimBrief generation that fails before the Generate click leaves the leg retryable instead
   of blocking it permanently ([#3](https://github.com/IntelIP/InfiniteFlightAgent/pull/3)).
 
-[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.1.0...v0.2.0

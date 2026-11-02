@@ -111,6 +111,19 @@ def test_finalize_composes_briefing(mocked):
     assert "UA1831 (ET1386)" in brief and "real aircraft A319" in brief
 
 
+def test_briefing_thrust_line_carries_the_estimators_warnings(mocked):
+    dispatch()
+    raw = json.loads(neo_plan(datetime.now(timezone.utc).isoformat()))
+    runway = next(r for r in raw["tlr"]["takeoff"]["runway"] if r["identifier"] == "30")
+    runway.update(elevation="5500", flex_temperature="45")
+    raw["tlr"]["takeoff"]["conditions"].update(temperature="9", altimeter="29.92")
+    mocked["plan"] = json.dumps(raw).encode()
+    brief = workflow.finalize_dispatch("KIAD-KEWR-20261031", "1")["briefing_markdown"]
+    thrust_line = next(line for line in brief.splitlines() if "TAKEOFF THRUST" in line)
+    assert "SUSPECT: thrust reduction over the 25% FAA AC 25-13 limit" in thrust_line
+    assert "high altitude (5,501 ft): engine behavior extrapolated" in thrust_line
+
+
 def test_generation_clicks_at_most_once_per_revision(mocked, monkeypatch):
     dispatch()
     calls = []

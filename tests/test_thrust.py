@@ -277,3 +277,21 @@ def test_no_high_altitude_widening_at_or_below_2000_ft():
         result = estimate(synthetic_neo(elev=elev))
         assert result["status"] == "estimated"
         assert not any("EASA E.110" in a for a in result["assumptions"])
+
+
+def test_warnings_are_printed_in_the_briefing_line_most_serious_first():
+    # Like the live Denver plan (FLEX 43-47 C, OAT 9-11 C, ~5,500 ft): both warnings fire.
+    denver = estimate(synthetic_neo(elev="5500", flex="45", oat="9"))
+    line = denver["briefing"]
+    assert denver["warnings"] == [
+        "SUSPECT: thrust reduction over the 25% FAA AC 25-13 limit",
+        "high altitude (5,501 ft): engine behavior extrapolated, wider range",  # 29.92 inHg
+    ]
+    assert line.endswith(" — " + "; ".join(denver["warnings"]))
+    assert line.index("SUSPECT") < line.index("high altitude")
+
+
+def test_ordinary_estimate_has_no_warnings():
+    sea = estimate(synthetic_neo(elev="300", flex="50", oat="15"))
+    assert sea["warnings"] == []
+    assert " — " not in sea["briefing"]
