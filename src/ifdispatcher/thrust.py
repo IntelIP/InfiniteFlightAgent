@@ -15,7 +15,7 @@ from typing import Any
 FBW_REF = "FlyByWire A32NX ThrustLimits_A32NX.hpp @66021c24448c (GPL-3.0; simulation, provenance unstated)"
 PW_TCDS = "EASA TCDS IM.E.093 Issue 14 (16 Oct 2026), take-off flat rating"
 
-# FlyByWire TO rows within the supported pressure-altitude band:
+# Every FlyByWire TO row (limits[0..20]), copied verbatim:
 # (altitude ft, corner point C, limit point C, CN1 flat, CN1 at limit point, CN1 at 100 C)
 FBW_TO = [
     (-2000, 48.0, 55.0, 81.351, 79.370, 61.535),
@@ -24,8 +24,38 @@ FBW_TO = [
     (500, 42.0, 52.0, 84.210, 81.618, 62.655),
     (1000, 42.0, 52.0, 84.579, 81.712, 62.655),
     (2000, 40.0, 50.0, 85.594, 82.720, 62.655),
+    (3000, 36.0, 48.0, 86.657, 83.167, 61.960),
+    (4000, 32.0, 46.0, 87.452, 83.332, 61.206),
+    (5000, 29.0, 44.0, 88.833, 84.166, 61.206),
+    (6000, 25.0, 42.0, 90.232, 84.815, 61.206),
+    (7000, 21.0, 40.0, 91.711, 85.565, 61.258),
+    (8000, 17.0, 38.0, 93.247, 86.225, 61.777),
+    (9000, 15.0, 36.0, 94.031, 86.889, 60.968),
+    (10000, 13.0, 34.0, 94.957, 88.044, 60.935),
+    (11000, 12.0, 32.0, 95.295, 88.526, 59.955),
+    (12000, 11.0, 30.0, 95.568, 88.818, 58.677),
+    (13000, 10.0, 28.0, 95.355, 88.819, 59.323),
+    (14000, 10.0, 26.0, 95.372, 89.311, 59.965),
+    (15000, 8.0, 24.0, 95.686, 89.907, 58.723),
+    (16000, 5.0, 22.0, 96.160, 89.816, 57.189),
+    (16600, 5.0, 22.0, 96.560, 89.816, 57.189),
 ]
 MIN_PA, MAX_PA = FBW_TO[0][0], FBW_TO[-1][0]
+# FlyByWire TO bleed N1 corrections (packs, nacelle anti-ice, wing anti-ice), keyed by
+# (pressure altitude < 8000 ft, OAT below the corner point); a FLEX above the limit point
+# uses FBW_FLEX_BLEED at any altitude.
+FBW_TO_BLEED = {
+    (True, True): (-0.4, -0.6, -0.7),
+    (True, False): (-0.5, -0.6, -0.7),
+    (False, True): (-0.6, -0.8, -0.8),
+    (False, False): (-0.7, -0.8, -0.8),
+}
+FBW_FLEX_BLEED = (-0.6, -0.7, -0.7)
+# Above 2,000 ft the corner point follows FlyByWire's LEAP-1A26 altitude lapse, but engines with
+# the same sea-level rating can differ at altitude (EASA E.110), so the corner tolerance grows by
+# this fraction of the corner's drop from its 2,000 ft value (about +/-3 C more at Denver).
+HIGH_ALTITUDE_PA = 2000
+HIGH_ALTITUDE_CORNER_FRACTION = 0.25
 
 # Sea-level flat-rating (corner point) temperature, source, +/- C applied in the uncertainty
 # range, and family. LEAP-1A and LEAP-1B flat ratings are not published in EASA E.110/E.115.
@@ -116,10 +146,10 @@ def fbw_leap1a26_n1(pa: float, oat: float, flex: float | None, packs: int, nacel
     else:
         cn1 = flat + (last - flat) * (temp - cp) / (lp - cp)
     if flex and flex > lp:
-        bleed = packs * -0.6 + nacelle * -0.7 + wing * -0.7
+        packs_c, nacelle_c, wing_c = FBW_FLEX_BLEED
     else:
-        packs_c, nacelle_c = (-0.4, -0.6) if oat < cp else (-0.5, -0.6)
-        bleed = packs * packs_c + nacelle * nacelle_c + wing * -0.7
+        packs_c, nacelle_c, wing_c = FBW_TO_BLEED[(pa < 8000, oat < cp)]
+    bleed = packs * packs_c + nacelle * nacelle_c + wing * wing_c
     return cn1 * math.sqrt((273.15 + oat) / 288.15) + bleed
 
 
@@ -272,6 +302,10 @@ def estimate_takeoff_n1(
     nacelle = int(anti_ice in ("ON", "ENG", "ALL"))
     wing = int(anti_ice in ("ALL", "WING"))
     corner_shift = _interp(pa, 1) - FBW_TO[2][1]
+    high_altitude = HIGH_ALTITUDE_CORNER_FRACTION * max(
+        0.0, _interp(HIGH_ALTITUDE_PA, 1) - _interp(pa, 1)
+    )
+    tolerance = corner_tolerance + high_altitude
     temp_used = assumed_temp if uses_assumed else None
 
     def temp_ratio(corner_delta: float, scale: float) -> float:
@@ -288,7 +322,7 @@ def estimate_takeoff_n1(
     nominal = ratio(0.0, 1.0, n_mid, 0.0)
     grid = [
         ratio(d, s, n, dd)
-        for d in (-corner_tolerance, 0.0, corner_tolerance)
+        for d in (-tolerance, 0.0, tolerance)
         for s in SHAPE_SCALES
         for n in (THRUST_EXPONENTS if derate else (n_mid,))
         for dd in ((-DERATE_TOLERANCE, 0.0, DERATE_TOLERANCE) if derate else (0.0,))
@@ -299,6 +333,11 @@ def estimate_takeoff_n1(
     notes = []
     if temp_used is not None and temp_ratio(0.0, 1.0) == 1.0:
         notes.append("assumed temperature at or below the flat rating or OAT: no extra reduction")
+    if high_altitude:
+        notes.append(
+            f"pressure altitude {pa:,.0f} ft: above {HIGH_ALTITUDE_PA:,} ft the engine's corner "
+            f"point is extrapolated with FlyByWire's LEAP-1A26 lapse, so the range is wider"
+        )
     if temp_thrust < 0.75:
         notes.append(
             "assumed-temperature reduction exceeds 25% of the rating (FAA AC 25-13); treat as suspect"
@@ -335,6 +374,15 @@ def estimate_takeoff_n1(
     assumptions = [
         f"corner point {corner_sl:.0f} C at sea level ({corner_source}), +/-{corner_tolerance:.0f} C",
         "lapse slopes borrowed from a LEAP-1A26 simulation, +/-20%",
+        *(
+            [
+                f"above {HIGH_ALTITUDE_PA:,} ft the corner point follows FlyByWire's LEAP-1A26 "
+                "altitude lapse; engines with equal sea-level ratings can differ at altitude "
+                f"(EASA E.110), so +/-{high_altitude:.1f} C more"
+            ]
+            if high_altitude
+            else []
+        ),
         f"altimeter unit {qnh_unit} inferred from its physical range (SimBrief gives none)",
         "temperatures in degrees C; elevation in feet",
         "bleed/anti-ice effects inside the ratio are ignored (<~0.5% N1)",

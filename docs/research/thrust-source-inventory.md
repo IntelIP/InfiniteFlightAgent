@@ -106,3 +106,26 @@ Whatever the choice, check every result against the AC 25-13 minimum and the cer
 - **Hudson:** decide D-09 for the United A321neo PW1133G-JM case: option 1, 2, 3, or a combination.
 - **Can start immediately (Ralph-loop eligible):** implement `resolve_takeoff_n1` for LEAP-1A26 by porting the FlyByWire method under GPL-3.0 obligations, with pinned-commit provenance. Reproduce worked cases from the source logic and label every output `candidate_method`. Completion criterion: tests reproduce the source within its precision, and every unsupported engine returns `unsupported_profile`.
 - **In the simulator, by Hudson:** the Infinite Flight PERF/E-WD/engine-variant observations listed under DISC-11.
+
+## High-altitude extension (v0.3.0, November 2, 2026)
+
+The estimator originally ported only FlyByWire's takeoff rows from -2,000 to 2,000 ft, so
+high airports such as Denver returned "unavailable". `ThrustLimits_A32NX.hpp` at the pinned
+commit (`66021c24448c`, file SHA-256 `1d9871dd…725bfd`) has 21 takeoff rows up to 16,600 ft.
+All of them are now ported verbatim, together with its altitude-dependent bleed corrections
+(larger at and above 8,000 ft).
+
+What this does and doesn't establish:
+
+- The rows are FlyByWire's LEAP-1A26 simulation, as before; their provenance is still unstated.
+- The other engines' sea-level corner points are shifted with FlyByWire's corner lapse. EASA
+  E.110 notes that engines with the same static rating deliver different thrust at altitude, so
+  this shift is an assumption. Above 2,000 ft the corner tolerance therefore grows by 25% of
+  the corner's drop from its 2,000 ft value (+/-3.2 C more at 5,456 ft). The 25% is a judgment
+  that keeps the widening proportional to the extrapolation; no source quantifies it.
+- On a real SimBrief A321neo plan from Denver (FLEX 47 C, OAT 11 C, 5,456 ft), the estimate is
+  0.862 x full-thrust N1 (0.810-0.920) and is flagged as exceeding FAA AC 25-13's 25% reduction.
+  SimBrief would not plan that, which suggests the extrapolated LEAP-1A32 corner is low
+  (conservative N1) at that altitude. Calibrating the corner against SimBrief's own FLEX limits
+  is a possible follow-up.
+- Estimates at or below 2,000 ft are unchanged (270 combinations compared with v0.2.1).

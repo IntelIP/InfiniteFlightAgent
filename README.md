@@ -158,8 +158,9 @@ Worker version with the same name. A running server reports its version at `/hea
   Cloudflare deployment, which planned its first live flights on November 1, 2026.
 - **Thrust targets are simulation-grade estimates**, shown with a range. No aircraft is yet
   verified against reference data ([aircraft coverage](docs/aircraft-coverage.md)). The model
-  covers airports from -2,000 to 2,000 ft pressure altitude, so high airports such as Denver
-  get no N1 target.
+  covers pressure altitudes from -2,000 to 16,600 ft, FlyByWire's full takeoff table. Above
+  2,000 ft, such as at Denver, the engine's behavior is extrapolated, so the range is wider and
+  large FLEX reductions there may be flagged as suspect.
 - **FlightAware only sees about two days ahead.** Flights further out have no live schedule or
   gate.
 - **It does not control the simulator.** It never claims your plan was imported, your aircraft

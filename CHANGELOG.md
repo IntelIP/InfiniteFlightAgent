@@ -11,6 +11,35 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-02
+
+### Added
+
+- **Takeoff N1 estimates at high-altitude airports.** The estimator now uses all 21 of
+  FlyByWire's A32NX takeoff rows, covering pressure altitudes from -2,000 to 16,600 ft instead
+  of -2,000 to 2,000 ft. Airports such as Denver (about 5,400 ft) get an N1 target where they
+  used to get "unavailable". The rows are copied verbatim from `ThrustLimits_A32NX.hpp` at the
+  same pinned commit, and a test checks the port against a line-by-line transcription of
+  FlyByWire's formula from -1,500 to 16,600 ft.
+
+### Changed
+
+- **Wider ranges above 2,000 ft.** There the engine's corner point (the temperature up to which
+  it holds full rated thrust) follows FlyByWire's LEAP-1A26 altitude lapse. Engines with the
+  same sea-level rating can differ at altitude (EASA E.110), so the corner tolerance grows by
+  25% of the corner's drop from its 2,000 ft value, about +/-3 C more at Denver. The briefing
+  says when this applies. Estimates at or below 2,000 ft are unchanged; 270 combinations were
+  compared with v0.2.1.
+- **Bleed corrections follow FlyByWire at 8,000 ft and above**, where its pack and anti-ice
+  N1 corrections are larger. This affects the FlyByWire reference N1 shown for the A320neo.
+- The approval prompt's thrust note uses the new range, so Denver now reads "estimate
+  available".
+
+Large FLEX reductions at high airports can trip the existing FAA AC 25-13 check (more than a
+25% thrust reduction) and be flagged as suspect. On a real Denver A321neo plan (FLEX 47 C at
+5,456 ft) the estimate is 0.862 x full-thrust N1 (0.810-0.920) and carries that flag,
+suggesting the extrapolated corner point is conservative there.
+
 ## [0.2.1] - 2026-11-02
 
 ### Fixed
@@ -90,7 +119,8 @@ First public release, and the first version live on the self-hosted Cloudflare d
 - A SimBrief generation that fails before the Generate click leaves the leg retryable instead
   of blocking it permanently ([#3](https://github.com/IntelIP/InfiniteFlightAgent/pull/3)).
 
-[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/IntelIP/InfiniteFlightAgent/releases/tag/v0.1.0
