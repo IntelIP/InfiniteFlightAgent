@@ -229,6 +229,20 @@ class Store:
             row = db.execute("SELECT value FROM settings WHERE name=?", (name,)).fetchone()
         return row[0] if row else None
 
+    def trip_legs(self, trip: str) -> list[tuple[str, dict, dict]]:
+        """Each dispatched leg of a trip at its latest revision: (leg, request, meta)."""
+        with self.connect() as db:
+            rows = db.execute(
+                "SELECT r.leg, r.payload, m.payload FROM requests r LEFT JOIN leg_meta m "
+                "ON m.trip = r.trip AND m.leg = r.leg AND m.revision = r.revision "
+                "WHERE r.trip=? ORDER BY r.leg, r.revision",
+                (trip,),
+            ).fetchall()
+        latest = {
+            leg: (json.loads(request), json.loads(meta or "{}")) for leg, request, meta in rows
+        }
+        return [(leg, request, meta) for leg, (request, meta) in latest.items()]
+
     def read_request(self, trip: str, leg: str, revision: int) -> dict | None:
         with self.connect() as db:
             row = db.execute(

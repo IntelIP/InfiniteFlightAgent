@@ -1,6 +1,6 @@
 [project]
 name = "infinite-flight-dispatcher"
-version = "0.1.0"
+version = "0.2.0"
 description = "AI dispatcher for Infinite Flight: real flights, SimBrief plans, and takeoff N1 estimates over MCP"
 requires-python = ">=3.11"
 license = "GPL-3.0-only"

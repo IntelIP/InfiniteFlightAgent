@@ -184,6 +184,11 @@ def airport_name(airport: str) -> str:
     return f"{name} ({place})" if place else name
 
 
+def local_time(value: str, airport: str) -> str:
+    """A UTC time as local time at an airport, e.g. "2026-11-02 08:20 EST"."""
+    return _local(value, airport_timezone(airport)) or value
+
+
 def _local(value: str | None, tz: str | None) -> str | None:
     moment = _parse(value)
     if not moment or not tz:

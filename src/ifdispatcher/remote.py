@@ -22,6 +22,7 @@ from langgraph.types import Command
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from ifdispatcher import __version__
 from ifdispatcher.config import export_tracing_settings, paid_operations_enabled, setting
 
 TOKEN_HEADER = "x-ifd-internal-token"
@@ -142,6 +143,7 @@ async def health(_: Request) -> JSONResponse:
     return JSONResponse(
         {
             "status": "ok",
+            "version": __version__,
             "paid_operations_enabled": paid_operations_enabled(),
             "database": bool(setting("DATABASE_URL")),
         }

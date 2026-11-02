@@ -325,6 +325,7 @@ def test_one_dispatch_per_leg_still_needs_approval(monkeypatch):
             "sim_aircraft": "A21N",
             "departure_local_date": "2026-10-31",
             "fa_flight_id": "UAL796-x",
+            "departure_utc": OUT_UTC,
         },
     }
     graph = agent.build_agent(
@@ -334,6 +335,93 @@ def test_one_dispatch_per_leg_still_needs_approval(monkeypatch):
     result = graph.invoke({"messages": [{"role": "user", "content": "go"}]}, config, version="v2")
     assert result.interrupts
     assert result.interrupts[0].value["action_requests"][0]["name"] == "dispatch_flight"
+
+
+LANDS_UTC = "2026-10-31T23:00:00Z"  # leg 1 (KIAD-KEWR) scheduled arrival
+
+
+def dispatch_leg_one(mocked):
+    mocked["flight"]["times"]["scheduled_in"] = {"utc": LANDS_UTC, "local": "2026-10-31 19:00 EDT"}
+    assert dispatch()["status"] == "awaiting_simbrief_generation"
+
+
+def private_leg_two(departure_utc):
+    return workflow.dispatch_flight(
+        "KIAD-KEWR-20261031",
+        "2",
+        "KEWR",
+        "KBOS",
+        "A20N",
+        "2026-10-31",
+        departure_utc=departure_utc,
+        private_callsign="N172HD",
+    )
+
+
+def test_leg_leaving_before_the_previous_leg_lands_is_refused(mocked):
+    dispatch_leg_one(mocked)
+    early = private_leg_two("2026-10-31T23:15:00Z")
+    assert early["status"] == "connection_conflict"
+    assert "0 h 15 min after leg 1 arrives" in early["reason"]
+    later = private_leg_two("2026-11-01T00:30:00Z")
+    assert later["status"] == "awaiting_simbrief_generation"
+    assert later["connection"] == {"leg": "1", "arrival_utc": LANDS_UTC, "connection": "1 h 30 min"}
+
+
+def gate_call(**args):
+    leg = {
+        "trip": "KIAD-KEWR-20261031",
+        "leg": "2",
+        "origin": "KEWR",
+        "destination": "KBOS",
+        "sim_aircraft": "A20N",
+        "departure_local_date": "2026-10-31",
+        "private_callsign": "N172HD",
+    }
+    return {"name": "dispatch_flight", "id": "c0", "args": {**leg, **args}}
+
+
+def run_gate(call):
+    from langchain_core.messages import AIMessage
+    from langgraph.checkpoint.memory import InMemorySaver
+
+    from ifdispatcher import agent
+
+    model = ScriptedModel([AIMessage("", tool_calls=[call]), AIMessage("Picking another.")])
+    graph = agent.build_agent(model=model, checkpointer=InMemorySaver())
+    config = {"configurable": {"thread_id": "t"}}
+    return graph.invoke({"messages": [{"role": "user", "content": "go"}]}, config, version="v2")
+
+
+@pytest.mark.parametrize(
+    "args, reason",
+    [
+        ({}, "needs departure_utc"),
+        ({"departure_utc": "2026-10-31T22:10:00Z"}, "0 h 50 min before leg 1 arrives"),
+    ],
+)
+def test_gate_refuses_missing_time_or_broken_connection_before_approval(
+    mocked, monkeypatch, args, reason
+):
+    from ifdispatcher import agent
+
+    dispatch_leg_one(mocked)
+    monkeypatch.setattr(agent.flights, "airport_name", lambda code: "Test airport")
+    result = run_gate(gate_call(**args))
+    assert not result.interrupts  # never reached the approval prompt
+    refused = [m for m in result.value["messages"] if m.type == "tool"]
+    assert len(refused) == 1 and reason in refused[0].content
+
+
+def test_approval_summary_shows_departure_and_connection(mocked, monkeypatch):
+    from ifdispatcher import agent
+
+    dispatch_leg_one(mocked)
+    airports = {"name": "Newark Liberty Int'l", "city": "Newark", "timezone": "America/New_York"}
+    monkeypatch.setattr(agent.flights, "_get", lambda path, params=None: airports)
+    summary = agent.approval_summary(gate_call(departure_utc="2026-11-01T00:30:00Z"))
+    assert "Departs 2026-10-31 20:30 EDT (2026-11-01T00:30:00Z)" in summary
+    assert "Connection: 1 h 30 min after leg 1 arrives 2026-10-31 19:00 EDT" in summary
 
 
 def test_agent_has_no_task_subagent():

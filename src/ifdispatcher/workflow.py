@@ -15,10 +15,73 @@ from ifdispatcher.config import data_dir, setting
 from ifdispatcher.core import Dispatch, Store, fetch_sync, normalize, open_store
 
 MAX_DEPARTURE_DRIFT = timedelta(hours=3)
+MIN_CONNECTION = timedelta(minutes=45)
 
 
 def _store() -> Store:
     return open_store()
+
+
+def _arrival(meta: dict) -> datetime | None:
+    """A dispatched airline leg's expected arrival; private legs have none on record."""
+    times = (meta.get("flight") or {}).get("times") or {}
+    value = (times.get("estimated_in") or {}).get("utc") or (times.get("scheduled_in") or {}).get(
+        "utc"
+    )
+    return _utc(value) if value else None
+
+
+def _duration(gap: timedelta) -> str:
+    minutes = abs(int(gap.total_seconds() // 60))
+    return f"{minutes // 60} h {minutes % 60:02d} min"
+
+
+def _relative(gap: timedelta) -> str:
+    return f"{_duration(gap)} {'after' if gap >= timedelta(0) else 'before'}"
+
+
+def connection(
+    trip: str, leg: str, departure: datetime | str, arrival: datetime | None = None
+) -> dict[str, Any]:
+    """How a leg fits around the trip's other dispatched legs, by time.
+
+    Returns "follows" (the leg it departs after, its arrival, the connection) and, when the leg
+    leaves less than MIN_CONNECTION after that arrival or arrives too late for the next leg, a
+    "conflict" sentence. Legs without a known arrival (private flights) are not checked.
+    """
+    departure = _utc(departure) if isinstance(departure, str) else departure
+    others = [
+        (other, _utc(request["departure"]), _arrival(meta))
+        for other, request, meta in _store().trip_legs(trip)
+        if other != leg and request.get("departure")
+    ]
+    fit: dict[str, Any] = {}
+    earlier = [o for o in others if o[1] < departure]
+    if earlier:
+        previous, _, landed = max(earlier, key=lambda o: o[1])
+        if landed:
+            gap = departure - landed
+            fit["follows"] = {
+                "leg": previous,
+                "arrival_utc": landed.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "connection": _duration(gap),
+            }
+            if gap < MIN_CONNECTION:
+                fit["conflict"] = (
+                    f"Leg {leg} departs {_relative(gap)} leg {previous} arrives "
+                    f"({landed:%Y-%m-%d %H:%MZ}); a connection needs at least "
+                    f"{_duration(MIN_CONNECTION)}. Choose a later flight for leg {leg}."
+                )
+    later = [o for o in others if o[1] >= departure]
+    if arrival and later and "conflict" not in fit:
+        following, leaves, _ = min(later, key=lambda o: o[1])
+        if leaves - arrival < MIN_CONNECTION:
+            fit["conflict"] = (
+                f"Leg {leg} arrives {arrival:%Y-%m-%d %H:%MZ}, {_relative(arrival - leaves)} "
+                f"leg {following} departs; a connection needs at least "
+                f"{_duration(MIN_CONNECTION)}."
+            )
+    return fit
 
 
 def _utc(value: str) -> datetime:
@@ -82,6 +145,9 @@ def dispatch_flight(
         scheduled = _utc(flight["times"]["scheduled_out"]["utc"])
         if abs(scheduled - departure) > MAX_DEPARTURE_DRIFT:
             return {"status": "flight_mismatch", "reason": "departure differs from the schedule"}
+    fit = connection(trip, leg, departure, _arrival({"flight": flight}) if flight else None)
+    if "conflict" in fit:
+        return {"status": "connection_conflict", "reason": fit["conflict"]}
 
     request = Dispatch(
         trip=trip,
@@ -113,6 +179,7 @@ def dispatch_flight(
     airline, digits = (number[:2], number[2:]) if flight and number else (None, None)
     return {
         "status": "awaiting_simbrief_generation",
+        "connection": fit.get("follows"),
         "trip": trip,
         "leg": leg,
         "revision": revision,

@@ -25,7 +25,11 @@ Set `TEST_DATABASE_URL` to a disposable Postgres database to run the Postgres-on
 
 ## Live acceptance
 
-The **Product validation** check (`scripts/validate.py`) passes only when the local checks pass and [`docs/evidence/live-acceptance.json`](docs/evidence/live-acceptance.json) shows every live outcome the SimBrief integration needs: generation through the deployed MCP service, a real neo plan, two legs kept after the latest plan changed, and an approval wait and resume. The evidence is tied to the integration code that was live (`src/ifdispatcher`, the Worker, the Dockerfile and `uv.lock`). When a pull request changes that code, the check reports `blocked` until someone releases it, runs a live two-leg trip, and records it with `scripts/record_live_acceptance.py` (usage is in its docstring). Changes to docs, tests and evaluations keep the existing evidence valid.
+The **Product validation** check (`scripts/validate.py`) passes only when the local checks pass and [`docs/evidence/live-acceptance.json`](docs/evidence/live-acceptance.json) shows every live outcome the SimBrief integration needs: generation through the deployed MCP service, a real neo plan, two legs kept after the latest plan changed, and an approval wait and resume. The evidence is tied to the integration code that was live (`src/ifdispatcher`, the agent's `instructions.md`, the Worker, the Dockerfile and `uv.lock`). When a pull request changes that code, the check reports `blocked` until someone releases it, runs a live two-leg trip, and records it with `scripts/record_live_acceptance.py` (usage is in its docstring). Changes to docs, tests and evaluations keep the existing evidence valid.
+
+## Releasing
+
+Versions follow [Semantic Versioning](https://semver.org). Add your change under `[Unreleased]` in [CHANGELOG.md](CHANGELOG.md). To release, a maintainer moves those entries under a new `[X.Y.Z] - YYYY-MM-DD` heading, sets the same version in `pyproject.toml` (then `uv lock`), and runs the **Release** workflow on `main`. The workflow refuses a version without a changelog section or one already released from another commit. Promotion names the Worker version `vX.Y.Z` and publishes the matching Git tag and GitHub Release.
 
 ## Adding an evaluation case
 

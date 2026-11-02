@@ -30,6 +30,8 @@ env:
 jobs:
   guard:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Release only the current main commit
         env:
@@ -38,6 +40,25 @@ jobs:
           [[ "$GITHUB_REF" == refs/heads/main ]] || { echo "Release from main only (got $GITHUB_REF)" >&2; exit 1; }
           head="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
           [[ "$head" == "$GITHUB_SHA" ]] || { echo "main is now $head; rerun the release on it" >&2; exit 1; }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      # The version in pyproject.toml names the release; each version ships once, from one commit.
+      - id: version
+        name: Version has a changelog entry and is not already released elsewhere
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+          python3 scripts/release_notes.py "$version" > /dev/null
+          tagged="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$version" --jq .object.sha 2>/dev/null || true)"
+          if [[ -n "$tagged" && "$tagged" != "$GITHUB_SHA" ]]; then
+            echo "v$version is already released from $tagged; bump the version in pyproject.toml and CHANGELOG.md" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "### Releasing v$version" >> "$GITHUB_STEP_SUMMARY"
 
   checks:
     needs: guard
@@ -47,7 +68,7 @@ jobs:
 
   upload:
     if: ${{ !inputs.bootstrap }}
-    needs: checks
+    needs: [guard, checks]
     runs-on: ubuntu-latest
     outputs:
       version_id: ${{ steps.upload.outputs.version_id }}
@@ -58,6 +79,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+      VERSION: ${{ needs.guard.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -83,17 +105,18 @@ jobs:
             --var "ACCESS_TEAM_DOMAIN:$ACCESS_TEAM_DOMAIN" \
             --var "ACCESS_AUD:$ACCESS_AUD" \
             --var "ACCESS_ALLOWED_EMAIL:$ACCESS_ALLOWED_EMAIL" \
-            --tag "${GITHUB_SHA::12}" \
-            --message "Release $GITHUB_SHA"
+            --tag "v$VERSION" \
+            --message "Release v$VERSION ($GITHUB_SHA)"
           version_id="$(jq -r 'select(.type == "version-upload") | .version_id' "$WRANGLER_OUTPUT_FILE_PATH" | tail -1)"
           [[ "$version_id" =~ ^[0-9a-f-]{36}$ ]] || { echo "Could not read the uploaded version id" >&2; exit 1; }
           echo "version_id=$version_id" >> "$GITHUB_OUTPUT"
           cp "$WRANGLER_OUTPUT_FILE_PATH" "$RUNNER_TEMP/evidence/wrangler-upload.ndjson"
           npx wrangler versions view "$version_id" --json > "$RUNNER_TEMP/evidence/candidate.json"
           jq -n --arg commit "$GITHUB_SHA" --arg version "$version_id" --arg run "$GITHUB_RUN_ID" \
-            '{commit: $commit, version_id: $version, run_id: $run}' > "$RUNNER_TEMP/evidence/release.json"
+            --arg release "v$VERSION" \
+            '{release: $release, commit: $commit, version_id: $version, run_id: $run}' > "$RUNNER_TEMP/evidence/release.json"
           {
-            echo "### Uploaded Worker version (no traffic)"
+            echo "### Uploaded Worker version v$VERSION (no traffic)"
             echo "- Version: \`$version_id\`"
             echo "- Commit: \`$GITHUB_SHA\`"
             echo "- Promote: \`npx wrangler versions deploy $version_id@100% -y\` or rerun with promote=true"
@@ -109,9 +132,11 @@ jobs:
 
   promote:
     if: ${{ inputs.promote && !inputs.bootstrap }}
-    needs: upload
+    needs: [guard, upload]
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: write # the vX.Y.Z tag and GitHub Release
     defaults:
       run:
         working-directory: deploy/cloudflare
@@ -119,6 +144,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       VERSION_ID: ${{ needs.upload.outputs.version_id }}
+      VERSION: ${{ needs.guard.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -130,11 +156,19 @@ jobs:
       - run: npm ci
       - run: npx wrangler versions deploy "$VERSION_ID@100%" -y
       - run: npx wrangler triggers deploy
+      - name: Tag v${{ needs.guard.outputs.version }} and publish its GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "v$VERSION" > /dev/null 2>&1 && exit 0  # rerun of the same release
+          python3 ../../scripts/release_notes.py "$VERSION" > "$RUNNER_TEMP/notes.md"
+          gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION" \
+            --notes-file "$RUNNER_TEMP/notes.md"
       - run: |
           mkdir -p "$RUNNER_TEMP/evidence"
           npx wrangler deployments status > "$RUNNER_TEMP/evidence/after-promote.txt"
           {
-            echo "### Promoted \`$VERSION_ID\` to 100%"
+            echo "### Promoted v$VERSION (\`$VERSION_ID\`) to 100%"
             echo '```'
             cat "$RUNNER_TEMP/evidence/after-promote.txt"
             echo '```'
