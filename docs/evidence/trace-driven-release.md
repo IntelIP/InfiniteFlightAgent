@@ -1,8 +1,8 @@
 # Trace-driven dispatcher release candidate
 
 Prepared November 6, 2026 (US Eastern; checks continue November 7 UTC). This is the
-local v0.4.0 candidate, combining the proposed patch fixes and workflow additions into
-one minor release. It is not a production deployment or verified aircraft expansion.
+v0.4.0 release, combining the proposed patch fixes and workflow additions into
+one minor release. It was deployed November 7 at 19:07 UTC; aircraft expansion remains unverified.
 
 ## Implemented behavior
 
@@ -69,8 +69,7 @@ confirmation. Runway selection now happens afterwards, and unknown front dialogs
 Detailed local logs and browser session links are in Git-ignored `artifacts/private/`.
 The required validator records its current working-tree digest and check results under
 `artifacts/validation/`. Existing v0.3.1 production evidence does not validate this code.
-Publication and production acceptance remain separate gates; no commit or deployment is
-claimed by this document.
+Deployment is verified below; production live acceptance remains a separate gate.
 
 ## Thrust investigation and aircraft expansion
 
@@ -87,11 +86,20 @@ A B772 numerical target therefore remains unavailable. The next aircraft-support
 requires the actual simulator variant/engine and an applicable independent target or
 observed calibration; no cross-engine substitution or new support claim was made.
 
-## Release gate
+## Production deployment — November 7, 2026
 
-The required validator's local checks passed, but its overall result is **blocked**:
-`Integration code changed since live acceptance on 49ebc8b; repeat it.` The previous production
-acceptance is deliberately preserved. The next authorized shipping sequence is commit/push,
-PR/code checks, merge/release, an exact-deployment live MCP two-leg run, and a separate
-production-evidence PR. Until that is done, v0.3.1 remains production and this candidate
-must not be called production-validated.
+- Release PR: [#17](https://github.com/IntelIP/InfiniteFlightAgent/pull/17).
+- Release commit: `72d54ecc3917184b1a2ac6c8a81ae1c82d754af8`.
+- [Release workflow](https://github.com/IntelIP/InfiniteFlightAgent/actions/runs/42404297013):
+  guard, Python checks, Worker checks, image upload and promotion all passed.
+- Worker version `331a9196-14ec-4197-b273-119c6e8a8ff7`, tagged `v0.4.0`, promoted to **100%**.
+- [GitHub Release v0.4.0](https://github.com/IntelIP/InfiniteFlightAgent/releases/tag/v0.4.0)
+  published November 7 at 19:07:02 UTC and verified as Latest.
+- The pre-publication validator passed 223 tests (3 skipped), lint and dead-code checks.
+  Worker type checks and six Worker tests also passed.
+
+The deployed MCP acceptance trip is pending the owner's Cloudflare Access OAuth sign-in.
+The cached MCP credential has no usable access token, and Realm explicitly refuses to drive
+OAuth consent. No Access policy was changed and no local fixture was substituted for a
+production trip. The old production acceptance JSON remains intact until the new trip is
+observed and `scripts/record_live_acceptance.py` derives replacement evidence.
