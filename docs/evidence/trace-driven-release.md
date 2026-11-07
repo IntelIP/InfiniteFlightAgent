@@ -1,4 +1,4 @@
-# Trace-driven dispatcher release candidate
+# Trace-driven dispatcher release — v0.4.0
 
 Prepared November 6, 2026 (US Eastern; checks continue November 7 UTC). This is the
 v0.4.0 release, combining the proposed patch fixes and workflow additions into
@@ -69,7 +69,7 @@ confirmation. Runway selection now happens afterwards, and unknown front dialogs
 Detailed local logs and browser session links are in Git-ignored `artifacts/private/`.
 The required validator records its current working-tree digest and check results under
 `artifacts/validation/`. Existing v0.3.1 production evidence does not validate this code.
-Deployment is verified below; production live acceptance remains a separate gate.
+Deployment and production live acceptance are verified below.
 
 ## Thrust investigation and aircraft expansion
 
@@ -98,8 +98,41 @@ observed calibration; no cross-engine substitution or new support claim was made
 - The pre-publication validator passed 223 tests (3 skipped), lint and dead-code checks.
   Worker type checks and six Worker tests also passed.
 
-The deployed MCP acceptance trip is pending the owner's Cloudflare Access OAuth sign-in.
-The cached MCP credential has no usable access token, and Realm explicitly refuses to drive
-OAuth consent. No Access policy was changed and no local fixture was substituted for a
-production trip. The old production acceptance JSON remains intact until the new trip is
-observed and `scripts/record_live_acceptance.py` derives replacement evidence.
+## Production live acceptance — November 7, 2026
+
+After the owner completed Access OAuth consent, the real production MCP service generated
+and finalized `KDEN-KIAD-20261108`, thread `trip-2abc41c671`, on the released code above.
+`record_live_acceptance.py` read production checkpoints, requests and snapshots and derived
+**PASS** for all four required outcomes: MCP generation, neo takeoff performance, independent
+retention of both legs, and authentication/approval/resumption. There were two approval pauses;
+no fixture or local agent was substituted for production.
+
+| Leg | Flight | Departure on November 8 | N1 ratio and range |
+| --- | --- | --- | --- |
+| 1 | UA1101 KDEN → KIAD | 07:40 MST / 14:40 UTC | 0.875 (0.834–0.923) × full-thrust N1 |
+| 2 | UA1126 KIAD → KDEN | 14:10 EST / 19:10 UTC | 0.921 (0.877–0.956) × full-thrust N1 |
+
+The second approval displayed a computed **1 h 14 min** connection. It also carried the
+completed first leg's briefing. The Denver briefing printed both the suspect-reduction and
+high-altitude warnings in code. Both briefings reported that plan checks passed while
+simulator performance remains unverified. The return used a historical gate labeled with
+its observation date. Saved-trip and conversation-status tools returned the retained plans
+and saved conversation without another generation.
+
+Provider measurements from completed turn responses total **$0.145 FlightAware list-price
+usage** and **53.972 Browserbase session seconds**. This is not an invoice: credits/discounts,
+Browserbase charges, model/ChatGPT-plan capacity and infrastructure charges are separate.
+The production run's private response log remains in `artifacts/private/v040-production-mcp.json`.
+Sanitized source-derived acceptance is in [live-acceptance.json](live-acceptance.json).
+
+Production run ids include `76536795-7237-4e74-b1ca-e8fc12c5c368` (first generated leg and
+return approval) and `48a32344-57da-47fc-a82a-2caad5126060` (final briefing). The MCP responses
+included versioned run identity, objective workflow outcomes, FlightAware cache/page costs,
+and released Browserbase session timing. A read-only LangSmith query confirmed `v0.4.0` tags,
+`approval_required`/`briefing_ready` feedback and zero blocked steps on those actual runs.
+These signals do not claim owner acceptance or simulator verification.
+
+One conversational follow-up remains: before the first leg was dispatched, connection
+checking had no saved prior-leg arrival, so the agent asked an extra confirmation. The
+subsequent deterministic approval correctly checked the actual connection. This did not
+prevent either leg, and is recorded for a future conversation-friction improvement.

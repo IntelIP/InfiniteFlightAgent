@@ -1,17 +1,17 @@
 # Backlog
 
-Status updated November 6, 2026. This file is the work-management source. The original
+Status updated November 7, 2026. This file is the work-management source. The original
 October planning items below retain their historical status unless explicitly updated.
 Current implementation and acceptance take precedence over those historical notes.
 
-## Trace-driven extension — v0.4.0 candidate
+## Trace-driven extension — v0.4.0 shipped
 
 Hudson authorized implementation of the proposed extension tasking on November 6.
 The reliability fixes, guided N1 calibration, aircraft/configuration and fuel assessment,
-arrival targets, saved trips/revisions/refresh, and LangSmith review tooling are implemented
-locally. The [candidate report](evidence/trace-driven-release.md) owns evidence, limitations
-and publication/production gates. Existing v0.3.1 live evidence cannot establish this
-candidate's production behavior. N1 model calibration and additional verified aircraft
+arrival targets, saved trips/revisions/refresh, and LangSmith review tooling shipped in
+v0.4.0 on November 7. Its real production two-leg MCP trip passed all four required
+acceptance outcomes. The [release report](evidence/trace-driven-release.md) owns evidence,
+limitations and the observed conversation-friction follow-up. N1 model calibration and additional verified aircraft
 support remain dependent on applicable reference/simulator observations; the code does not
 claim them complete.
 
