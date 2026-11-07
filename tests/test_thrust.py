@@ -183,7 +183,7 @@ def test_support_note_depends_on_the_departure_airport():
 
     assert "estimate available" in support_note("A21N", "KIAD", 312)
     denver = support_note("A21N", "KDEN", 5434)
-    assert "estimate available" in denver and "KDEN (5,434 ft)" in denver
+    assert "estimate available" in denver and "KDEN (5,434 ft field elevation)" in denver
     edge = support_note("A20N", "SLLP", 16000)
     assert "may be unavailable" in edge and "day's pressure" in edge
     too_high = support_note("A20N", "XXXX", 18000)

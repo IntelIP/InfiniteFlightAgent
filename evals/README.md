@@ -66,3 +66,19 @@ These checks prove replay/normalization and spend controls against controlled re
 They do not prove provider availability or current flight schedules. Use a small explicit
 live sample before releases or after changing the provider integration. Larger live runs
 need an intentionally chosen list and budget; ordinary prompt changes use replay.
+
+
+## Generation and recovery with controlled providers
+
+```sh
+uv run python evals/run_workflow_replay.py
+```
+
+This runs the real configured model and graph, approval pauses, workflow, parser, local
+storage and briefing rendering. Provider responses are controlled: a pre-click mismatch,
+a successful retry, an observed-reading calibration follow-up, and the Auckland range/fuel
+failure. It uses ChatGPT-plan capacity and LangSmith tracing, with zero FlightAware requests
+or Browserbase sessions. It does not prove live generation or simulator accuracy.
+
+Research replay also isolates the saved-trip/revision tools from production storage and
+blocks the new airframe browser tool, so adding a tool cannot silently bypass replay mode.

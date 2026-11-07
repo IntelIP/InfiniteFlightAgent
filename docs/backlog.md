@@ -1,6 +1,20 @@
 # Backlog
 
-Status: planning, October 30, 2026. This file is the work-management source. All work below is **not started** unless explicitly updated. Creating the plans does not authorize execution of every item.
+Status updated November 6, 2026. This file is the work-management source. The original
+October planning items below retain their historical status unless explicitly updated.
+Current implementation and acceptance take precedence over those historical notes.
+
+## Trace-driven extension — v0.4.0 candidate
+
+Hudson authorized implementation of the proposed extension tasking on November 6.
+The reliability fixes, guided N1 calibration, aircraft/configuration and fuel assessment,
+arrival targets, saved trips/revisions/refresh, and LangSmith review tooling are implemented
+locally. The [candidate report](evidence/trace-driven-release.md) owns evidence, limitations
+and publication/production gates. Existing v0.3.1 live evidence cannot establish this
+candidate's production behavior. N1 model calibration and additional verified aircraft
+support remain dependent on applicable reference/simulator observations; the code does not
+claim them complete.
+
 
 Owner convention: Hudson owns product, cost, and authority decisions; the implementing agent owns an explicitly started engineering item. No deadlines or delegated workers are assigned. Keep work focused to one session; split an item when findings reveal a larger independent scope. Record evidence and blockers on the item, without duplicating decisions elsewhere.
 

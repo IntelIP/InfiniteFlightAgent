@@ -1,6 +1,6 @@
 [project]
 name = "infinite-flight-dispatcher"
-version = "0.3.1"
+version = "0.4.0"
 description = "AI dispatcher for Infinite Flight: real flights, SimBrief plans, and takeoff N1 estimates over MCP"
 requires-python = ">=3.11"
 license = "GPL-3.0-only"
@@ -10,6 +10,7 @@ dependencies = [
     "httpx==0.28.1",
     "pydantic>=2.11,<3",
     "deepagents>=0.7.32",
+    "langsmith==0.14.16",
     "langchain-openai>=1.7.3",
     "langgraph-checkpoint-sqlite>=3.1.3",
     "pyjwt[crypto]>=2.15.1",

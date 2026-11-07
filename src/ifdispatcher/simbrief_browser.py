@@ -21,6 +21,7 @@ from browserbase import Browserbase, NotFoundError
 from playwright.sync_api import sync_playwright
 
 from ifdispatcher.config import require_paid_operations, setting
+from ifdispatcher import observability
 
 HOME_URL = "https://www.simbrief.com/home/"
 DISPATCH_URL = "https://dispatch.simbrief.com/options/custom"
@@ -63,7 +64,7 @@ def _context_id(bb: Browserbase) -> str:
 
 
 def open_session(bb: Browserbase, minutes: int = 15):
-    return bb.sessions.create(
+    session = bb.sessions.create(
         browser_settings={
             "context": {"id": _context_id(bb), "persist": True},
             "viewport": {"width": 1440, "height": 900},
@@ -72,11 +73,41 @@ def open_session(bb: Browserbase, minutes: int = 15):
         api_timeout=minutes * 60,
         user_metadata={"app": "InfiniteFlightDispatcher"},
     )
+    observability.browser_opened(session.id)
+    return session
 
 
 def release(bb: Browserbase, session_id: str) -> None:
     """End the session; Browserbase persists the context's cookies on release."""
     bb.sessions.update(session_id, status="REQUEST_RELEASE")
+    observability.browser_closed(session_id)
+
+
+def airframes(aircraft: str) -> dict:
+    """Read actual selectable SimBrief profiles; does not generate a plan."""
+    require_paid_operations()
+    bb = _client()
+    session = open_session(bb, minutes=5)
+    try:
+        with sync_playwright() as pw:
+            browser = pw.chromium.connect_over_cdp(session.connect_url)
+            page = browser.contexts[0].pages[0]
+            if not ensure_logged_in(page):
+                return {"status": "not_logged_in"}
+            page.select_option("#basetype", aircraft)
+            page.wait_for_function("a => document.querySelector('#type').value === a", arg=aircraft)
+            options = page.locator("#type").evaluate(
+                "e => [...e.options].filter(o => o.value && !o.value.startsWith('--')).map(o => ({id:o.value, name:o.textContent.trim()}))"
+            )
+            browser.close()
+            return {
+                "status": "ok",
+                "aircraft": aircraft,
+                "airframes": options,
+                "note": "Selectable profiles only; simulator configuration and thrust applicability remain separate.",
+            }
+    finally:
+        release(bb, session.id)
 
 
 def _logged_in(page) -> bool:
@@ -224,11 +255,22 @@ def _answer_known_prompts(page) -> list[str]:
     answered = []
     for _ in range(3):
         page.wait_for_timeout(800)
-        texts = page.evaluate(VISIBLE_MODALS_JS)
-        match = next((k for k in KNOWN_PROMPTS for t in texts if k in t.lower()), None)
+        dialogs = page.get_by_role("dialog").filter(visible=True).all()
+        if not dialogs:
+            break
+        # Only answer the front dialog. A matching prompt behind another dialog must not
+        # receive a click through it (observed during the release form check).
+        _, dialog = max(
+            enumerate(dialogs),
+            key=lambda pair: (
+                pair[1].evaluate("e => parseInt(getComputedStyle(e).zIndex) || 0"),
+                pair[0],
+            ),
+        )
+        text = dialog.inner_text().lower()
+        match = next((k for k in KNOWN_PROMPTS if k in text), None)
         if not match:
             break
-        dialog = page.locator("[class*=modal], [role=dialog]").filter(has_text=match).last
         dialog.get_by_role("button", name=KNOWN_PROMPTS[match], exact=True).click()
         answered.append(f"{match} -> {KNOWN_PROMPTS[match]}")
     return answered
@@ -249,10 +291,25 @@ def form_values(fields: dict[str, Any]) -> dict[str, str]:
         "pounds": "1" if fields["units"] == "LBS" else "0",
         "flighttype": "g" if fields.get("callsign") and not fields.get("airline") else "s",
         "pax": "" if fields.get("passengers") is None else str(fields["passengers"]),
-        "route": "",
+        "route": fields.get("route") or "",
         "date": departure.strftime("%d %b %Y - %H:%M"),
     }
     return values
+
+
+def form_mismatches(fields: dict, want: dict, got: dict) -> dict:
+    """Unspecified route is a provider default; explicitly agreed fields must match."""
+    expected = dict(want)
+    if fields.get("route") is None:
+        expected.pop("route", None)
+    for key in ("airframe_id", "runway"):
+        if fields.get(key):
+            expected[key] = fields[key]
+    return {
+        key: {"want": value, "got": got.get(key)}
+        for key, value in expected.items()
+        if str(got.get(key)).strip().upper() != str(value).strip().upper()
+    }
 
 
 def generate(
@@ -292,23 +349,30 @@ def generate(
             page.wait_for_function(
                 "a => document.querySelector('#type').value === a", arg=want["basetype"]
             )
+            if fields.get("airframe_id"):
+                page.select_option("#type", fields["airframe_id"])
             page.select_option("#pounds", want["pounds"])
             page.select_option("#flighttype", want["flighttype"])
             for field in ("airline", "fltnum", "callsign", "orig", "dest", "pax"):
                 page.fill(f"#{field}", want[field])
                 page.dispatch_event(f"#{field}", "change")
-            page.fill("#route", "")
+            page.fill("#route", want["route"])
             page.evaluate(SET_CHECKBOX_JS, ["tlr", True])
             page.evaluate(SET_DATE_JS, fields["departure_utc"])
             answered = _answer_known_prompts(page)
             open_prompts = page.evaluate(VISIBLE_MODALS_JS)
+            # Accepting the departure-time prompt resets runway selection. Apply the
+            # explicitly approved runway afterwards, then verify the final form.
+            if fields.get("runway") and not open_prompts:
+                page.wait_for_function(
+                    "r => [...document.querySelector('#origrwy').options].some(o => o.value === r)",
+                    arg=fields["runway"],
+                )
+                page.select_option("#origrwy", fields["runway"])
             got = {k: page.input_value(f"#{k}") for k in want}
             got["tlr"] = page.evaluate("() => document.getElementById('tlr').checked")
-            mismatched = {
-                k: {"want": want[k], "got": got[k]}
-                for k in want
-                if str(got[k]).strip().upper() != str(want[k]).strip().upper()
-            }
+            got.update(airframe_id=page.input_value("#type"), runway=page.input_value("#origrwy"))
+            mismatched = form_mismatches(fields, want, got)
             if not got["tlr"]:
                 mismatched["tlr"] = {"want": True, "got": False}
             filled_shot = shots_dir / f"{tag}-filled.png"
@@ -319,10 +383,10 @@ def generate(
                 "prompts_answered": answered,
                 "screenshots": [str(filled_shot)],
             }
-            if mismatched:
-                return {**result, "status": "fill_mismatch", "mismatched": mismatched}
             if open_prompts:
                 return {**result, "status": "needs_review", "prompts": open_prompts}
+            if mismatched:
+                return {**result, "status": "fill_mismatch", "mismatched": mismatched}
             if not click:
                 return {**result, "status": "filled"}
             if before_click:
@@ -357,6 +421,9 @@ def generate(
                 "prompts": prompts,
                 "screenshots": [str(filled_shot), str(done_shot)],
             }
+    except Exception as exc:
+        exc.simbrief_session = replay
+        raise
     finally:
         release(bb, session.id)
 

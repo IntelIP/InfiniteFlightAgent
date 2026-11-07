@@ -14,15 +14,17 @@ import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 from flight_data import FlightData
 
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
-from ifdispatcher import flights
+from ifdispatcher import core, flights, operations, simbrief_browser, workflow
 from ifdispatcher.agent import build_agent
-from ifdispatcher.config import export_tracing_settings
+from ifdispatcher.config import data_dir, export_tracing_settings
+from ifdispatcher.core import Store
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -91,6 +93,18 @@ CASES = [
         "calibrated": True,
     },
 ]
+CASES.append(
+    {
+        "id": "E2E-10",
+        "turns": [
+            "Private two-leg trip, A20N, callsign N320HD, 4 passengers, KGS, standard A20N airframe and default SimBrief route. Leg 1 KIAD to KEWR on November 8, 2026 at 17:00 UTC. Leg 2 KEWR to KIAD on November 8, 2026 at 21:00 UTC. Set up and generate both, one approval per leg, and deliver each briefing."
+        ],
+        "expect": "generated",
+        "thrust": "estimated",
+        "legs": 2,
+    }
+)
+
 FOLLOW_UP = "Go with your best suggestion and set it up."
 
 
@@ -99,7 +113,22 @@ def tool_results(messages, name):
 
 
 def run_case(case: dict, experiment: str) -> dict:
-    os.environ["IFD_DATA_DIR"] = tempfile.mkdtemp(prefix="ifd-e2e-")
+    # Credentials may come from the deployed database; flight requests and browser-context
+    # bookkeeping stay in a temporary local store. Never write eval trips to production.
+    context = Store(data_dir()).read_setting(simbrief_browser.STORED_CONTEXT)
+    with (
+        tempfile.TemporaryDirectory(prefix="ifd-e2e-") as directory,
+        patch.dict(os.environ, {"IFD_DATA_DIR": directory}),
+        patch.object(core, "open_store", lambda: Store(Path(directory))),
+        patch.object(workflow, "_store", lambda: Store(Path(directory))),
+        patch.object(operations, "open_store", lambda: Store(Path(directory))),
+    ):
+        if context:
+            Store(Path(directory)).save_setting(simbrief_browser.STORED_CONTEXT, context)
+        return _run_case(case, experiment)
+
+
+def _run_case(case: dict, experiment: str) -> dict:
     agent = build_agent(checkpointer=InMemorySaver())
     config = {
         "configurable": {"thread_id": f"{experiment}-{case['id']}"},
@@ -132,7 +161,13 @@ def run_case(case: dict, experiment: str) -> dict:
                 or case.get("decline")
                 and approvals
             )
-            if done or replies >= 2:
+            if (
+                (done and len(tool_results(messages, "finalize_dispatch")) >= case.get("legs", 1))
+                or (case.get("decline") and approvals)
+                or case["expect"] == "existing"
+                and done
+                or replies >= 2
+            ):
                 break
             replies += 1
             payload = {"messages": [{"role": "user", "content": FOLLOW_UP}]}
@@ -148,6 +183,12 @@ def run_case(case: dict, experiment: str) -> dict:
     thrust = (final.get("thrust") or {}).get("status")
     checks = {
         "no_error": error is None,
+        "retained_legs": len(finals) >= case.get("legs", 1)
+        if case["expect"] == "generated"
+        else True,
+        "no_infeasible_flight": all(
+            (f.get("feasibility") or {}).get("status") != "infeasible" for f in finals
+        ),
         "outcome": {
             "generated": bool(generations)
             and generations[-1].get("status") == "generated"

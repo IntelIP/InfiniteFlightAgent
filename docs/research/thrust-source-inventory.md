@@ -125,7 +125,9 @@ What this does and doesn't establish:
   that keeps the widening proportional to the extrapolation; no source quantifies it.
 - On a real SimBrief A321neo plan from Denver (FLEX 47 C, OAT 11 C, 5,456 ft), the estimate is
   0.862 x full-thrust N1 (0.810-0.920) and is flagged as exceeding FAA AC 25-13's 25% reduction.
-  SimBrief would not plan that, which suggests the extrapolated LEAP-1A32 corner is low
-  (conservative N1) at that altitude. Calibrating the corner against SimBrief's own FLEX limits
-  is a possible follow-up.
+  The original interpretation that this demonstrates a conservative estimate is unverified.
+  A November 6 retained Auckland OFP explicitly warns that it exceeds aircraft range and has
+  negative landing fuel, so successful SimBrief generation alone cannot establish a valid
+  performance reference. Compare matched, feasible plans and independent simulator/reference
+  observations before changing the model. See the [candidate findings](../evidence/trace-driven-release.md).
 - Estimates at or below 2,000 ft are unchanged (270 combinations compared with v0.2.1).
