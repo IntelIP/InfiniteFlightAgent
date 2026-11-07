@@ -17,6 +17,7 @@ from zoneinfo import ZoneInfo
 import httpx
 
 from ifdispatcher.config import require_paid_operations, setting
+from ifdispatcher.observability import event
 
 BASE = "https://aeroapi.flightaware.com/aeroapi"
 SOURCE = "FlightAware AeroAPI v4"
@@ -115,19 +116,27 @@ def _get(path: str, params: dict | None = None, transport=None) -> dict:
     hit = _cache.get(cache_key)
     if hit and time.monotonic() - hit[0] < CACHE_TTL:
         usage["cache_hits"] += 1
+        event("flightaware", endpoint=path, cached=True, list_price_usd=0)
         return hit[1]
     stored = _airport_cached(path) if not query and transport is None else None
     if stored is not None:
         usage["cache_hits"] += 1
+        event("flightaware", endpoint=path, cached=True, list_price_usd=0)
         return stored
     rate = price_milliusd(path)
     require_paid_operations()
     _wait_for_rate_limit(int(query.get("max_pages") or 1))
+    measured = event("flightaware", endpoint=path, cached=False, list_price_usd=None)
+    started = time.monotonic()
     try:
         with httpx.Client(timeout=30, transport=transport) as client:
             response = client.get(BASE + path, params=query, headers={"x-apikey": _api_key()})
     except httpx.RequestError as exc:
+        measured.update(outcome="network_error", elapsed_s=round(time.monotonic() - started, 3))
         raise ValueError("network_error: AeroAPI request failed; no retry performed") from exc
+    measured.update(
+        http_status=response.status_code, elapsed_s=round(time.monotonic() - started, 3)
+    )
     if response.status_code == 401:
         raise ValueError("unauthorized: invalid key or endpoint above the Personal tier")
     if response.status_code == 429:
@@ -135,6 +144,10 @@ def _get(path: str, params: dict | None = None, transport=None) -> dict:
     if response.status_code >= 400:
         raise ValueError(f"http_error: AeroAPI returned {response.status_code}")
     data = response.json()
+    measured.update(
+        pages=int(data.get("num_pages") or 1),
+        list_price_usd=rate * int(data.get("num_pages") or 1) / 1000,
+    )
     usage["requests"] += 1
     usage["result_sets"] += int(data.get("num_pages") or 1)
     usage["cost_milliusd"] += rate * int(data.get("num_pages") or 1)

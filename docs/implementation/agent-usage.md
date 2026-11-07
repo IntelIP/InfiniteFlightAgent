@@ -84,3 +84,34 @@ Decided October 31, 2026 (Hudson): personal, not resold; open source with bring-
 - **Kill switch** — `IFD_PAID_OPERATIONS_ENABLED`: unset means enabled (local use); anything other than `true` blocks FlightAware calls, Browserbase generation, and remote agent turns before they start. The Worker sets it explicitly (default `false`).
 - **R2** — generation screenshots upload to `screens/<leg tag>/` when `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET` are set.
 - **End-to-end checks** — `uv run python evals/run_e2e.py` drives the live agent through approval, browser generation, plan matching, thrust, and the briefing for nine scenarios. It writes plans to the SimBrief account and spends Browserbase time.
+
+
+## v0.4.0 candidate additions
+
+The [candidate report](../evidence/trace-driven-release.md) distinguishes implemented local
+behavior, controlled-provider model evaluations and actual live observations.
+
+- Ask to list saved trips, inspect a trip, change a saved leg or refresh its briefing. Changes
+  use a new revision and approval; refresh keeps the original OFP and reports changed lines.
+- `list_saved_trips` and `conversation_status` are direct remote MCP tools requiring no model
+  invocation. The latter uses the original thread id to recover persisted replies/approvals.
+- Provide an observed full-throttle N1 and simulator version after a briefing to get a percentage
+  target. Saved readings require matching conditions and expire after seven days.
+- Give a full arrival date/time and a sourced gate-to-gate duration for arrival-target planning.
+  The generated plan reports the difference from the target, rather than promising exact arrival.
+- Explicit route, runway, passengers and selectable SimBrief airframe id are supported. Custom/ACJ
+  configuration is not inferred from a base aircraft name. Simulator capacity uses the dispatch
+  units and requires a source; missing configuration evidence remains unknown.
+- Fuel/range/weight failures and all provider remarks reach the briefing. Infeasible flights
+  withhold thrust-setting instructions, even if SimBrief generated an OFP.
+
+Trace review (read-only unless `--enqueue` is supplied):
+
+```sh
+uv run python scripts/review_traces.py --days 7 --limit 50
+uv run python scripts/review_traces.py --days 7 --limit 50 --enqueue
+```
+
+The review queue scores whole conversations. Automatic workflow feedback is separate from
+owner acceptance. Provider usage reports FlightAware list-price estimates and Browserbase
+elapsed time; unknown invoice costs stay unknown.

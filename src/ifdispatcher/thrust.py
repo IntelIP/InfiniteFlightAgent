@@ -95,7 +95,8 @@ LABEL = "SIMULATION-GRADE ESTIMATE"
 
 def _number(value) -> float | None:
     try:
-        return float(value)
+        result = float(value)
+        return result if math.isfinite(result) else None
     except (TypeError, ValueError):
         return None
 
@@ -169,7 +170,7 @@ def support_note(
         return f"{code}: simulation-grade takeoff N1 estimate available" + (
             f" (elevation of {airport} unknown)" if airport else ""
         )
-    where = f"{code} at {airport} ({elevation_ft:,.0f} ft)"
+    where = f"{code} at {airport} ({elevation_ft:,.0f} ft field elevation)"
     band = f"the modeled {MIN_PA:,}..{MAX_PA:,} ft pressure-altitude band"
     if not MIN_PA - PA_MARGIN_FT <= elevation_ft <= MAX_PA + PA_MARGIN_FT:
         return f"{where}: takeoff N1 estimate unavailable (outside {band})"
@@ -240,6 +241,15 @@ def estimate_takeoff_n1(
     Returns N1 as a ratio of full rated (TOGA/TO) N1 at the same conditions, plus an absolute
     target when `full_thrust_n1` (read in Infinite Flight at full throttle) is supplied.
     """
+    if full_thrust_n1 is not None and (
+        isinstance(full_thrust_n1, bool)
+        or not math.isfinite(full_thrust_n1)
+        or not 40 < full_thrust_n1 <= 120
+    ):
+        return _result(
+            "invalid_input",
+            reason="full_thrust_n1 must be an observed N1 percentage above 40 and at most 120",
+        )
     family = AIRCRAFT.get(aircraft_icao or "")
     if not family:
         return _result(

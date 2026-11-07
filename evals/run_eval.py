@@ -24,7 +24,7 @@ from flight_data import FlightData
 
 from langgraph.checkpoint.memory import InMemorySaver
 
-from ifdispatcher import flights, workflow
+from ifdispatcher import flights, operations, workflow
 from ifdispatcher.core import Store
 from ifdispatcher.agent import build_agent
 from ifdispatcher.config import export_tracing_settings
@@ -203,6 +203,8 @@ def run_case(
             patch.dict(os.environ, {"IFD_DATA_DIR": directory}),
             data.case(fixture),
             patch.object(workflow, "_store", lambda: Store(Path(os.environ["IFD_DATA_DIR"]))),
+            patch.object(operations, "open_store", lambda: Store(Path(os.environ["IFD_DATA_DIR"]))),
+            patch.object(workflow.simbrief_browser, "airframes", blocked),
             patch.object(workflow, "generate_plan", blocked),
             patch.object(workflow, "finalize_dispatch", blocked),
             patch.object(workflow, "analyze_existing_plan", blocked),

@@ -26,7 +26,7 @@ from langchain.tools import tool
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 
-from ifdispatcher import flights, thrust, workflow
+from ifdispatcher import flights, operations, thrust, workflow
 from ifdispatcher.config import data_dir, export_tracing_settings, setting
 from ifdispatcher.siwc import chatgpt_model
 
@@ -53,7 +53,12 @@ def current_time() -> dict:
 
 @tool(parse_docstring=True)
 def find_route_flights(
-    origin: str, destination: str, local_date: str, airline: str | None = None
+    origin: str,
+    destination: str,
+    local_date: str,
+    airline: str | None = None,
+    trip: str | None = None,
+    leg: str | None = None,
 ) -> dict:
     """Real nonstop airline flights between two airports on a local date (FlightAware).
 
@@ -62,8 +67,15 @@ def find_route_flights(
         destination: Arrival airport ICAO code, e.g. KEWR.
         local_date: Departure date in the origin's local time, YYYY-MM-DD.
         airline: Optional 2-letter airline code to keep, e.g. UA (includes codeshares).
+        trip: Existing trip id for computed connections in search results.
+        leg: Leg being considered, when trip is supplied.
     """
-    return _safe(flights.find_route_flights, origin, destination, local_date, airline)
+    result = _safe(flights.find_route_flights, origin, destination, local_date, airline)
+    if trip and leg:
+        for flight in result.get("data") or []:
+            departure = flight["times"]["scheduled_out"]["utc"]
+            flight["connection_check"] = workflow.connection(trip, leg, departure)
+    return result
 
 
 @tool(parse_docstring=True)
@@ -153,6 +165,13 @@ def dispatch_flight(
     units: str = "KGS",
     passengers: int | None = None,
     private_callsign: str | None = None,
+    route: str | None = None,
+    runway: str | None = None,
+    airframe_id: str | None = None,
+    configuration: str | None = None,
+    simulator_capacity: float | None = None,
+    capacity_source: str | None = None,
+    arrival_target_utc: str | None = None,
 ) -> dict:
     """Prepare one leg for SimBrief; the user's approval also authorizes generating it.
 
@@ -169,7 +188,14 @@ def dispatch_flight(
         engine: Only if the user explicitly wants thrust for an engine other than the one SimBrief plans with.
         units: KGS or LBS, matching the user's SimBrief settings.
         passengers: Optional passenger count.
-        private_callsign: Callsign for a private/GA flight (no airline flight number), 2-7 letters or digits such as the registration N172HD.
+        private_callsign: Callsign for a private/GA flight, 2-7 letters or digits.
+        route: Explicit agreed route, or omit to let SimBrief choose.
+        runway: Explicit departure runway, e.g. 25R.
+        airframe_id: Exact SimBrief airframe id the user selected, not an invented ACJ profile.
+        configuration: Description of the simulator configuration (e.g. standard A20N or ACJ).
+        simulator_capacity: Observed simulator tank capacity in the selected units.
+        capacity_source: Where the simulator capacity was observed, including version.
+        arrival_target_utc: Agreed arrival target with timezone, used to compare the generated plan.
     """
     return _safe(
         workflow.dispatch_flight,
@@ -186,6 +212,13 @@ def dispatch_flight(
         units,
         passengers,
         private_callsign,
+        route,
+        runway,
+        airframe_id,
+        configuration,
+        simulator_capacity,
+        capacity_source,
+        arrival_target_utc,
     )
 
 
@@ -205,7 +238,11 @@ def generate_in_simbrief(trip: str, leg: str, revision: int = 1) -> dict:
 
 @tool(parse_docstring=True)
 def finalize_dispatch(
-    trip: str, leg: str, revision: int = 1, full_thrust_n1: float | None = None
+    trip: str,
+    leg: str,
+    revision: int = 1,
+    full_thrust_n1: float | None = None,
+    simulator_version: str | None = None,
 ) -> dict:
     """After generate_in_simbrief succeeds (or the user generated manually): fetch the plan once, verify, estimate thrust,
     refresh the gate, and return the final briefing.
@@ -215,8 +252,9 @@ def finalize_dispatch(
         leg: Leg id used in dispatch_flight.
         revision: Revision used in dispatch_flight.
         full_thrust_n1: Optional N1 the user read in Infinite Flight at full throttle.
+        simulator_version: Version of Infinite Flight, to save/reuse an exactly matching reading.
     """
-    return _safe(workflow.finalize_dispatch, trip, leg, revision, full_thrust_n1)
+    return _safe(workflow.finalize_dispatch, trip, leg, revision, full_thrust_n1, simulator_version)
 
 
 @tool(parse_docstring=True)
@@ -248,6 +286,86 @@ def analyze_existing_plan(
     )
 
 
+@tool(parse_docstring=True)
+def saved_trips(trip: str | None = None) -> dict:
+    """List saved trips, or read a trip's latest leg statuses, revisions and briefings without provider calls.
+
+    Args:
+        trip: Trip id to inspect or resume, or omit to list ids.
+    """
+    return _safe(operations.saved_trips, trip)
+
+
+@tool(parse_docstring=True)
+def simbrief_airframes(aircraft: str) -> dict:
+    """List selectable SimBrief airframes for a known aircraft without generating a plan.
+
+    Args:
+        aircraft: Base ICAO type, e.g. A20N. Uses Browserbase time.
+    """
+    return _safe(workflow.simbrief_browser.airframes, aircraft)
+
+
+@tool(parse_docstring=True)
+def check_connection(trip: str, leg: str, departure_utc: str) -> dict:
+    """Compute a candidate leg's connection and any conflict before recommending it.
+
+    Args:
+        trip: Saved trip id.
+        leg: Candidate leg id.
+        departure_utc: Candidate departure from a search or agreed private flight, with timezone.
+    """
+    return _safe(workflow.connection, trip, leg, departure_utc)
+
+
+@tool(parse_docstring=True)
+def revise_dispatch(trip: str, leg: str, changes: dict, base_revision: int) -> dict:
+    """Prepare a new revision of a saved leg after approval; preserves the old plan unchanged.
+
+    Args:
+        trip: Existing trip id.
+        leg: Existing leg id.
+        changes: Agreed changed dispatch fields such as route, runway, passengers, departure_utc,
+            sim_aircraft, engine or airframe_id. Uses dispatch_flight field names. Always
+            include a new verified fa_flight_id when changing an airline flight.
+        base_revision: Current saved revision being changed; approval is bound to this exact base.
+    """
+    return _safe(operations.revise, trip, leg, changes, base_revision)
+
+
+@tool(parse_docstring=True)
+def refresh_briefing(
+    trip: str, leg: str, revision: int = 1, simulator_version: str | None = None
+) -> dict:
+    """Refresh flight/gate information around a saved OFP and report changed briefing lines; never regenerates.
+
+    Args:
+        trip: Existing trip id.
+        leg: Existing leg id.
+        revision: Saved revision to refresh.
+        simulator_version: Optional version for exactly matching N1 calibration reuse.
+    """
+    return _safe(operations.refresh, trip, leg, revision, simulator_version)
+
+
+@tool(parse_docstring=True)
+def plan_arrival(
+    origin: str, destination: str, arrival_local: str, block_time: str, duration_source: str
+) -> dict:
+    """Compute an estimated departure for a dated local arrival target using gate-to-gate duration.
+
+    Args:
+        origin: Departure ICAO.
+        destination: Arrival ICAO, supplying the destination timezone.
+        arrival_local: Full arrival date and local time, YYYY-MM-DDTHH:MM; ask for the date if missing.
+        block_time: Gate-to-gate duration HH:MM:SS from a plan or explicitly labeled estimate.
+        duration_source: Identify the saved plan or explain the duration estimate; never claim a guessed duration is measured.
+    """
+    return _safe(
+        operations.plan_arrival, origin, destination, arrival_local, block_time, duration_source
+    )
+
+
 TOOLS = [
     current_time,
     find_route_flights,
@@ -260,6 +378,12 @@ TOOLS = [
     generate_in_simbrief,
     finalize_dispatch,
     analyze_existing_plan,
+    saved_trips,
+    simbrief_airframes,
+    check_connection,
+    revise_dispatch,
+    refresh_briefing,
+    plan_arrival,
 ]
 
 
@@ -307,6 +431,10 @@ def _thrust_line(args: dict) -> str:
 def approval_summary(tool_call, *_context) -> str:
     """What the user checks before approving a dispatch, built from the call, not the chat."""
     args = tool_call["args"]
+    if tool_call.get("name") == "revise_dispatch":
+        args = operations.revision_inputs(
+            args["trip"], args["leg"], args["changes"], args["base_revision"]
+        )
     flight = args.get("fa_flight_id") or f"private, callsign {args.get('private_callsign')}"
     return "\n".join(
         [
@@ -317,15 +445,23 @@ def approval_summary(tool_call, *_context) -> str:
             *_timing_lines(args),
             f"Simulator aircraft {args.get('sim_aircraft')}",
             _thrust_line(args),
+            f"Load: {args.get('passengers') if args.get('passengers') is not None else 'SimBrief default'} passengers; units {args.get('units', 'KGS')}",
+            f"Route: {args.get('route') or 'SimBrief default'}; runway: {args.get('runway') or 'automatic'}; airframe: {args.get('airframe_id') or args.get('sim_aircraft')}",
+            f"Configuration: {args.get('configuration') or 'simulator configuration not verified'}; capacity: {args.get('simulator_capacity')} {args.get('units', 'KGS')} ({args.get('capacity_source') or 'not supplied'})",
+            f"Arrival target: {args.get('arrival_target_utc') or 'not set'}",
         ]
     )
 
 
 INTERRUPT_ON = {
+    "revise_dispatch": {
+        "allowed_decisions": ["approve", "edit", "reject"],
+        "description": approval_summary,
+    },
     "dispatch_flight": {
         "allowed_decisions": ["approve", "edit", "reject"],
         "description": approval_summary,
-    }
+    },
 }
 
 

@@ -24,6 +24,7 @@ from starlette.responses import JSONResponse
 
 from ifdispatcher import __version__
 from ifdispatcher.config import export_tracing_settings, paid_operations_enabled, setting
+from ifdispatcher import observability, operations
 
 TOKEN_HEADER = "x-ifd-internal-token"
 WAIT_SECONDS = 25
@@ -78,10 +79,28 @@ def _run(payload, thread_id: str) -> dict[str, Any]:
         return {"status": "paid_operations_disabled", "thread_id": thread_id}
     from ifdispatcher.agent import message_ids
 
-    config = {"configurable": {"thread_id": thread_id}, "tags": ["remote"]}
+    run_id = str(uuid.uuid4())
+    config = {
+        "configurable": {"thread_id": thread_id},
+        "tags": ["remote", f"v{__version__}"],
+        "run_id": run_id,
+        "metadata": {"version": __version__, "surface": "remote"},
+    }
     agent = _get_agent()
     seen = message_ids(agent.get_state(config))
-    return _turn(agent.invoke(payload, config=config, version="v2"), thread_id, seen)
+    events = []
+    token = observability.meter.set(events)
+    try:
+        result = agent.invoke(payload, config=config, version="v2")
+        response = _turn(result, thread_id, seen)
+        signals = observability.summarize(result.value["messages"], seen)
+        if result.interrupts:
+            signals["outcome"] = "approval_required"
+        response.update(run_id=run_id, workflow=signals, provider_usage=events)
+        observability.write_feedback(run_id, signals)
+        return response
+    finally:
+        observability.meter.reset(token)
 
 
 async def _wait(thread_id: str) -> dict[str, Any]:
@@ -151,6 +170,39 @@ async def turn_status(thread_id: str) -> dict[str, Any]:
             "server restarted; send plan_flight on this thread to ask where it stands.",
         }
     return await _wait(thread_id)
+
+
+@mcp.tool()
+def list_saved_trips(trip: str | None = None) -> dict:
+    """List saved trip ids, or read a trip's latest legs and briefings without model/provider calls."""
+    return operations.saved_trips(trip)
+
+
+@mcp.tool()
+def conversation_status(thread_id: str) -> dict:
+    """Read a persisted conversation after a restart without invoking the model or generating.
+
+    Pass the original conversation thread_id; this differs from a saved trip id.
+    """
+    state = _get_agent().get_state({"configurable": {"thread_id": thread_id}})
+    if not state.values:
+        return {"status": "not_found", "thread_id": thread_id}
+    if state.interrupts:
+        request = state.interrupts[0].value["action_requests"][0]
+        return {
+            "status": "approval_required",
+            "thread_id": thread_id,
+            "summary": request["description"],
+            "inputs": request["args"],
+        }
+    messages = state.values.get("messages", [])
+    reply = next((m.text for m in reversed(messages) if m.type == "ai" and m.text), None)
+    return {
+        "status": "saved",
+        "thread_id": thread_id,
+        "reply": reply,
+        "next": "Continue with plan_flight using this same thread_id. Check saved trip status before retrying interrupted generation.",
+    }
 
 
 @mcp.custom_route("/health", methods=["GET"])

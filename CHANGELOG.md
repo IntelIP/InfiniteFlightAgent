@@ -11,6 +11,43 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-07
+
+### Fixed
+
+- SimBrief-supplied routes no longer fail a blank-route readback. Explicit routes still
+  must match. The approved runway is selected after the departure-time prompt resets it.
+- Generation failures return `clicked` and `retryable`. Safe failures before Generate may
+  be corrected and retried once; an atomic database claim prevents a second Generate click
+  across threads or restarts. Repeating dispatch cannot erase generation history.
+- Overlapping SimBrief dialogs are handled from the front. Unknown warnings stop for review.
+- Connection durations are computed in a tool before recommendations. The prompt avoids
+  redundant confirmation of settled flights and labels airport field elevation explicitly.
+- Briefings expose SimBrief fuel/range/weight failures and preserve provider messages.
+  Infeasible plans withhold thrust-setting guidance. A generated OFP is distinct from a
+  feasible flight; the observed KLAX–NZAA plan had negative landing fuel and a range warning.
+
+### Added
+
+- Guided full-throttle N1 calibration and percentage targets. Saved readings require a
+  simulator version, exact aircraft/engine/conditions/runway match, and an age of at most
+  seven days. No engine model or supported-aircraft claim changes.
+- Dated arrival-target calculations using sourced gate-to-gate block time, with explicit
+  timezone/date-line handling and comparison to the generated plan's arrival.
+- Explicit route, runway, load and SimBrief airframe selection. The retained OFP checks the
+  selected airframe id. Simulator configuration/capacity and its source are kept separate
+  from the provider profile; supplied capacity uses the dispatch's explicit KGS/LBS units.
+- Saved-trip listing, per-leg status/briefings, revision comparisons, approved revisions,
+  briefing refresh with changes, and persisted conversation/approval inspection after restart.
+- Per-turn FlightAware list-price measurements and Browserbase elapsed time (no invented
+  Browserbase/model invoice costs); versioned traces and objective workflow feedback.
+- `scripts/review_traces.py` for bounded conversation review and optional LangSmith queueing;
+  `evals/run_workflow_replay.py` for real-model generation/recovery/briefing regression with
+  controlled providers and zero FlightAware/Browserbase calls.
+
+Live acceptance is recorded separately after deployment; see [the implementation and
+validation report](docs/evidence/trace-driven-release.md). No new aircraft-support claim is made.
+
 ## [0.3.1] - 2026-11-02
 
 ### Fixed
@@ -132,7 +169,8 @@ First public release, and the first version live on the self-hosted Cloudflare d
 - A SimBrief generation that fails before the Generate click leaves the leg retryable instead
   of blocking it permanently ([#3](https://github.com/IntelIP/InfiniteFlightAgent/pull/3)).
 
-[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.2.0...v0.2.1

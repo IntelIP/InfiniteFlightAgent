@@ -10,7 +10,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from ifdispatcher import artifacts, flights, simbrief_browser, thrust
+from ifdispatcher import artifacts, flights, planning, simbrief_browser, thrust
 from ifdispatcher.config import data_dir, setting
 from ifdispatcher.core import Dispatch, Store, fetch_sync, normalize, open_store
 
@@ -23,16 +23,17 @@ def _store() -> Store:
 
 
 def _arrival(meta: dict) -> datetime | None:
-    """A dispatched airline leg's expected arrival; private legs have none on record."""
+    """A live flight's expected arrival, or the retained plan's arrival for private legs."""
     times = (meta.get("flight") or {}).get("times") or {}
     value = (times.get("estimated_in") or {}).get("utc") or (times.get("scheduled_in") or {}).get(
         "utc"
     )
+    value = value or meta.get("planned_arrival")
     return _utc(value) if value else None
 
 
 def _duration(gap: timedelta) -> str:
-    minutes = abs(int(gap.total_seconds() // 60))
+    minutes = int(abs(gap.total_seconds()) // 60)
     return f"{minutes // 60} h {minutes % 60:02d} min"
 
 
@@ -105,6 +106,13 @@ def dispatch_flight(
     units: str = "KGS",
     passengers: int | None = None,
     private_callsign: str | None = None,
+    route: str | None = None,
+    runway: str | None = None,
+    airframe_id: str | None = None,
+    configuration: str | None = None,
+    simulator_capacity: float | None = None,
+    capacity_source: str | None = None,
+    arrival_target_utc: str | None = None,
 ) -> dict[str, Any]:
     origin, destination, sim_aircraft = origin.upper(), destination.upper(), sim_aircraft.upper()
     flight = None
@@ -140,6 +148,11 @@ def dispatch_flight(
         }
     if not departure_utc:
         return {"status": "missing_input", "missing_inputs": ["departure_utc"]}
+    if simulator_capacity is not None and not capacity_source:
+        return {
+            "status": "missing_input",
+            "missing_inputs": ["capacity_source (where simulator fuel capacity was observed)"],
+        }
     departure = _utc(departure_utc)
     if flight:
         scheduled = _utc(flight["times"]["scheduled_out"]["utc"])
@@ -159,20 +172,38 @@ def dispatch_flight(
         departure=departure,
         units=units.upper(),
         passengers=passengers,
+        route=route,
+        runway=runway,
+        airframe_id=airframe_id,
+        configuration=configuration,
+        simulator_capacity=simulator_capacity,
+        capacity_source=capacity_source,
+        arrival_target_utc=arrival_target_utc,
     )
     store = _store()
     prepared = store.prepare(request)
     if prepared["status"] != "prepared":
         return prepared
+    old_meta = store.read_meta(trip, leg, revision)
+    if old_meta and (
+        old_meta.get("engine"),
+        old_meta.get("private_callsign"),
+        (old_meta.get("flight") or {}).get("fa_flight_id"),
+    ) != (engine, private_callsign, fa_flight_id):
+        return {
+            "status": "revision_conflict",
+            "reason": "Flight, engine or callsign changed; use a new revision",
+        }
     store.save_meta(
         trip,
         leg,
         revision,
         {
+            **old_meta,
             "flight": flight,
             "engine": engine,
             "private_callsign": private_callsign,
-            "prepared_at": datetime.now(timezone.utc).isoformat(),
+            "prepared_at": old_meta.get("prepared_at") or datetime.now(timezone.utc).isoformat(),
         },
     )
     number = flight["flight_number"] if flight else private_callsign
@@ -195,6 +226,10 @@ def dispatch_flight(
             "units": units.upper(),
             "passengers": passengers,
             "takeoff_performance": "enable runway analysis (TLR)",
+            "route": route if route is not None else "SimBrief default",
+            "runway": runway,
+            "airframe_id": airframe_id,
+            "configuration": configuration,
         },
         "thrust_estimate": "supported (labeled simulation-grade estimate)"
         if sim_aircraft in thrust.AIRCRAFT
@@ -204,11 +239,20 @@ def dispatch_flight(
             "generation fails, show these inputs so the user can generate manually."
         ),
         "flight": flight,
+        "warnings": [
+            "Custom/ACJ configuration and simulator capacity are not verified by the aircraft name alone"
+        ]
+        if configuration
+        else [],
     }
 
 
 def _tag(trip: str, leg: str, revision: int) -> str:
     return f"IFD_{re.sub(r'[^A-Za-z0-9]', '', trip)[:24]}_{leg}_R{revision}"
+
+
+class GenerationClaimed(ValueError):
+    """Another execution already owns this leg revision's Generate click."""
 
 
 def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) -> dict[str, Any]:
@@ -219,12 +263,17 @@ def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) ->
         return {"status": "missing_dispatch", "reason": "call dispatch_flight for this leg first"}
     meta = store.read_meta(trip, leg, revision)
     previous = (meta.get("generation") or {}).get("status")
-    if click and previous in ("clicking", "generated", "uncertain", "error"):
+    if (
+        click
+        and previous in ("clicking", "generated", "uncertain", "error")
+        and not (meta.get("generation") or {}).get("retryable")
+    ):
         return {
             "status": "already_attempted",
             "reason": f"generation already {previous} for this leg revision; finalize it, or "
             "dispatch a new revision if the user wants to regenerate",
             "generation": meta.get("generation"),
+            "retryable": False,
         }
     flight = meta.get("flight") or {}
     ident = re.fullmatch(r"([A-Z]{3})(\d+[A-Z]?)", flight.get("ident_icao") or "")
@@ -242,11 +291,39 @@ def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) ->
     }
 
     def mark_clicking() -> None:  # just before the click: earlier failures leave the leg retryable
-        meta["generation"] = {"status": "clicking", "at": datetime.now(timezone.utc).isoformat()}
-        store.save_meta(trip, leg, revision, meta)
+        nonlocal meta
+        claimed = store.claim_generation(trip, leg, revision)
+        if claimed is None:
+            raise GenerationClaimed("Generation already claimed for this revision")
+        meta = claimed
 
-    result = simbrief_browser.generate(
-        fields, click, data_dir() / "screens", before_click=mark_clicking if click else None
+    fields.update({k: request.get(k) for k in ("route", "runway", "airframe_id")})
+    try:
+        result = simbrief_browser.generate(
+            fields, click, data_dir() / "screens", before_click=mark_clicking if click else None
+        )
+    except GenerationClaimed:
+        return {
+            "status": "already_attempted",
+            "retryable": False,
+            "reason": "Another execution already claimed Generate for this revision",
+        }
+    except Exception as exc:
+        clicked = (meta.get("generation") or {}).get("status") == "clicking"
+        result = {
+            "status": "uncertain" if clicked else "error",
+            "error": type(exc).__name__,
+            "session": getattr(exc, "simbrief_session", None),
+            "clicked": clicked,
+            "retryable": not clicked,
+        }
+        meta["generation"] = {**meta.get("generation", {}), **result}
+        store.save_meta(trip, leg, revision, meta)
+        return result
+    clicked = (meta.get("generation") or {}).get("status") == "clicking"
+    result.update(
+        clicked=clicked,
+        retryable=not clicked and result["status"] not in ("generated", "uncertain"),
     )
     try:
         result["r2_keys"] = artifacts.upload(
@@ -277,6 +354,9 @@ def _synopsis(raw: dict) -> dict[str, Any]:
         "takeoff_weight": f"{weights.get('est_tow')} {units}",
         "passengers": weights.get("pax_count"),
         "sched_out": times.get("sched_out"),
+        "arrival": times.get("est_in"),
+        "block_time": times.get("est_block"),
+        "flight_route": general.get("route"),
     }
 
 
@@ -312,6 +392,12 @@ def _briefing(syn: dict, flight: dict | None, est: dict, takeoff: dict | None, m
         f"**TAKEOFF THRUST (simulation-grade estimate):** {thrust_line}",
         "",
     ]
+    if meta.get("feasibility"):
+        lines.extend([planning.assessment_line(meta["feasibility"]), ""])
+        if meta["feasibility"]["status"] == "infeasible":
+            lines[1] = (
+                "**TAKEOFF THRUST:** withheld — the generated flight is infeasible; revise the plan first"
+            )
     if flight:
         out = flight["times"]["scheduled_out"]
         est_out = flight["times"]["estimated_out"]["local"] or "n/a"
@@ -324,8 +410,15 @@ def _briefing(syn: dict, flight: dict | None, est: dict, takeoff: dict | None, m
         lines.append(f"**Departure:** sched out {out['local']} ({out['utc']}) · est {est_out}")
     else:
         lines.append(f"**Flight:** private, callsign {meta.get('private_callsign')}")
+        if syn.get("sched_out"):
+            lines.append(f"**Departure:** {syn['sched_out']}")
+    plan_label = (
+        "SimBrief plan generated (infeasible)"
+        if (meta.get("feasibility") or {}).get("status") == "infeasible"
+        else "SimBrief plan confirmed"
+    )
     lines.append(
-        f"**SimBrief plan confirmed:** generated {syn['generated_at']} · {syn['route']} · "
+        f"**{plan_label}:** generated {syn['generated_at']} · {syn['route']} · "
         f"{syn['aircraft']} · {syn['cruise']} · {syn['distance_nm']} nm · ETE {syn['ete']} · "
         f"block fuel {syn['block_fuel']} · TOW {syn['takeoff_weight']}"
     )
@@ -335,11 +428,21 @@ def _briefing(syn: dict, flight: dict | None, est: dict, takeoff: dict | None, m
             f"V1/VR/V2 {takeoff.get('speeds_v1')}/{takeoff.get('speeds_vr')}/"
             f"{takeoff.get('speeds_v2')} · bleeds {takeoff.get('bleed_setting')}"
         )
+    for message in (meta.get("feasibility") or {}).get("provider_messages", []):
+        lines.append(f"**SimBrief message:** {message}")
+    if syn.get("arrival"):
+        lines.append(f"**Estimated arrival:** {syn['arrival']} (gate arrival, UTC)")
+    if meta.get("arrival_comparison"):
+        lines.append(f"**Arrival target:** {meta['arrival_comparison']}")
     return "\n".join(lines)
 
 
 def finalize_dispatch(
-    trip: str, leg: str, revision: int = 1, full_thrust_n1: float | None = None
+    trip: str,
+    leg: str,
+    revision: int = 1,
+    full_thrust_n1: float | None = None,
+    simulator_version: str | None = None,
 ) -> dict[str, Any]:
     store = _store()
     request = store.read_request(trip, leg, revision)
@@ -385,6 +488,18 @@ def finalize_dispatch(
         engine_override=meta.get("engine"),
         full_thrust_n1=full_thrust_n1,
     )
+    from ifdispatcher.operations import calibrated_estimate
+
+    estimate, calibration = calibrated_estimate(
+        store,
+        dict(
+            data, airframe_id=request.get("airframe_id"), configuration=request.get("configuration")
+        ),
+        meta.get("engine"),
+        estimate,
+        full_thrust_n1,
+        simulator_version,
+    )
     flight = meta.get("flight")
     if flight and flight.get("fa_flight_id"):
         try:
@@ -399,16 +514,31 @@ def finalize_dispatch(
         except ValueError:
             meta["recent_gates"] = None
     synopsis = _synopsis(raw)
+    feasibility = planning.assess(raw, request)
+    meta["feasibility"] = feasibility
+    if request.get("arrival_target_utc") and synopsis.get("arrival"):
+        delta = _utc(synopsis["arrival"]) - _utc(request["arrival_target_utc"])
+        meta["arrival_comparison"] = (
+            f"{request['arrival_target_utc']}; plan arrives {_relative(delta)} target"
+        )
+    briefing = _briefing(synopsis, flight, estimate, data.get("selected_takeoff"), meta)
+    meta.update(
+        briefing=briefing,
+        planned_arrival=synopsis.get("arrival"),
+        task_outcome="infeasible" if feasibility["status"] == "infeasible" else "briefing_ready",
+    )
+    store.save_meta(trip, leg, revision, meta)
     return {
         "status": "complete",
-        "briefing_markdown": _briefing(
-            synopsis, flight, estimate, data.get("selected_takeoff"), meta
-        ),
+        "briefing_markdown": briefing,
         "synopsis": synopsis,
         "flight": flight,
         "recent_gates": meta.get("recent_gates"),
         "thrust": estimate,
         "snapshot": {"trip": trip, "leg": leg, "revision": revision, "sha256": saved["raw_sha256"]},
+        "feasibility": feasibility,
+        "calibration": calibration,
+        "task_outcome": "infeasible" if feasibility["status"] == "infeasible" else "briefing_ready",
     }
 
 
@@ -483,6 +613,7 @@ def analyze_existing_plan(
                 "in FlightAware data; the plan's flight number looks user-entered"
             )
     synopsis = _synopsis(raw)
+    meta["feasibility"] = planning.assess(raw)
     briefing = _briefing(synopsis, flight, estimate, data.get("selected_takeoff"), meta)
     if not flight:
         briefing = briefing.replace(
@@ -497,4 +628,8 @@ def analyze_existing_plan(
         "flight": flight,
         "recent_gates": meta.get("recent_gates"),
         "thrust": estimate,
+        "feasibility": meta["feasibility"],
+        "task_outcome": "infeasible"
+        if meta["feasibility"]["status"] == "infeasible"
+        else "briefing_ready",
     }

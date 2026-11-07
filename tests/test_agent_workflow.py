@@ -148,8 +148,8 @@ def test_failure_before_the_click_leaves_the_leg_retryable(mocked, monkeypatch):
         raise RuntimeError("Context ID not found")  # session never opened, nothing clicked
 
     monkeypatch.setattr(workflow.simbrief_browser, "generate", lost_profile)
-    with pytest.raises(RuntimeError):
-        workflow.generate_plan("KIAD-KEWR-20261031", "1", 1)
+    result = workflow.generate_plan("KIAD-KEWR-20261031", "1", 1)
+    assert result["status"] in ("error", "uncertain")
 
     def clicks(fields, click, shots_dir, before_click=None):
         before_click()
@@ -167,11 +167,12 @@ def test_failure_after_the_click_blocks_a_second_click(mocked, monkeypatch):
         raise RuntimeError("browser disconnected")
 
     monkeypatch.setattr(workflow.simbrief_browser, "generate", disconnects_after_click)
-    with pytest.raises(RuntimeError):
-        workflow.generate_plan("KIAD-KEWR-20261031", "1", 1)
+    result = workflow.generate_plan("KIAD-KEWR-20261031", "1", 1)
+    assert result["status"] in ("error", "uncertain")
     second = workflow.generate_plan("KIAD-KEWR-20261031", "1", 1)
     assert second["status"] == "already_attempted"
-    assert second["generation"]["status"] == "clicking"
+    assert second["generation"]["status"] == "uncertain"
+    assert second["generation"]["retryable"] is False
 
 
 def test_finalize_refuses_plan_older_than_the_generate_click(mocked, monkeypatch):
@@ -443,8 +444,11 @@ def test_approval_summary_thrust_note_follows_the_airport_elevation(mocked, monk
     airport = {"name": "Test Intl", "city": "Test", "timezone": "America/Denver"}
     call = gate_call(origin="KDEN", destination="KIAD", departure_utc="2026-11-01T00:30:00Z")
     for elevation, note in (
-        (5434, "A20N at KDEN (5,434 ft): simulation-grade takeoff N1 estimate available"),
-        (18000, "A20N at KDEN (18,000 ft): takeoff N1 estimate unavailable"),
+        (
+            5434,
+            "A20N at KDEN (5,434 ft field elevation): simulation-grade takeoff N1 estimate available",
+        ),
+        (18000, "A20N at KDEN (18,000 ft field elevation): takeoff N1 estimate unavailable"),
     ):
         record = {**airport, "elevation": elevation}
         monkeypatch.setattr(agent.flights, "_get", lambda path, params=None, r=record: r)

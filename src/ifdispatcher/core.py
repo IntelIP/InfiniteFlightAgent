@@ -30,6 +30,11 @@ class Dispatch(BaseModel):
     passengers: Annotated[int, Field(ge=0, strict=True)] | None = None
     route: Annotated[str, Field(max_length=10000)] | None = None
     runway: Annotated[str, Field(pattern=r"^[0-3][0-9][LCR]?$", max_length=3)] | None = None
+    airframe_id: Annotated[str, Field(pattern=r"^(?:[A-Z0-9]{2,4}|[0-9]+_[0-9]+)$")] | None = None
+    configuration: Annotated[str, Field(max_length=200)] | None = None
+    simulator_capacity: Annotated[float, Field(gt=0, le=1000000)] | None = None
+    capacity_source: Annotated[str, Field(max_length=500)] | None = None
+    arrival_target_utc: AwareDatetime | None = None
 
 
 def encode(value):
@@ -137,7 +142,11 @@ class Store:
                 "SELECT payload FROM requests WHERE trip=? AND leg=? AND revision=?",
                 (request.trip, request.leg, request.revision),
             ).fetchone()
-            if old and old[0] != payload:
+            if (
+                old
+                and encode(Dispatch.model_validate(json.loads(old[0])).model_dump(mode="json"))
+                != payload
+            ):
                 raise ValueError("revision_conflict: use a new revision for changed inputs")
             db.execute(
                 "INSERT OR IGNORE INTO requests VALUES (?,?,?,?)",
@@ -174,6 +183,11 @@ class Store:
                 raise ValueError("unverified_custom_airframe: exact mapping not established")
             if normalized["aircraft"]["icao_code"] != expected["aircraft"]:
                 raise ValueError("identity_mismatch: aircraft differs")
+            if (
+                expected.get("airframe_id")
+                and obj["aircraft"].get("internal_id") != expected["airframe_id"]
+            ):
+                raise ValueError("identity_mismatch: selected SimBrief airframe differs")
             if normalized["weight_units"].upper() != expected["units"]:
                 raise ValueError("identity_mismatch: units differ")
             if expected["runway"]:
@@ -215,6 +229,32 @@ class Store:
             ).fetchone()
         return json.loads(row[0]) if row else {}
 
+    def claim_generation(self, trip: str, leg: str, revision: int) -> dict | None:
+        """Atomically claim the Generate click, including across conversation threads/restarts."""
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute(
+                "SELECT payload FROM leg_meta WHERE trip=? AND leg=? AND revision=?",
+                (trip, leg, revision),
+            ).fetchone()
+            meta = json.loads(row[0]) if row else {}
+            previous = meta.get("generation") or {}
+            if previous.get("at") or previous.get("status") in (
+                "generated",
+                "uncertain",
+                "clicking",
+            ):
+                return None
+            meta["generation"] = {
+                "status": "clicking",
+                "at": datetime.now(timezone.utc).isoformat(),
+            }
+            db.execute(
+                "INSERT OR REPLACE INTO leg_meta VALUES (?,?,?,?)",
+                (trip, leg, revision, encode(meta)),
+            )
+            return meta
+
     def save_setting(self, name: str, value: str):
         """Server-owned state that must outlive the container (e.g. a recreated browser profile)."""
         with self.connect() as db:
@@ -241,7 +281,27 @@ class Store:
         latest = {
             leg: (json.loads(request), json.loads(meta or "{}")) for leg, request, meta in rows
         }
-        return [(leg, request, meta) for leg, (request, meta) in latest.items()]
+        return sorted(
+            [(leg, request, meta) for leg, (request, meta) in latest.items()],
+            key=lambda item: (
+                not item[0].isdigit(),
+                int(item[0]) if item[0].isdigit() else item[0],
+            ),
+        )
+
+    def trips(self) -> list[str]:
+        with self.connect() as db:
+            return [
+                r[0]
+                for r in db.execute("SELECT DISTINCT trip FROM requests ORDER BY trip").fetchall()
+            ]
+
+    def revisions(self, trip: str, leg: str) -> list[dict]:
+        with self.connect() as db:
+            rows = db.execute(
+                "SELECT payload FROM requests WHERE trip=? AND leg=? ORDER BY revision", (trip, leg)
+            ).fetchall()
+        return [json.loads(r[0]) for r in rows]
 
     def read_request(self, trip: str, leg: str, revision: int) -> dict | None:
         with self.connect() as db:
