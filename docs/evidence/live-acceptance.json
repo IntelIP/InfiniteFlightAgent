@@ -1,34 +1,34 @@
 {
   "schemaVersion": "ifd-live-acceptance/v1",
   "acceptance": "BUILD-04",
-  "recorded_at": "2026-11-02T03:55:25.225728+00:00",
+  "recorded_at": "2026-11-07T19:54:53.716006+00:00",
   "deployment": {
-    "commit": "49ebc8b88037c1211a669c428156408ec05bbcb5",
-    "worker_version": "d79ca2ed-a836-4281-8902-f78c817378da"
+    "commit": "72d54ecc3917184b1a2ac6c8a81ae1c82d754af8",
+    "worker_version": "331a9196-14ec-4197-b273-119c6e8a8ff7"
   },
-  "integration_digest": "e7d827ddff8f4edccb70151d15dca14ce9490a49d996d921a94959489c0d6725",
+  "integration_digest": "fd5ace258b2c93536b28052716a47bca74b5ebac79980471d40496144409911c",
   "outcomes": {
     "generation_through_mcp": {
       "passed": true,
-      "detail": "KDEN-KIAD-20261103 leg 1, KDEN-KIAD-20261103 leg 2"
+      "detail": "KDEN-KIAD-20261108 leg 1, KDEN-KIAD-20261108 leg 2"
     },
     "neo_response": {
       "passed": true,
-      "detail": "KDEN-KIAD-20261103 leg 1 (A21N), KDEN-KIAD-20261103 leg 2 (A21N)"
+      "detail": "KDEN-KIAD-20261108 leg 1 (A21N), KDEN-KIAD-20261108 leg 2 (A21N)"
     },
     "two_legs_retained": {
       "passed": true,
-      "detail": "KDEN-KIAD-20261103 legs 1 and 2"
+      "detail": "KDEN-KIAD-20261108 legs 1 and 2"
     },
     "authentication_and_resumption": {
       "passed": true,
-      "detail": "approval wait, resume and signed-in generation: KDEN-KIAD-20261103"
+      "detail": "approval wait, resume and signed-in generation: KDEN-KIAD-20261108"
     }
   },
   "cases": [
     {
-      "thread": "trip-4a1166b8aa",
-      "trip": "KDEN-KIAD-20261103",
+      "thread": "trip-2abc41c671",
+      "trip": "KDEN-KIAD-20261108",
       "interrupts": 2,
       "resumes": 4,
       "legs": [
@@ -39,17 +39,17 @@
             "origin": "KDEN",
             "destination": "KIAD",
             "aircraft": "A21N",
-            "departure": "2026-11-03T21:10:00Z"
+            "departure": "2026-11-08T14:40:00Z"
           },
           "generation": {
             "status": "generated",
-            "clicked_at": "2026-11-02T03:54:02.484102+00:00",
+            "clicked_at": "2026-11-07T19:53:21.147849+00:00",
             "browser_session": true
           },
           "snapshot": {
-            "sha256": "414f8f2a3e22449297020c06dd440c0afdb9c9297d5152656ee9a484df763146",
-            "retrieved_at": "2026-11-02T03:54:15.083339+00:00",
-            "generated_at": "2026-11-02T03:54:03Z",
+            "sha256": "ad90f82c821c726af0c8436c22661686157104e0c6e3dec000e7df488e171600",
+            "retrieved_at": "2026-11-07T19:53:33.647874+00:00",
+            "generated_at": "2026-11-07T19:53:22Z",
             "origin": "KDEN",
             "destination": "KIAD",
             "aircraft": "A21N",
@@ -63,17 +63,17 @@
             "origin": "KIAD",
             "destination": "KDEN",
             "aircraft": "A21N",
-            "departure": "2026-11-04T03:10:00Z"
+            "departure": "2026-11-08T19:10:00Z"
           },
           "generation": {
             "status": "generated",
-            "clicked_at": "2026-11-02T03:54:42.954124+00:00",
+            "clicked_at": "2026-11-07T19:54:08.344898+00:00",
             "browser_session": true
           },
           "snapshot": {
-            "sha256": "578b6fd413c78054e502f582fff2fc1fb362c77547f59d0a2c9684c28861cd6a",
-            "retrieved_at": "2026-11-02T03:55:01.156845+00:00",
-            "generated_at": "2026-11-02T03:54:44Z",
+            "sha256": "20e6f2bf8d94b02fe70df1211c3e93fb4e9bd213dfe73cc910b353314abd52d2",
+            "retrieved_at": "2026-11-07T19:54:21.712729+00:00",
+            "generated_at": "2026-11-07T19:54:09Z",
             "origin": "KIAD",
             "destination": "KDEN",
             "aircraft": "A21N",

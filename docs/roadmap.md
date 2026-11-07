@@ -1,9 +1,8 @@
 # Roadmap
 
-Status updated November 6, 2026. v0.3.1 is the latest shipped build. The next minor candidate,
-v0.4.0, combines reliability, actionable N1 readings, aircraft-aware planning, trip management
+Status updated November 7, 2026. v0.4.0 is the latest shipped build. It combines reliability, actionable N1 readings, aircraft-aware planning, trip management
 and trace review. Its [implementation/validation report](evidence/trace-driven-release.md)
-records what exists locally and the remaining release gates. The milestones below are the
+records the implementation, verified deployment and passing production acceptance trip. The milestones below are the
 original outcome map; their historical notes do not describe today's deployment.
 Product intent and support definitions are owned by [goal.md](goal.md).
 

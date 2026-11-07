@@ -86,10 +86,10 @@ Decided October 31, 2026 (Hudson): personal, not resold; open source with bring-
 - **End-to-end checks** — `uv run python evals/run_e2e.py` drives the live agent through approval, browser generation, plan matching, thrust, and the briefing for nine scenarios. It writes plans to the SimBrief account and spends Browserbase time.
 
 
-## v0.4.0 candidate additions
+## v0.4.0 additions
 
-The [candidate report](../evidence/trace-driven-release.md) distinguishes implemented local
-behavior, controlled-provider model evaluations and actual live observations.
+The [release report](../evidence/trace-driven-release.md) distinguishes local checks,
+controlled-provider model evaluations and the passing production MCP trip.
 
 - Ask to list saved trips, inspect a trip, change a saved leg or refresh its briefing. Changes
   use a new revision and approval; refresh keeps the original OFP and reports changed lines.
