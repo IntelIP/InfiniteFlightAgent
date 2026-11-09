@@ -145,7 +145,8 @@ def _run_case(case: dict, experiment: str) -> dict:
     replies = 0
     try:
         for _ in range(8):
-            result = agent.invoke(payload, config=config, version="v2")
+            with simbrief_browser.session_scope():
+                result = agent.invoke(payload, config=config, version="v2")
             if result.interrupts:
                 approvals += 1
                 if case.get("decline"):

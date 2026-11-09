@@ -632,7 +632,8 @@ def main() -> None:
         payload: Any = {"messages": [{"role": "user", "content": text}]}
         while True:
             seen = message_ids(agent.get_state(config))
-            result = agent.invoke(payload, config=config, version="v2")
+            with workflow.simbrief_browser.session_scope():
+                result = agent.invoke(payload, config=config, version="v2")
             if result.interrupts:
                 for briefing in new_briefings(result.value["messages"], seen):
                     print("\ndispatcher>", briefing)
