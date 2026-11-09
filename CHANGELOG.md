@@ -11,6 +11,22 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-08
+
+### Fixed
+
+- SimBrief generation runs Route Finder when no route was supplied, after airport/date/runway
+  updates finish, and waits for the routing result. Explicit routes are preserved. Empty or
+  direct-only automatic results stop for review before Generate instead of silently producing DCT.
+- Each active dispatcher execution lazily opens one Browserbase session and Playwright
+  connection for its SimBrief operations. Parallel browser tools serialize on the owning
+  thread. The session is released on completion, error or an approval pause; separate
+  workflows remain isolated. Local chat and the live E2E runner use the same lifecycle.
+
+Local regression tests cover session reuse, isolation, cleanup, approval pauses and routing.
+Live Browserbase acceptance remains pending: its API rejects new sessions after the free
+billable-minute allowance was exhausted. This release does not claim new live acceptance.
+
 ## [0.4.0] - 2026-11-07
 
 ### Fixed
@@ -169,7 +185,8 @@ First public release, and the first version live on the self-hosted Cloudflare d
 - A SimBrief generation that fails before the Generate click leaves the leg retryable instead
   of blocking it permanently ([#3](https://github.com/IntelIP/InfiniteFlightAgent/pull/3)).
 
-[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.2.1...v0.3.0

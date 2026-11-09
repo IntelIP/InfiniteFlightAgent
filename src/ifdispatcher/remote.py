@@ -24,7 +24,7 @@ from starlette.responses import JSONResponse
 
 from ifdispatcher import __version__
 from ifdispatcher.config import export_tracing_settings, paid_operations_enabled, setting
-from ifdispatcher import observability, operations
+from ifdispatcher import observability, operations, simbrief_browser
 
 TOKEN_HEADER = "x-ifd-internal-token"
 WAIT_SECONDS = 25
@@ -91,7 +91,8 @@ def _run(payload, thread_id: str) -> dict[str, Any]:
     events = []
     token = observability.meter.set(events)
     try:
-        result = agent.invoke(payload, config=config, version="v2")
+        with simbrief_browser.session_scope():
+            result = agent.invoke(payload, config=config, version="v2")
         response = _turn(result, thread_id, seen)
         signals = observability.summarize(result.value["messages"], seen)
         if result.interrupts:
@@ -222,8 +223,6 @@ async def simbrief_keepalive(_: Request) -> JSONResponse:
     """Daily Worker cron: keep the SimBrief login fresh, signing in again if it lapsed."""
     if not paid_operations_enabled():
         return JSONResponse({"status": "paid_operations_disabled"})
-    from ifdispatcher import simbrief_browser
-
     try:
         result = await asyncio.get_running_loop().run_in_executor(_pool, simbrief_browser.keepalive)
     except Exception as exc:
