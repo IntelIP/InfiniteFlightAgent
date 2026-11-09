@@ -176,7 +176,9 @@ def test_generation_waits_for_routing_before_claiming_generate(
 
     page = Page()
     browser = SimpleNamespace(contexts=[SimpleNamespace(pages=[page])], close=lambda: None)
-    pw = SimpleNamespace(chromium=SimpleNamespace(connect_over_cdp=lambda _: browser))
+    browser.contexts[0].set_default_timeout = lambda _: None
+    browser.contexts[0].set_default_navigation_timeout = lambda _: None
+    pw = SimpleNamespace(chromium=SimpleNamespace(connect_over_cdp=lambda _, **k: browser))
     monkeypatch.setattr(simbrief_browser, "sync_playwright", lambda: nullcontext(pw))
     monkeypatch.setattr(simbrief_browser, "_client", lambda: None)
     monkeypatch.setattr(
@@ -237,7 +239,13 @@ def browser_resources(monkeypatch):
             self.owner = get_ident()
             self.id = url
             self.closed = False
-            self.contexts = [SimpleNamespace(pages=[self])]
+            self.contexts = [
+                SimpleNamespace(
+                    pages=[self],
+                    set_default_timeout=lambda _: None,
+                    set_default_navigation_timeout=lambda _: None,
+                )
+            ]
 
         def record(self, action):
             assert get_ident() == self.owner and not self.closed
@@ -261,7 +269,7 @@ def browser_resources(monkeypatch):
             self.record("evaluate")
             return [{"id": "A20N", "name": "Default"}]
 
-    def connect(url):
+    def connect(url, **kwargs):
         browser = Browser(url)
         browsers.append(browser)
         return browser
@@ -275,6 +283,8 @@ def browser_resources(monkeypatch):
             events.append(("driver_stop", None, get_ident()))
 
     def create(**kwargs):
+        assert kwargs["api_timeout"] == max(60, int(simbrief_browser.budget.SESSION_SECONDS))
+        assert kwargs["keep_alive"] is False
         session = SimpleNamespace(
             id=f"session-{len(creates)}", connect_url=f"session-{len(creates)}"
         )
@@ -284,8 +294,16 @@ def browser_resources(monkeypatch):
     def update(sid, **kwargs):
         assert kwargs == {"status": "REQUEST_RELEASE"}
         events.append(("release", sid, get_ident()))
+        return SimpleNamespace(status="COMPLETED")
 
-    client = SimpleNamespace(sessions=SimpleNamespace(create=create, update=update))
+    client = SimpleNamespace(
+        sessions=SimpleNamespace(
+            create=create,
+            update=update,
+            list=lambda: [],
+            retrieve=lambda _: SimpleNamespace(status="RUNNING"),
+        )
+    )
     monkeypatch.setattr(simbrief_browser, "_client", lambda: client)
     monkeypatch.setattr(simbrief_browser, "_context_id", lambda _: "saved-login-profile")
     monkeypatch.setattr(simbrief_browser, "sync_playwright", playwright)
@@ -306,8 +324,10 @@ def test_workflow_reuses_one_connection_and_preserves_usage_context(browser_reso
             assert simbrief_browser.airframes("A21N")["status"] == "ok"
             assert first["session"].endswith(resources.creates[0].id)
             assert not any(e[0] == "release" for e in resources.events)
-        assert len(resources.creates) == len(resources.browsers) == len(usage) == 1
-        assert usage[0]["released"] and usage[0]["elapsed_s"] >= 0
+        assert len(resources.creates) == len(resources.browsers) == 1
+        measured = next(e for e in usage if e.get("session_id"))
+        assert measured["released"] and measured["elapsed_s"] >= 0
+        assert measured["minimum_billable_minutes_estimate"] == 1
         assert [e[0] for e in resources.events][-3:] == ["disconnect", "driver_stop", "release"]
         assert len({e[2] for e in resources.events}) == 1
         assert simbrief_browser._workflow_browser.get() is None
@@ -323,19 +343,31 @@ def test_no_browser_work_opens_no_session(browser_resources):
 
 def test_concurrent_workflows_do_not_share_a_browser(browser_resources):
     from concurrent.futures import ThreadPoolExecutor
-    from threading import Barrier
+    from threading import Event
+    from ifdispatcher.browser_budget import admission_status
+    import time
 
-    ready = Barrier(2)
+    ready, finish = Event(), Event()
 
     def workflow():
         with simbrief_browser.session_scope():
             first = simbrief_browser.keepalive()["session"]
-            ready.wait(timeout=5)
+            ready.set()
+            assert finish.wait(5)
             assert simbrief_browser.keepalive()["session"] == first
             return first
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        sessions = list(pool.map(lambda _: workflow(), range(2)))
+        first = pool.submit(workflow)
+        assert ready.wait(5)
+        second = pool.submit(workflow)
+        end = time.monotonic() + 5
+        while admission_status()["waiting"] != 1 and time.monotonic() < end:
+            time.sleep(0.01)
+        assert admission_status()["waiting"] == 1
+        assert len(browser_resources.creates) == 1
+        finish.set()
+        sessions = [first.result(5), second.result(5)]
     assert len(set(sessions)) == len(browser_resources.creates) == 2
     assert all(b.closed for b in browser_resources.browsers)
     assert sum(e[0] == "release" for e in browser_resources.events) == 2
@@ -418,4 +450,108 @@ def test_parallel_dispatcher_tools_share_session_until_approval(browser_resource
     assert result["status"] == "approval_required"
     assert len(browser_resources.creates) == len(browser_resources.browsers) == 1
     assert browser_resources.browsers[0].closed
-    assert result["provider_usage"][0]["released"]
+    assert next(e for e in result["provider_usage"] if e.get("session_id"))["released"]
+
+
+@pytest.mark.parametrize("reason", ["idle", "deadline"])
+def test_watchdog_releases_once_and_never_creates_a_replacement(browser_resources, reason):
+    import time
+    from ifdispatcher.browser_budget import BrowserLimit, admission_status
+
+    resources = browser_resources
+    with simbrief_browser.session_scope() as scope:
+        simbrief_browser.keepalive()
+        scope.timer.cancel()
+        if reason == "idle":
+            scope.last_used = time.monotonic() - 31
+        else:
+            scope.expires = time.monotonic() - 1
+        scope._watch()
+        assert scope.release_confirmed
+        # Account ownership continues through OFP retrieval until workflow scope exits.
+        assert admission_status()["active"] == 1
+        with pytest.raises(BrowserLimit, match="browser_"):
+            simbrief_browser.keepalive()
+    assert len(resources.creates) == 1
+    assert sum(e[0] == "release" for e in resources.events) == 1
+    assert admission_status()["active"] == 0
+
+
+def test_watchdog_terminates_a_running_command(browser_resources, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+    from ifdispatcher.browser_budget import BrowserLimit
+
+    released = Event()
+    update = browser_resources.client.sessions.update
+
+    def terminate(*a, **k):
+        result = update(*a, **k)
+        released.set()
+        return result
+
+    def blocked(page):
+        assert released.wait(2), "watchdog failed to terminate the provider session"
+        return True
+
+    monkeypatch.setattr(browser_resources.client.sessions, "update", terminate)
+    monkeypatch.setattr(simbrief_browser, "ensure_logged_in", blocked)
+    monkeypatch.setattr(simbrief_browser.budget, "SESSION_SECONDS", 0.05)
+    with ThreadPoolExecutor(1) as pool:
+        future = pool.submit(simbrief_browser.keepalive)
+        with pytest.raises(BrowserLimit, match="browser_deadline"):
+            future.result(3)
+    assert len(browser_resources.creates) == 1
+
+
+def test_existing_provider_browser_blocks_creation(browser_resources, monkeypatch):
+    from ifdispatcher.browser_budget import BrowserLimit
+
+    client = browser_resources.client
+    existing = SimpleNamespace(status="RUNNING", user_metadata={"app": "InfiniteFlightDispatcher"})
+    monkeypatch.setattr(client.sessions, "list", lambda: [existing])
+    with simbrief_browser.session_scope():
+        with pytest.raises(BrowserLimit, match="existing_browser_active"):
+            simbrief_browser.keepalive()
+        with pytest.raises(BrowserLimit, match="existing_browser_active"):
+            simbrief_browser.keepalive()
+    assert browser_resources.creates == []
+
+
+def test_late_create_after_scope_closes_is_released_without_connecting(
+    browser_resources, monkeypatch
+):
+    from concurrent.futures import ThreadPoolExecutor
+    from contextvars import copy_context
+    from threading import Event
+    from ifdispatcher.browser_budget import BrowserLimit, admission_status
+
+    creating, respond, released = Event(), Event(), Event()
+    resources = browser_resources
+    create, update = resources.client.sessions.create, resources.client.sessions.update
+
+    def delayed_create(**kwargs):
+        creating.set()
+        assert respond.wait(2)
+        return create(**kwargs)
+
+    def terminate(*args, **kwargs):
+        result = update(*args, **kwargs)
+        released.set()
+        return result
+
+    monkeypatch.setattr(resources.client.sessions, "create", delayed_create)
+    monkeypatch.setattr(resources.client.sessions, "update", terminate)
+    monkeypatch.setattr(simbrief_browser.budget, "CLEANUP_SECONDS", 0.01)
+    with simbrief_browser.session_scope() as scope, ThreadPoolExecutor(1) as pool:
+        future = pool.submit(copy_context().run, simbrief_browser.keepalive)
+        assert creating.wait(2)
+        scope.close()
+        assert admission_status()["phase"] == "awaiting_provider_expiry"
+        respond.set()
+        with pytest.raises(BrowserLimit, match="scope_closed"):
+            future.result(2)
+        assert released.wait(2)
+    assert len(resources.creates) == 1
+    assert resources.browsers == []
+    assert admission_status()["active"] == 0

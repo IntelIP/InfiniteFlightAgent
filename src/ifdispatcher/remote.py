@@ -28,6 +28,7 @@ from ifdispatcher import observability, operations, simbrief_browser
 
 TOKEN_HEADER = "x-ifd-internal-token"
 WAIT_SECONDS = 25
+MAX_OUTSTANDING_TURNS = 6  # four workers and at most two waiting turns
 _agent = None
 _turns: dict[str, Future] = {}  # latest turn per thread_id
 _pool = ThreadPoolExecutor(max_workers=4)
@@ -125,6 +126,12 @@ async def _start(payload, thread_id: str) -> dict[str, Any]:
             "thread_id": thread_id,
             "next": "A turn is still running on this thread. Call turn_status instead.",
         }
+    if sum(not f.done() for f in _turns.values()) >= MAX_OUTSTANDING_TURNS:
+        return {
+            "status": "queue_full",
+            "thread_id": thread_id,
+            "next": "Dispatcher busy; try later. No work was started.",
+        }
     _turns[thread_id] = _pool.submit(_run, payload, thread_id)
     return await _wait(thread_id)
 
@@ -174,6 +181,12 @@ async def turn_status(thread_id: str) -> dict[str, Any]:
 
 
 @mcp.tool()
+def browser_status() -> dict:
+    """Inspect browser admission and active provider sessions without opening a browser."""
+    return simbrief_browser.session_inventory()
+
+
+@mcp.tool()
 def list_saved_trips(trip: str | None = None) -> dict:
     """List saved trip ids, or read a trip's latest legs and briefings without model/provider calls."""
     return operations.saved_trips(trip)
@@ -220,14 +233,10 @@ async def health(_: Request) -> JSONResponse:
 
 @mcp.custom_route("/internal/simbrief/keepalive", methods=["POST"])
 async def simbrief_keepalive(_: Request) -> JSONResponse:
-    """Daily Worker cron: keep the SimBrief login fresh, signing in again if it lapsed."""
+    """The old cron is a no-op: actual browser work signs in on demand."""
     if not paid_operations_enabled():
         return JSONResponse({"status": "paid_operations_disabled"})
-    try:
-        result = await asyncio.get_running_loop().run_in_executor(_pool, simbrief_browser.keepalive)
-    except Exception as exc:
-        return JSONResponse({"status": "error", "error": type(exc).__name__}, status_code=500)
-    return JSONResponse(result, status_code=200 if result["status"] == "logged_in" else 500)
+    return JSONResponse({"status": "skipped", "reason": "SimBrief login refreshed on demand"})
 
 
 def create_app():

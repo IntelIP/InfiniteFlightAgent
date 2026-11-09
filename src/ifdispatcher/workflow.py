@@ -317,6 +317,8 @@ def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) ->
             "clicked": clicked,
             "retryable": not clicked,
         }
+        if isinstance(exc, simbrief_browser.budget.BrowserLimit):
+            result.update(automatic_retry_allowed=False, reason=str(exc))
         meta["generation"] = {**meta.get("generation", {}), **result}
         store.save_meta(trip, leg, revision, meta)
         return result
