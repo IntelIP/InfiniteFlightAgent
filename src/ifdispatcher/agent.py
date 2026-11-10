@@ -473,7 +473,7 @@ class DispatchApproval(HumanInTheLoopMiddleware):
     """The dispatch approval gate, refusing dispatches the user should never be asked to approve.
 
     Replaces Deep Agents' HumanInTheLoopMiddleware in place (same name). Refused before approval:
-    several calls for one trip, leg, and revision (the model is offering alternatives), a call
+    invalid saved-leg revisions, several calls for one trip, leg, and revision, a call
     without departure_utc (the user could not check the time), and a leg that leaves too soon
     after the trip's previous leg arrives. Every dispatch call in that turn is refused (never
     executed), so none runs without approval, and the model fixes the call or asks the user.
@@ -485,17 +485,23 @@ class DispatchApproval(HumanInTheLoopMiddleware):
 
     @staticmethod
     def _problem(calls) -> str | None:
-        legs = [
-            (c["args"].get("trip"), c["args"].get("leg"), c["args"].get("revision", 1))
-            for c in calls
-        ]
-        if len(set(legs)) != len(legs):
-            return (
-                "Several dispatch_flight calls for the same leg. Dispatch exactly one flight per "
-                "leg: choose the best fit and say why in one line, or ask the user to choose."
-            )
+        dispatches = []
         for call in calls:
             args = call["args"]
+            if call["name"] == "revise_dispatch":
+                try:
+                    revision = revise_dispatch.args_schema.model_validate(args)
+                    args = operations.revision_inputs(**revision.model_dump())
+                except ValueError as exc:
+                    return str(exc)
+            dispatches.append(args)
+        legs = [(args.get("trip"), args.get("leg"), args.get("revision", 1)) for args in dispatches]
+        if len(set(legs)) != len(legs):
+            return (
+                "Several dispatch calls for the same leg. Dispatch exactly one flight per "
+                "leg: choose the best fit and say why in one line, or ask the user to choose."
+            )
+        for args in dispatches:
             if not args.get("departure_utc"):
                 return (
                     "dispatch_flight needs departure_utc (the flight's scheduled_out utc from the "
@@ -512,7 +518,7 @@ class DispatchApproval(HumanInTheLoopMiddleware):
 
     def _refuse(self, state) -> dict | None:
         last = next((m for m in reversed(state["messages"]) if isinstance(m, AIMessage)), None)
-        calls = [c for c in (last.tool_calls if last else []) if c["name"] == "dispatch_flight"]
+        calls = [c for c in (last.tool_calls if last else []) if c["name"] in INTERRUPT_ON]
         reason = self._problem(calls)
         if reason is None:
             return None

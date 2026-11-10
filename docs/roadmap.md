@@ -1,37 +1,76 @@
 # Roadmap
 
-Status updated November 7, 2026. v0.4.0 is the latest shipped build. It combines reliability, actionable N1 readings, aircraft-aware planning, trip management
-and trace review. Its [implementation/validation report](evidence/trace-driven-release.md)
-records the implementation, verified deployment and passing production acceptance trip. The milestones below are the
-original outcome map; their historical notes do not describe today's deployment.
-Product intent and support definitions are owned by [goal.md](goal.md).
+Status updated November 10, 2026 UTC. Production is **v0.4.2**; its
+[deployment and exact-image acceptance record](implementation/deployment.md#current-release-v042)
+own the observed release facts. New release work is tracked in the
+[Infinite Flight Agent Linear project](https://linear.app/intelip/project/infinite-flight-agent-a2f7101e32e9).
+The [backlog](backlog.md) indexes current capability and historical research;
+[goal.md](goal.md) owns accepted intent and the unchanged aircraft-support definition.
 
-| Milestone | User/engineering outcome | Exit condition | Backlog |
+## Release outcomes
+
+| Version | User outcome | Owning acceptance |
+| --- | --- | --- |
+| v0.4.2 — shipped | Automatic routing, retained plans and bounded single-user browser workflows | [Deployment and acceptance](implementation/deployment.md#current-release-v042) |
+| v0.4.3 — first implementation wave | Invalid revisions return useful validation; provider failures explain the cause; workflow evaluation has a versioned baseline | [INT-402–406](https://linear.app/intelip/issue/INT-406) |
+| v0.4.4 — planned | Existing conversations and routing are predictable across broader scenarios; the v26 catalog/native-capability matrix is recorded | [INT-407–411](https://linear.app/intelip/issue/INT-411) |
+| v0.4.5 — planned | Current neo/MAX estimate paths have evidenced v26 compatibility corrections and honest profile outcomes | [INT-412–415](https://linear.app/intelip/issue/INT-415) |
+| v0.5.0 — planned | Trips expose durable progress and safe cancellation/recovery, support more dispatch inputs and private configurations, and report measured aircraft expansion | [INT-416–428](https://linear.app/intelip/issue/INT-428) |
+
+For this sequence, v0.4.x repairs and verifies existing behavior; v0.5 adds trip-control and
+dispatch capabilities. A separate v0.4.5 release is reviewed if compatibility investigation
+finds no runtime correction to ship. Linear owns the detailed task acceptance and actual
+blocking relationships, rather than this map duplicating those specifications.
+
+The first parallel wave covers revision validation (INT-404), provider failures (INT-405)
+and workflow evaluations (INT-403), with one integrator handling documentation (INT-402)
+and release assembly. Each worker has an isolated branch. Integration, publication,
+required acceptance and production promotion remain separate observed steps.
+
+## Original product milestones and current gaps
+
+| Milestone | Current capability | Remaining acceptance | Backlog |
 | --- | --- | --- | --- |
-| M0 — Resolve integration feasibility | Know how the selected launch aircraft, SimBrief generation, flight data, and host connections can work together | Exact launch variants recorded; supported generation flow identified; thrust-resolution paths assessed; material access/decision blockers named | DISC-01 through DISC-05 |
-| M1 — Establish the application foundation | A resumable personal dispatcher accepts a flight idea through MCP | Quality/validation bootstrap exists; shared contracts and storage work; one intended host completes a real low-risk request; other hosts have compatibility work recorded | SETUP-01, BUILD-01, BUILD-02 |
-| M2 — Prepare a real flight collaboratively | Hudson can resolve missing details and obtain an identified SimBrief plan plus airport-position guidance | Research and generation work end to end; multi-leg identities survive; authentication handoffs and interruption recovery demonstrated | BUILD-03, BUILD-04 |
-| M3 — Deliver launch-aircraft thrust guidance | SimBrief takeoff solutions become actionable manual targets for the selected A320/A321neo variants | Each selected variant passes its own thrust-support criteria and records limitations/evidence | BUILD-05, VERIFY-01 |
-| M4 — Prove the usable release | The complete preparation experience works in Codex, ChatGPT, and Claude | Goal acceptance demonstrated; import field matrix verified; leading spawn/thrust response checked; failures, latency, and cost recorded | VERIFY-02, VERIFY-03 |
-| M5 — Expand aircraft coverage in batches | More aircraft receive supported translations | Each batch uses an up-to-date fleet list, prioritizes recent aircraft updates, and meets per-aircraft acceptance | EXPAND-01 |
+| M0 — Resolve integration feasibility | The selected generation, flight-data and hosted MCP paths run | Exact launch engine/profile applicability and simulator findings remain incomplete | DISC-01 through DISC-08 |
+| M1 — Establish the application foundation | Deployed Deep Agent, MCP, storage/checkpoints and runnable quality gates exist | Durable execution progress/cancellation and client-specific journeys are tracked separately | SETUP-01, BUILD-01/02; INT-416/417/426 |
+| M2 — Prepare a real flight collaboratively | Approval, browser generation, correlated OFPs and retained multi-leg briefings are observed | Broader scenarios, configuration evidence and simulator parking correspondence | BUILD-03/04; INT-407–410/419/426 |
+| M3 — Deliver launch-aircraft thrust guidance | Labeled estimates and observed-reading calibration are implemented | Zero aircraft currently meet verified support criteria; per-profile references and simulator cases remain required | BUILD-05, VERIFY-01; INT-412–414/420–425 |
+| M4 — Prove the usable release | Remote MCP and deployment acceptance are observed | Full intended-client journeys, simulator import-field matrix and usable aircraft-specific instructions | VERIFY-02/03; INT-426 |
+| M5 — Expand aircraft coverage in batches | Catalog and family-batch work is defined | Source-backed methods and verified outcomes for individual aircraft | EXPAND-01; INT-409/420–427 |
 
-M0 investigations may reveal dependencies that change implementation order. M1–M3 can overlap where inputs are established; a development milestone is not release acceptance.
+These milestones are distinct from release numbering. Shipping v0.5 does not automatically
+complete all original launch or aircraft-support criteria.
+
+## Aircraft expansion
+
+[INT-409](https://linear.app/intelip/issue/INT-409) freezes the official fleet and v26 change
+matrix, including engine/configuration variants and native PERF/FMS capabilities. The
+initial observed official fleet page lists 51 aircraft entries, so the strict-majority target
+is 26 fully verified entries. The frozen manifest must establish the denominator before it
+is used as a delivery metric; partial profile support is reported separately.
+
+Priorities include the current Challenger 350, confirmed ACJ configurations and aircraft
+with relevant v26 changes. An ACJ livery does not establish extra fuel capacity. Cockpit,
+visual and fuel-system changes do not by themselves prove a thrust-model change. Native
+indications are inspected before duplicating a capability in the dispatcher.
+
+Numerical scenarios distinguish N1, EPR, torque and other applicable target types; no N1
+formula is assumed universal. Scenario breadth, implemented estimates and simulator-verified
+support have separate counts. Reference or simulator-access blockers stay visible. An
+intermediate release reports its actual coverage and leaves unfinished expansion tasks open;
+it cannot claim majority coverage or silently reduce the denominator.
+
+## Evaluation and release evidence
+
+- Use software-defined whole-scenario and persistent-state checks, not only unit tests or a preferred sequence of tool calls.
+- Compare matched, versioned cases in LangSmith with code/fixture/verifier identity, useful workflow metrics and explicit invalid/missing-evidence outcomes.
+- Keep scripted models/controlled services, real-model replay, live-provider acceptance, numerical references and simulator observations distinct.
+- Preserve exact-input approval, immutable retained plans, Generate claims, bounded browser ownership and explicit unavailable thrust.
+- Meet repository CI/product acceptance for the actual candidate. Live provider batches require an allowance; promotion retains the existing production approval gate and rollback identity.
 
 ## Representative scenarios
 
-- Launch-aircraft airline departure: dated flight identity, schedule, reported gate, matching simulator spawn, generated plan, and thrust instruction.
-- Launch-aircraft private multi-leg itinerary: KIAD → EINN → LFMN, FBO/ramp guidance, separate plans and briefings, translation for each leg's conditions. This is a representative case, not an already validated route recommendation.
-- Missing/changed data: unassigned gate, unavailable thrust reference, changed aircraft/runway/weather, interrupted generation, and recovery.
-- The supplied B737 MAX 8 report is a preserved format example in the design, not an expansion of launch-aircraft scope.
-
-## Stop and decision gates
-
-- Do not promise a numerical thrust target where no applicable method/data exists. Record the limitation and pursue the specific research item.
-- If a launch variant cannot be supported, bring the finding to Hudson; do not silently shrink launch scope.
-- Select paid providers, model budgets, remote hosting, or access changes only with the applicable user decision.
-- Complete required direct verification once; reopen only for a material change, failed/conflicting check, or unresolved acceptance issue.
-- Do not commit, push, publish, deploy, or merge as part of planning or implementation authority alone.
-
-## First integrated research case
-
-Dulles–Newark with United A321neo is selected. DISC-09–11 in the [backlog](backlog.md) cover dated flight identity, gate/stand evidence, and PW thrust applicability. These can progress independently of SimBrief API generation access; no completed flight briefing is yet established.
+- Dated airline preparation with reported gate, simulator-mapping status, matched plan and appropriately qualified thrust instruction.
+- Private multi-leg preparation with sourced aircraft configuration, FBO/ramp limitations, independently retained plans and per-leg guidance.
+- Changed inputs, unsupported revision fields, rejected approvals, infeasible fuel/weight, unavailable targets, provider failures, uncertain generation and restart recovery.
+- The original Dulles–Newark United A321neo case remains profile-specific verification work in DISC-09–11; successful generic neo dispatch does not complete that aircraft's simulator acceptance.

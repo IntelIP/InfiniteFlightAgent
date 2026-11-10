@@ -1,8 +1,50 @@
 # Backlog
 
-Status updated November 7, 2026. This file is the work-management source. The original
-October planning items below retain their historical status unless explicitly updated.
-Current implementation and acceptance take precedence over those historical notes.
+Status updated November 10, 2026 UTC. Current release work is tracked in the
+[Infinite Flight Agent Linear project](https://linear.app/intelip/project/infinite-flight-agent-a2f7101e32e9).
+This file indexes that work and preserves earlier research. [goal.md](goal.md) owns the
+accepted product requirements and aircraft-support definition; the
+[roadmap](roadmap.md) maps release outcomes. Linear owns current task acceptance,
+dependencies and execution state. The October notes below retain their historical status;
+the current implementation and evidence summarized here supersede those dated blockers.
+
+## Current delivery baseline
+
+Production is [v0.4.2](implementation/deployment.md#current-release-v042). The exact release
+image passed a deployed two-leg staging trip before promotion. The production rollout,
+transport limitations, provider usage and cleanup are recorded in the deployment runbook.
+This proves the exercised dispatch integration, not simulator import or aircraft accuracy.
+
+| Surface | Current capability | Remaining work |
+| --- | --- | --- |
+| Foundation — SETUP-01, BUILD-01/02 | Locked Python application, Deep Agent, MCP, transactional storage/checkpoints, CI and product-validation manifest are installed; deployed generation is observed | Whole-operation progress, cancellation/deadlines and intended-client acceptance remain separate tasks |
+| SimBrief — DISC-03/06, BUILD-04 | Browser generation, Route Finder, exact-input approval/readback, correlated immutable OFPs and two retained legs are observed | More dispatch inputs and broader recovery/scenario coverage; generation does not prove every provider option |
+| Flight research — BUILD-03 | Dated FlightAware research, connection checks, reported gates and explicitly unverified spawn suggestions are implemented | Verified simulator stand mapping, private configuration evidence and import behavior |
+| Thrust — BUILD-05, VERIFY-01 | Labeled A20N/A21N/B38M estimates and condition-specific observed N1 calibration are implemented | Zero aircraft have verified support under the accepted definition; engine/build applicability and simulator evidence remain open |
+| Trip management and evaluation | Saved legs/briefings, approved revisions, refresh differences, persisted conversation inspection and trace/replay tooling are implemented | Revision approval crash, useful provider failure causes and versioned workflow evaluation baseline are first-wave work |
+| Expansion — EXPAND-01 | Versioned catalog and aircraft-batch tasks are defined in Linear | Freeze the current official catalog/engine matrix, establish reference cases and verify profiles before counting support |
+
+## Active release work
+
+| Version | Linear work | Outcome |
+| --- | --- | --- |
+| v0.4.3 | INT-402–406; [release task](https://linear.app/intelip/issue/INT-406) | Reliable revision approval and provider failure handling, planning reconciliation and measured evaluation baseline |
+| v0.4.4 | INT-407–411; [release task](https://linear.app/intelip/issue/INT-411) | Predictable existing conversations/routing, current catalog assessment and broader end-to-end scenarios |
+| v0.4.5 | INT-412–415; [release task](https://linear.app/intelip/issue/INT-415) | Evidence-based compatibility corrections for existing estimate profiles on the v26 baseline |
+| v0.5.0 | INT-416–428; [release task](https://linear.app/intelip/issue/INT-428) | Durable trip control, expanded dispatch inputs, private-flight configurations and measured aircraft expansion |
+
+The first implementation wave is active: INT-404 owns revision validation, INT-405 provider
+failure handling and INT-403 workflow evaluations. Each worker has an isolated branch and
+source surface; the integrator owns INT-402 and combines the changes for INT-406. Parallel
+development does not increase the one-browser production limit. No first-wave change is
+represented as released merely because implementation has started.
+
+All mandatory deterministic workflow invariants must pass; model quality, stage latency,
+clarification and usage comparisons use the same versioned scenario baseline. Controlled
+providers, real-model replay, live integration, numerical references and simulator
+observations remain distinct evidence. Live batches require an approved allowance and
+production retains its owner approval gate. Missing evidence leaves the corresponding
+outcome open.
 
 ## Trace-driven extension — v0.4.0 shipped
 
@@ -16,7 +58,7 @@ support remain dependent on applicable reference/simulator observations; the cod
 claim them complete.
 
 
-Owner convention: Hudson owns product, cost, and authority decisions; the implementing agent owns an explicitly started engineering item. No deadlines or delegated workers are assigned. Keep work focused to one session; split an item when findings reveal a larger independent scope. Record evidence and blockers on the item, without duplicating decisions elsewhere.
+Owner convention: Hudson owns product, cost and authority decisions; implementing agents own explicitly started engineering items, and one integrator owns shared contracts and release assembly. Current ownership and dependencies are in Linear. No calendar deadlines are committed. Record evidence and blockers on the owning item instead of copying task specifications into multiple plans.
 
 ## BROWSER-01 — Bound browser ownership, waiting, and runtime
 
@@ -33,6 +75,11 @@ Merged in PR #20 and deployed in [v0.4.2](implementation/deployment.md#current-r
 with fresh acceptance of the exact release image before promotion.
 
 ## Research and decisions
+
+The following discovery and implementation entries are retained from October planning.
+Their dated progress and authorization notes are historical; use the current baseline and
+linked Linear work above for today's delivery state. Unresolved aircraft, stand and simulator
+acceptance requirements remain in scope.
 
 ### DISC-01 — Enumerate launch variants
 

@@ -23,8 +23,14 @@ from pathlib import Path
 from threading import Lock, RLock, Timer, get_ident
 from typing import Any
 
-from browserbase import Browserbase, NotFoundError
-from playwright.sync_api import sync_playwright
+from browserbase import (
+    APIConnectionError,
+    APIStatusError,
+    APITimeoutError,
+    Browserbase,
+    NotFoundError,
+)
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
 
 from ifdispatcher.config import require_paid_operations, setting
 from ifdispatcher import browser_budget as budget, observability
@@ -35,8 +41,113 @@ CONTEXT_SETTING = "BROWSERBASE_SIMBRIEF_CONTEXT_ID"
 STORED_CONTEXT = "browserbase_simbrief_context_id"  # store key for a context this server created
 NAVIGRAPH_LOGIN = re.compile(r"identity\.api\.navigraph\.com")
 SIMBRIEF = re.compile(r"simbrief\.com")
+UNCERTAIN_GENERATION_NEXT = (
+    "Do not click Generate again for this revision. Inspect saved generation status and ask "
+    "the user to inspect and confirm the existing SimBrief plan. Only call finalize_dispatch "
+    "after the user confirms the plan was generated. If no matching plan exists, ask the user "
+    "how to proceed before approving a new revision."
+)
 _workflow_browser = ContextVar("ifd_workflow_browser", default=None)
 log = logging.getLogger(__name__)
+
+
+def generation_failure(exc: Exception, clicked: bool) -> dict[str, Any]:
+    """Static recovery advice from actual error evidence, never raw provider diagnostics.
+
+    A 429 alone does not distinguish concurrency from session creation rate limits.
+    A 402 alone establishes a payment problem, not exhausted browser hours. Response
+    bodies can contain credentials or URLs: use them only for classification.
+    """
+    code = "provider_error_unknown"
+    reason = "Browser generation failed without a recognized provider cause."
+    next_action = (
+        "Inspect browser status and configuration before explicitly retrying in a new workflow."
+    )
+    status = exc.status_code if isinstance(exc, APIStatusError) else None
+    if isinstance(exc, budget.BrowserLimit):
+        code = "browser_limited"
+        reason = str(exc)  # locally defined budget messages; preserve the existing response
+        next_action = "This browser workflow has stopped; check browser status before starting a new workflow."
+    elif isinstance(exc, (APITimeoutError, PlaywrightTimeoutError, TimeoutError)) or status in (
+        408,
+        504,
+    ):
+        code = "provider_timeout"
+        reason = "The browser operation timed out."
+        next_action = "Check browser status for an unfinished session before explicitly retrying in a new workflow."
+    elif status in (401, 403):
+        code = "provider_authentication_failed"
+        reason = "Browserbase rejected authentication or project access."
+        next_action = (
+            "Check the configured Browserbase credentials and project access before resuming."
+        )
+    elif isinstance(exc, APIStatusError):
+        body = exc.body
+        if isinstance(body, dict):
+            error = body.get("error")
+            parts = [body.get("code"), body.get("message"), error]
+            if isinstance(error, dict):
+                parts = [
+                    body.get("code"),
+                    body.get("message"),
+                    error.get("code"),
+                    error.get("message"),
+                ]
+        else:
+            parts = [body]
+        evidence = " ".join(p for p in parts if isinstance(p, str)).lower()
+        evidence = re.sub(r"[_\s-]+", " ", evidence)
+        if re.search(
+            r"\b(?:quota|credits?|browser (?:hours?|minutes?)|browser time|usage)(?: limit)? "
+            r"(?:(?:has|have) been |is |was )?(?:exceeded|exhausted|reached|depleted)\b|"
+            r"\b(?:insufficient|exhausted) (?:credits?|quota|browser (?:hours?|minutes?))\b|"
+            r"\b(?:exceeded|reached) (?:your |the )?(?:monthly )?"
+            r"(?:quota|browser (?:hours?|minutes?)|browser time|usage)(?: limit)?\b",
+            evidence,
+        ):
+            code = "provider_quota_exhausted"
+            reason = "Browserbase reported exhausted usage quota or credits."
+            next_action = "Check Browserbase usage and quota; resume only after quota is available, or generate manually in SimBrief."
+        elif re.search(
+            r"\b(?:concurrency|concurrent (?:sessions?|browsers?))(?: limit)? "
+            r"(?:has been |was |is )?(?:exceeded|exhausted|reached)\b|"
+            r"\b(?:exceeded|reached) (?:your |the )?(?:maximum(?: number of)? |max )?"
+            r"(?:concurrency|concurrent (?:sessions?|browsers?))(?: limit)?\b",
+            evidence,
+        ):
+            code = "provider_concurrency_limited"
+            reason = "Browserbase reported a concurrent browser limit."
+            next_action = "Wait for active browsers to finish and check browser status before explicitly resuming."
+        elif status == 402:
+            code = "provider_payment_required"
+            reason = "Browserbase requires a billing or payment action; exhausted quota was not established."
+            next_action = "Check Browserbase billing status before resuming, or generate manually in SimBrief."
+        elif status == 429:
+            code = "provider_rate_limited"
+            reason = "Browserbase rate limited the request; the specific limit was not established."
+            next_action = "Wait and check Browserbase rate limits and active sessions before explicitly resuming."
+        elif status >= 500:
+            code = "provider_unavailable"
+            reason = "Browserbase returned a server error."
+            next_action = "Check Browserbase service and browser status before explicitly retrying in a new workflow."
+    elif isinstance(exc, APIConnectionError):
+        code = "provider_unavailable"
+        reason = "The Browserbase API could not be reached."
+        next_action = (
+            "Check connectivity and browser status before explicitly retrying in a new workflow."
+        )
+    if clicked:
+        reason += " Generate was claimed; its outcome is unknown."
+        next_action = UNCERTAIN_GENERATION_NEXT
+    result = {
+        "reason_code": code,
+        "reason": reason,
+        "next": next_action,
+        "automatic_retry_allowed": False,
+    }
+    if status is not None:
+        result["provider_status_code"] = status
+    return result
 
 
 class _WorkflowBrowser:
