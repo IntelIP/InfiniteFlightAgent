@@ -55,6 +55,7 @@ def test_mcp_client_lists_dispatcher_tools(server):
 
     assert asyncio.run(list_tools()) == [
         "approve_dispatch",
+        "browser_status",
         "conversation_status",
         "list_saved_trips",
         "plan_flight",

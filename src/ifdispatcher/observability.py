@@ -21,11 +21,13 @@ def browser_opened(session_id: str):
     event("browserbase", session_id=session_id, opened_monotonic=time.monotonic(), cost_usd=None)
 
 
-def browser_closed(session_id: str):
+def browser_closed(session_id: str, confirmed: bool = True, requested: bool = True):
     for entry in meter.get() or []:
         if entry.get("session_id") == session_id and "opened_monotonic" in entry:
             entry["elapsed_s"] = round(time.monotonic() - entry.pop("opened_monotonic"), 3)
-            entry["released"] = True
+            entry["release_requested"] = requested
+            entry["released"] = confirmed
+            entry["minimum_billable_minutes_estimate"] = max(1, entry["elapsed_s"] / 60)
 
 
 def summarize(messages, seen: set) -> dict:
@@ -59,6 +61,8 @@ def summarize(messages, seen: set) -> dict:
             "not_logged_in",
             "needs_review",
             "uncertain",
+            "browser_limited",
+            "queue_full",
         )
     ]
     infeasible = any(r["task_outcome"] == "infeasible" for r in results)

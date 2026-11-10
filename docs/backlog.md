@@ -18,6 +18,18 @@ claim them complete.
 
 Owner convention: Hudson owns product, cost, and authority decisions; the implementing agent owns an explicitly started engineering item. No deadlines or delegated workers are assigned. Keep work focused to one session; split an item when findings reveal a larger independent scope. Record evidence and blockers on the item, without duplicating decisions elsewhere.
 
+## BROWSER-01 — Bound browser ownership, waiting, and runtime
+
+Hudson authorized implementation November 9 after upgrading Browserbase to Developer.
+Use the current single-user agent and existing store. Initial implementation used offline
+checks; Hudson subsequently authorized live acceptance on November 9.
+The [browser policy](implementation/agent-usage.md#bounded-browser-management) owns limits,
+operator commands, and coordination boundaries. Acceptance: one active workflow, bounded FIFO
+admission, server lifetime and idle cleanup, no replacement after timeout, no scheduled browser
+usage, and honest release/billing telemetry. Check queuing and cleanup with controlled provider
+responses. Live generation acceptance passed on isolated Cloudflare staging for candidate
+`9363cd1`; [the acceptance report](evidence/pr20-live-acceptance.md) records results and limits.
+
 ## Research and decisions
 
 ### DISC-01 — Enumerate launch variants

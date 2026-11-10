@@ -11,6 +11,26 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+### Added
+
+- Bounded Browserbase management for the single-user dispatcher: one active workflow,
+  two FIFO waiters, a 30-second queue wait, a three-minute session lifetime, and idle cleanup.
+  Admission uses the existing transactional store, and unconfirmed releases remain fenced.
+- Read-only `browser_status` MCP inspection and `ifd-simbrief sessions` / `cleanup` commands.
+  Cleanup targets only dispatcher-owned sessions older than the session budget.
+- Queue, deadline, release-confirmation, and minimum-adjusted browser-minute telemetry.
+
+### Changed
+
+- Browserbase requests use short timeouts without automatic retries. Browser commands and
+  cleanup are bounded, disconnected sessions end automatically, and timed-out workflows do
+  not open replacement browsers. The daily keepalive route skips browser work; login refresh
+  happens on demand. Remote admission limits outstanding agent turns to six.
+
+Local checks and isolated Cloudflare staging acceptance pass. Two retained A20N plans used
+two non-overlapping browser sessions and increased reported usage by two minutes. These
+controls have not been deployed to production; see [live acceptance](docs/evidence/pr20-live-acceptance.md).
+
 ## [0.4.1] - 2026-11-08
 
 ### Fixed

@@ -20,14 +20,14 @@ from contextlib import ExitStack, contextmanager
 from contextvars import ContextVar, copy_context
 from functools import wraps
 from pathlib import Path
-from threading import Lock, get_ident
+from threading import Lock, RLock, Timer, get_ident
 from typing import Any
 
 from browserbase import Browserbase, NotFoundError
 from playwright.sync_api import sync_playwright
 
 from ifdispatcher.config import require_paid_operations, setting
-from ifdispatcher import observability
+from ifdispatcher import browser_budget as budget, observability
 
 HOME_URL = "https://www.simbrief.com/home/"
 DISPATCH_URL = "https://dispatch.simbrief.com/options/custom"
@@ -45,22 +45,102 @@ class _WorkflowBrowser:
     def __init__(self):
         self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="simbrief-browser")
         self.stack = ExitStack()
-        self.lock = Lock()
+        self.lock = RLock()
         self.used = False
         self.closed = False
         self.session = None
         self.page = None
         self.owner = None
+        self.lease = None
+        self.timer = None
+        self.expires = None
+        self.last_used = time.monotonic()
+        self.busy = 0
+        self.stopped = None
+        self.release_lock = Lock()
+        self.release_attempted = False
+        self.release_confirmed = False
+        self.usage_context = copy_context()
+
+    def remaining(self):
+        if self.closed:
+            raise budget.BrowserLimit("browser_scope_closed: no further browser commands")
+        if self.stopped:
+            raise budget.BrowserLimit(self.stopped)
+        left = self.expires - time.monotonic() if self.expires else budget.SESSION_SECONDS
+        if left <= 0:
+            self.abort("browser_deadline: three-minute session budget exhausted")
+            raise budget.BrowserLimit(self.stopped)
+        return left
+
+    def _release_remote(self):
+        with self.release_lock:
+            if self.release_attempted or self.session is None:
+                return
+            self.release_attempted = True
+            self.release_confirmed = release(self.bb, self.session.id)
+            if self.closed and self.lease:
+                self.lease.finish(self.release_confirmed)
+
+    def abort(self, reason):
+        with self.lock:
+            self.stopped = self.stopped or reason
+        observability.event("browserbase", outcome=reason.split(":")[0])
+        try:
+            self._release_remote()
+        except Exception as exc:
+            log.warning("SimBrief forced release failed: %s", type(exc).__name__)
+
+    def _watch(self):
+        with self.lock:
+            if self.closed or self.stopped:
+                return
+            now = time.monotonic()
+            left = self.expires - now
+            if not self.busy:
+                left = min(left, budget.IDLE_SECONDS - (now - self.last_used))
+        if left <= 0:
+            reason = "browser_deadline" if now >= self.expires else "browser_idle_timeout"
+            self.abort(f"{reason}: session released; no automatic replacement")
+            return
+        self.timer = Timer(min(left, 1), lambda: self.usage_context.copy().run(self._watch))
+        self.timer.daemon = True
+        self.timer.start()
 
     def run(self, call, *args, **kwargs):
         if self.owner == get_ident():
+            self.remaining()
             return call(*args, **kwargs)
         with self.lock:
             if self.closed:
                 raise ValueError("SimBrief workflow browser is already closed")
+            self.remaining()
             self.used = True
-            future = self.pool.submit(copy_context().run, call, *args, **kwargs)
-        return future.result()
+            self.busy += 1
+            self.last_used = time.monotonic()
+            future = self.pool.submit(copy_context().run, self._call, call, args, kwargs)
+        try:
+            return future.result(
+                timeout=budget.QUEUE_SECONDS + budget.SESSION_SECONDS + budget.API_SECONDS * 3
+            )
+        except TimeoutError:
+            if future.done():
+                raise
+            self.abort(
+                "browser_command_timeout: work stopped; check saved generation before retrying"
+            )
+            future.cancel()
+            raise budget.BrowserLimit(self.stopped) from None
+        finally:
+            with self.lock:
+                self.busy -= 1
+                self.last_used = time.monotonic()
+
+    def _call(self, call, args, kwargs):
+        self.remaining()
+        result = call(*args, **kwargs)
+        self.remaining()
+        return result
 
     def connect(self, minutes):
         require_paid_operations()
@@ -71,16 +151,33 @@ class _WorkflowBrowser:
                     "SimBrief workflow browser could not connect; start a new workflow"
                 )
             if self.session is None:
+                self.lease = budget.Lease()
+                self.lease.acquire()
+                self.expires = time.monotonic() + budget.SESSION_SECONDS
                 self.bb = _client()
-                self.session = open_session(self.bb, minutes=minutes)
+                self.session = open_session(
+                    self.bb, minutes=min(minutes, budget.SESSION_SECONDS / 60)
+                )
                 # LIFO cleanup: disconnect, stop Playwright, then release Browserbase even
                 # when connecting or a later tool fails. HTTP-only work opens no browser.
-                self.stack.callback(release, self.bb, self.session.id)
+                self.stack.callback(self._release_remote)
+                self.remaining()
+                self._watch()
                 pw = self.stack.enter_context(sync_playwright())
-                self.browser = pw.chromium.connect_over_cdp(self.session.connect_url)
+                self.browser = pw.chromium.connect_over_cdp(
+                    self.session.connect_url, timeout=budget.NAVIGATION_MS
+                )
                 self.stack.callback(self.browser.close)
+                self.browser.contexts[0].set_default_timeout(budget.ACTION_MS)
+                self.browser.contexts[0].set_default_navigation_timeout(budget.NAVIGATION_MS)
                 self.page = self.browser.contexts[0].pages[0]
+            self.remaining()
         except Exception as exc:
+            self.stopped = (
+                str(exc)
+                if isinstance(exc, budget.BrowserLimit)
+                else "browser_connection_failed: no automatic replacement"
+            )
             if self.session:
                 exc.simbrief_session = f"https://www.browserbase.com/sessions/{self.session.id}"
             raise
@@ -88,11 +185,15 @@ class _WorkflowBrowser:
 
     def close(self):
         with self.lock:
+            if self.closed:
+                return
             self.closed = True
+            if self.timer:
+                self.timer.cancel()
             future = self.pool.submit(copy_context().run, self.stack.close) if self.used else None
         try:
             if future:
-                future.result()
+                future.result(timeout=budget.CLEANUP_SECONDS)
         except Exception as exc:
             observability.event(
                 "browserbase",
@@ -101,7 +202,17 @@ class _WorkflowBrowser:
             )
             log.warning("SimBrief browser cleanup failed: %s", type(exc).__name__)
         finally:
-            self.pool.shutdown(wait=True)
+            # The owner thread may be stuck in CDP. Release remotely without waiting for it.
+            if self.lease and not self.release_attempted:
+                self.abort("browser_cleanup: releasing remaining session")
+            if self.lease:
+                # Keep account ownership through latest-OFP retrieval, even if the idle
+                # watchdog already ended the browser. Ambiguous releases stay fenced.
+                try:
+                    self.lease.finish(self.release_confirmed)
+                except Exception as exc:
+                    log.warning("SimBrief lease cleanup failed: %s", type(exc).__name__)
+            self.pool.shutdown(wait=False)
 
 
 @contextmanager
@@ -139,7 +250,7 @@ def _client() -> Browserbase:
     key = setting("BROWSERBASE_API_KEY")
     if not key:
         raise ValueError("missing_configuration: BROWSERBASE_API_KEY in .env")
-    return Browserbase(api_key=key)  # the key identifies the project
+    return Browserbase(api_key=key, timeout=budget.API_SECONDS, max_retries=0)
 
 
 def _context_exists(bb: Browserbase, context_id: str) -> bool:
@@ -168,23 +279,76 @@ def _context_id(bb: Browserbase) -> str:
 
 
 def open_session(bb: Browserbase, minutes: int = 15):
+    # Cross-check provider state as well as the shared-store lease. This also fences a
+    # session left by a prior process. Unrelated applications' sessions are never ended.
+    context_id = _context_id(bb)
+    active = [s for s in bb.sessions.list() if s.status not in budget.TERMINAL]
+    if any(
+        (s.user_metadata or {}).get("app") == "InfiniteFlightDispatcher"
+        or s.context_id == context_id
+        for s in active
+    ):
+        raise budget.BrowserLimit(
+            "existing_browser_active: inspect or clean up the existing dispatcher session"
+        )
+    current = _workflow_browser.get()
+    if current and current.lease:
+        current.remaining()
+        current.lease.fence_create()
     session = bb.sessions.create(
         browser_settings={
-            "context": {"id": _context_id(bb), "persist": True},
+            "context": {"id": context_id, "persist": True},
             "viewport": {"width": 1440, "height": 900},
         },
-        keep_alive=True,
-        api_timeout=minutes * 60,
-        user_metadata={"app": "InfiniteFlightDispatcher"},
+        keep_alive=False,
+        api_timeout=max(60, min(int(minutes * 60), budget.SESSION_SECONDS)),
+        user_metadata={"app": "InfiniteFlightDispatcher", "managed_by": "browser_budget_v1"},
     )
     observability.browser_opened(session.id)
     return session
 
 
-def release(bb: Browserbase, session_id: str) -> None:
+def release(bb: Browserbase, session_id: str) -> bool:
     """End the session; Browserbase persists the context's cookies on release."""
-    bb.sessions.update(session_id, status="REQUEST_RELEASE")
-    observability.browser_closed(session_id)
+    # With keep_alive=False, disconnecting CDP may already have completed it.
+    result = bb.sessions.retrieve(session_id)
+    requested = result.status not in budget.TERMINAL
+    if requested:
+        result = bb.sessions.update(session_id, status="REQUEST_RELEASE")
+    confirmed = result.status in budget.TERMINAL
+    if not confirmed:
+        confirmed = bb.sessions.retrieve(session_id).status in budget.TERMINAL
+    observability.browser_closed(session_id, confirmed=confirmed, requested=requested)
+    return confirmed
+
+
+def session_inventory(cleanup: bool = False) -> dict:
+    """Inspect sessions, optionally releasing only aged dispatcher-owned browsers.
+
+    This never opens a browser. A release request is distinguished from confirmed completion.
+    """
+    from datetime import datetime, timezone
+
+    bb = _client()
+    now = datetime.now(timezone.utc)
+    sessions = []
+    for item in bb.sessions.list():
+        if item.status in budget.TERMINAL:
+            continue
+        owned = (item.user_metadata or {}).get("app") == "InfiniteFlightDispatcher"
+        started = item.started_at or item.created_at
+        age = max(0, (now - started).total_seconds())
+        row = {"id": item.id, "status": item.status, "managed": owned, "elapsed_s": round(age, 1)}
+        if cleanup and owned and age >= budget.SESSION_SECONDS:
+            # Recheck immediately before ending it; never act on unrelated applications.
+            latest = bb.sessions.retrieve(item.id)
+            if (
+                latest.status not in budget.TERMINAL
+                and (latest.user_metadata or {}).get("app") == "InfiniteFlightDispatcher"
+            ):
+                row.update(release_requested=True, released=release(bb, item.id))
+        sessions.append(row)
+    return {"admission": budget.admission_status(), "sessions": sessions}
 
 
 @_browser_operation
@@ -208,7 +372,7 @@ def airframes(aircraft: str) -> dict:
 
 def _logged_in(page) -> bool:
     """True when the dispatch form (origin field) renders, i.e. the profile is signed in."""
-    page.goto(DISPATCH_URL, wait_until="domcontentloaded", timeout=60_000)
+    page.goto(DISPATCH_URL, wait_until="domcontentloaded", timeout=budget.NAVIGATION_MS)
     try:
         page.wait_for_selector("[name*=orig]", timeout=20_000)
         return True
@@ -225,7 +389,7 @@ def _sign_in(page) -> bool:
     username, password = setting("NAVIGRAPH_USERNAME"), setting("NAVIGRAPH_PASSWORD")
     if not (username and password):
         return False
-    page.goto(DISPATCH_URL, wait_until="domcontentloaded", timeout=60_000)
+    page.goto(DISPATCH_URL, wait_until="domcontentloaded", timeout=budget.NAVIGATION_MS)
     try:  # the cookie banner can appear after load and would block the Sign In click
         page.locator("#cookie-settings").get_by_text("Accept all cookies", exact=True).first.click(
             timeout=8_000
@@ -233,12 +397,12 @@ def _sign_in(page) -> bool:
     except Exception:
         pass  # no banner (already accepted in this profile)
     page.click("#login-button")
-    page.wait_for_url(NAVIGRAPH_LOGIN, timeout=30_000)
+    page.wait_for_url(NAVIGRAPH_LOGIN, timeout=budget.NAVIGATION_MS)
     page.fill("#username", username)
     page.fill("#password", password)
     page.click("#login-id")
     try:
-        page.wait_for_url(SIMBRIEF, timeout=60_000)
+        page.wait_for_url(SIMBRIEF, timeout=budget.NAVIGATION_MS)
     except Exception:
         return False
     return _logged_in(page)
@@ -261,19 +425,20 @@ def keepalive() -> dict[str, Any]:
 
 
 @_browser_operation
-def login(minutes: int = 15) -> None:
+def login(minutes: int = 3) -> None:
     """Open a cloud browser on the persistent profile; the user logs into SimBrief there.
 
     Watches the user's tab without navigating it; once SimBrief no longer asks to sign in,
     confirms in a second tab that the dispatch page is available, then saves the profile.
     """
-    connection = _workflow_browser.get().connect(minutes=minutes + 5)
+    minutes = min(minutes, budget.SESSION_SECONDS / 60)
+    connection = _workflow_browser.get().connect(minutes=minutes)
     bb, session = connection.bb, connection.session
     live = bb.sessions.debug(session.id).debugger_fullscreen_url
     ok = False
     context = connection.browser.contexts[0]
     page = context.pages[0]
-    page.goto(DISPATCH_URL, wait_until="domcontentloaded", timeout=60_000)
+    page.goto(DISPATCH_URL, wait_until="domcontentloaded", timeout=budget.NAVIGATION_MS)
     print(f"Session: https://www.browserbase.com/sessions/{session.id}")
     print("LIVE VIEW (open and log into SimBrief/Navigraph):", live, flush=True)
     deadline = time.monotonic() + minutes * 60
@@ -453,14 +618,14 @@ def generate(
         if not open_prompts:
             # Airport/date/runway lookups can replace the route asynchronously.
             # Finish those first, then apply the approved route or run Route Finder.
-            page.wait_for_function("() => jQuery.active === 0", timeout=60_000)
+            page.wait_for_function("() => jQuery.active === 0", timeout=30_000)
             open_prompts = page.evaluate(VISIBLE_MODALS_JS)
             if not open_prompts:
                 if want["route"]:
                     page.fill("#route", want["route"])
                 else:
                     page.get_by_text("Find Route", exact=True).click()
-                    page.wait_for_function("() => jQuery.active === 0", timeout=60_000)
+                    page.wait_for_function("() => jQuery.active === 0", timeout=30_000)
                 open_prompts = page.evaluate(VISIBLE_MODALS_JS)
         got = {k: page.input_value(f"#{k}") for k in want}
         got["tlr"] = page.evaluate("() => document.getElementById('tlr').checked")
@@ -528,7 +693,9 @@ def generate(
 
 
 def main() -> None:
-    if len(sys.argv) > 1 and sys.argv[1] == "inspect":
+    if len(sys.argv) > 1 and sys.argv[1] in ("sessions", "cleanup"):
+        print(json.dumps(session_inventory(cleanup=sys.argv[1] == "cleanup"), indent=1))
+    elif len(sys.argv) > 1 and sys.argv[1] == "inspect":
         print(json.dumps(inspect_form(), indent=1))
     else:
         login()

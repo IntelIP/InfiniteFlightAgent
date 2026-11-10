@@ -20,7 +20,7 @@ The definition uses only fields Managed Deep Agents accepts (model, tools, `inte
 
 ## Setup
 
-Browser generation: `BROWSERBASE_API_KEY` in `.env` (the key identifies the project). The Browserbase context keeps the SimBrief login. With `NAVIGRAPH_USERNAME` and `NAVIGRAPH_PASSWORD` set, a session that finds SimBrief signed out signs in through Navigraph's email/password form by itself (not Google/Apple/Microsoft sign-in, and not past MFA). Without them, `uv run ifd-simbrief` opens a cloud session and prints a Live View link where the user logs in once. If Browserbase no longer has `BROWSERBASE_SIMBRIEF_CONTEXT_ID`, a new context is created and its id kept in the store. The deployed Worker runs a daily keep-alive (cron) that refreshes the login. `uv run ifd-simbrief inspect` lists the dispatch form fields. SimBrief's `static_id` is a read-only debug field on that page, so plans are correlated by generation time after the click plus route, aircraft, units, and departure. Thrust estimates use the engine SimBrief planned with unless the user asks for another.
+Browser generation: use the existing `BROWSERBASE_API_KEY` credential (Doppler in deployment; the historical local `.env` path also works). The Browserbase context keeps the SimBrief login. With `NAVIGRAPH_USERNAME` and `NAVIGRAPH_PASSWORD` set, a session that finds SimBrief signed out signs in through Navigraph's email/password form by itself (not Google/Apple/Microsoft sign-in, and not past MFA). Without them, `uv run ifd-simbrief` opens a cloud session and prints a Live View link where the user logs in once. If Browserbase no longer has `BROWSERBASE_SIMBRIEF_CONTEXT_ID`, a new context is created and its id kept in the store. Login refresh is now on demand; the old scheduled keepalive route does not open a browser. `uv run ifd-simbrief inspect` lists the dispatch form fields. SimBrief's `static_id` is a read-only debug field on that page, so plans are correlated by generation time after the click plus route, aircraft, units, and departure. Thrust estimates use the engine SimBrief planned with unless the user asks for another.
 
 ```bash
 uv sync --locked
@@ -115,3 +115,72 @@ uv run python scripts/review_traces.py --days 7 --limit 50 --enqueue
 The review queue scores whole conversations. Automatic workflow feedback is separate from
 owner acceptance. Provider usage reports FlightAware list-price estimates and Browserbase
 elapsed time; unknown invoice costs stay unknown.
+
+## Bounded browser management
+
+November 9 implementation, with [isolated Cloudflare staging acceptance](../evidence/pr20-live-acceptance.md)
+completed November 10 UTC. These controls have not been deployed to production.
+Browserbase's project now reports concurrency 25. The dispatcher deliberately admits just
+one active browser workflow for its shared SimBrief login. A transactional FIFO in the
+existing settings store allows two waiting workflows, each waiting at most 30 seconds
+without opening a browser. Remote agent admission also bounds outstanding turns to six
+(four workers plus two waiting). Model/research work can continue independently.
+
+`BrowserBudgetMiddleware` covers the agent's browser and finalization tools; the same guard
+at `session_scope`/connection creation protects direct CLI and Python calls. An invocation
+opens its session lazily and reuses it. Human approval pauses exit the scope. Once that
+session expires, fails to connect, or is reaped for inactivity, the invocation cannot
+silently open another one. Existing generation claims and uncertain-outcome handling remain
+in force: never regenerate merely because waiting timed out.
+
+| Control | Limit |
+| --- | ---: |
+| Active browser workflows sharing the store | 1 |
+| Waiting browser workflows | 2 |
+| Queue wait without browser usage | 30 seconds |
+| Browserbase server session lifetime | 180 seconds |
+| Idle between browser operations | 30 seconds, checked at one-second intervals |
+| Browserbase HTTP request | 8 seconds; no automatic SDK retries |
+| Playwright navigation / ordinary action | 20 / 10 seconds |
+| Route Finder wait | 30 seconds |
+| Generate completion polling | At most 60 iterations, with the session deadline still enforced |
+| Owner-thread cleanup wait | 12 seconds, then remote release |
+
+The watchdog requests remote release even while a command or model response is stalled.
+`keep_alive=False` ends sessions on CDP disconnect; the server lifetime is the independent
+backstop if the process dies. Expiry ends browser work; it does not forcibly kill a Python
+thread or bound the entire model conversation. Ordinary Playwright waits and the browser
+command future are bounded too. Cleanup does not claim success until the provider reports a
+terminal session status. Unknown create/release outcomes retain the lease until the possible
+provider lifetime has elapsed, with an allowance for the HTTP request and cleanup. Account
+ownership remains through latest-OFP retrieval and scope exit, even if idle cleanup has
+already closed the browser.
+
+All processes coordinating this login must use the same `DATABASE_URL` (production) or local
+SQLite store. Separate stores and external CLI calls cannot participate in one atomic queue.
+A provider preflight also refuses to create while a dispatcher-owned session or the same
+saved Context is active. This check detects existing orphans; it cannot make independently
+configured clients atomic. Browserbase account limits remain the ultimate provider boundary.
+
+Operator commands, using the existing credential; neither starts a browser:
+
+```sh
+uv run --locked ifd-simbrief sessions
+uv run --locked ifd-simbrief cleanup
+```
+
+The first lists active provider sessions and admission limits. `cleanup` rechecks and requests
+release only for dispatcher-owned sessions at least 180 seconds old; unrelated and younger
+sessions are left alone. `browser_status` provides the read-only inventory over remote MCP.
+The old daily keepalive endpoint returns `skipped`; normal browser work still signs in when
+needed. The deployed v0.4.1 behavior changes only after an authorized deployment.
+
+Usage telemetry includes queue wait, elapsed session time, release-request versus confirmed
+release, cleanup failures, deadline/idle outcomes, and an explicitly labeled minimum-adjusted
+minute estimate. Invoice cost stays unknown. The estimate applies the documented one-minute
+minimum but does not pretend to reproduce the provider's rounding algorithm.
+
+References: [Browserbase session lifetime](https://docs.browserbase.com/reference/api/create-a-session),
+[release API](https://docs.browserbase.com/reference/api/update-a-session),
+[Context concurrency guidance](https://docs.browserbase.com/platform/browser/core-features/contexts),
+and [billing minimums](https://docs.browserbase.com/account/billing/plans).
