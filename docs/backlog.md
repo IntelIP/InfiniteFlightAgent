@@ -29,6 +29,8 @@ admission, server lifetime and idle cleanup, no replacement after timeout, no sc
 usage, and honest release/billing telemetry. Check queuing and cleanup with controlled provider
 responses. Live generation acceptance passed on isolated Cloudflare staging for candidate
 `9363cd1`; [the acceptance report](evidence/pr20-live-acceptance.md) records results and limits.
+Merged in PR #20 and deployed in [v0.4.2](implementation/deployment.md#current-release-v042),
+with fresh acceptance of the exact release image before promotion.
 
 ## Research and decisions
 

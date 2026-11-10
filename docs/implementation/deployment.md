@@ -1,5 +1,45 @@
 # Cloudflare deployment
 
+## Current release: v0.4.2
+
+Observed November 10, 2026 UTC (November 9 in New York): [PR #20](https://github.com/IntelIP/InfiniteFlightAgent/pull/20)
+is merged and [v0.4.2](https://github.com/IntelIP/InfiniteFlightAgent/releases/tag/v0.4.2)
+is deployed to production at 100% traffic. The [Release workflow](https://github.com/IntelIP/InfiniteFlightAgent/actions/runs/42730659971)
+completed successfully, including Python/Worker CI, image upload, owner-authorized production
+approval, promotion and release publication.
+
+- Release source: `f9769901dde443fab96b459855ac21e007d0c96a`.
+- Production Worker version: `42be74fa-87e9-4226-a3a5-debaec360173`.
+- Immutable image: `sha256:2f9ab7989ffa433b5e0880537cd4df64eea93a178a8618f8467fcd82f5526235`.
+- Previous production version, available for rollback: `758f18dd-4c55-4df1-9017-8939e9eeddb1` (v0.4.1).
+
+Before promotion, that exact uploaded image passed a two-leg trip through a separate
+Cloudflare staging Worker, version `43386d6e-0111-423b-8a54-080f333fc15d`. The
+[database-derived acceptance record](../evidence/live-acceptance.json) passes all four
+BUILD-04 outcomes for the release source. Trip `v042-20261110T010552Z` retained both A20N
+OFPs and briefings, with takeoff performance, after approval waits. Routes were
+`JCOBY4 SWANN PHLBO4` and `PORTT4 PARKE HYPER9`, each with 17 navlog entries. Both dispatches
+used automatic routing without requiring the earlier route-field clarification.
+
+Exactly two Browserbase sessions ran, sequentially, for 42.766 and 50.574 seconds. Both
+requested a 180-second provider lifetime, had `keepAlive=false`, and finished `COMPLETED`.
+No sessions remained active; reported project usage increased from 62 to 64 browser minutes.
+The [browser policy](agent-usage.md#bounded-browser-management) owns the effective limits.
+Local repository validation passed with this acceptance record. Queue overflow and timeout
+failure cases remain controlled-provider test evidence rather than deliberately stranded live
+browsers.
+
+Staging MCP used an operator-authenticated Container SSH tunnel with internal-token
+verification; unauthenticated public staging health returned HTTP 401. The public Access
+OAuth client flow was not rerun. The scheduled staging bootstrap returned `skipped` without
+opening a browser. The temporary Worker, schedule, container app, tunnel and SSH key were
+removed before promotion. Post-promotion checks read deployment/release metadata and browser
+inventory; public production health rejected unauthenticated access with HTTP 401. No further
+flight generation was run. Private receipts are retained in Git-ignored
+`artifacts/private/v042-release/`, and the workflow retains upload/promotion artifacts.
+
+## Initial resource setup (historical)
+
 Status October 31, 2026: nothing has been deployed and the release workflows have not run. Created so far (none are secrets):
 
 - GitHub repository [IntelIP/InfiniteFlightAgent](https://github.com/IntelIP/InfiniteFlightAgent) (public), `production` environment (owner review, `main` only), variables `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `ACCESS_ALLOWED_EMAIL`, secret `CLOUDFLARE_ACCOUNT_ID`.
@@ -71,7 +111,7 @@ Cloudflare Access does the OAuth for MCP clients; the Worker does not implement 
 4. Validate: from an Access-authenticated browser open `https://<worker-host>/health` (expect 200 JSON); without Access, expect a block or 401/403. Connect one MCP client and make one call, such as a flight lookup.
 5. Set `IFD_PAID_OPERATIONS_ENABLED=true` in Doppler when ready, then release again.
 
-Later releases: run **Release** with `promote=false`, review the uploaded version, then rerun with `promote=true` (a new upload of the same commit), or promote the recorded id with `npx wrangler versions deploy <id>@100% -y`. Version preview URLs are not generated for Workers with Durable Objects, so validation happens after promotion. Durable Object–managed containers do not take part in image rollouts; the Worker restarts the running container on its next request when the image or secrets differ from what it started with, ending any in-flight stream.
+Later releases: run **Release** with `promote=true`, review the uploaded version while production approval is held, then approve promotion of that recorded version. `promote=false` supports upload-only preparation. Version preview URLs are not generated for Workers with Durable Objects; v0.4.2 acceptance used a separate temporary Worker with the exact uploaded image before production approval, as recorded above. Durable Object–managed containers do not take part in image rollouts; the Worker restarts the running container on its next request when the image or secrets differ from what it started with, ending any in-flight stream.
 
 ## Notes from Condere's release process
 
@@ -130,6 +170,6 @@ Open owner decisions this raises:
 
 The OAuth callback goes to `127.0.0.1`, so Sign in with ChatGPT runs locally (`uv run ifd-login`). Then import the resulting credential once into the deployment with `ifd-credentials import` (Python side; uses `IFD_CREDENTIAL_KEY` and `DATABASE_URL`). After import the deployed host owns refreshes; stop using the same credential locally. This follows OpenAI's [self-hosted VM guidance](https://developers.openai.com/siwc/token-sharing-open-source/self-hosted-vms): complete OAuth locally with the same client and user, transfer the protected credential over a secure channel, keep a stable host id on the server, and let the server own refreshes. OpenAI notes that host-specific usage attribution and revocation for transferred sessions are not yet available. Confirm the ChatGPT-plan terms permit this personal hosted use before enabling it.
 
-## Not yet validated
+## Initial local checks (historical)
 
-The container image builds for linux/amd64 and was run locally: `/health` returns ok, `/mcp` returns 401 without the internal token, an MCP client lists the two tools, and `plan_flight` returns `paid_operations_disabled` with the switch off. `wrangler deploy --dry-run` was validated only with a placeholder registry image. No Access, Doppler, Neon, R2, or GitHub resources exist, and none of the workflows has run.
+The container image builds for linux/amd64 and was run locally: `/health` returns ok, `/mcp` returns 401 without the internal token, an MCP client lists the two tools, and `plan_flight` returns `paid_operations_disabled` with the switch off. `wrangler deploy --dry-run` was validated only with a placeholder registry image. Those were pre-deployment checks. The resource setup above and current release record supersede their original deployment status.
