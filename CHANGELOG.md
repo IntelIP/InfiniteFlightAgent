@@ -11,6 +11,8 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-09
+
 ### Added
 
 - Bounded Browserbase management for the single-user dispatcher: one active workflow,
@@ -28,8 +30,7 @@ A running server reports its version at `/health`.
   happens on demand. Remote admission limits outstanding agent turns to six.
 
 Local checks and isolated Cloudflare staging acceptance pass. Two retained A20N plans used
-two non-overlapping browser sessions and increased reported usage by two minutes. These
-controls have not been deployed to production; see [live acceptance](docs/evidence/pr20-live-acceptance.md).
+two non-overlapping browser sessions and increased reported usage by two minutes. See [live acceptance](docs/evidence/pr20-live-acceptance.md).
 
 ## [0.4.1] - 2026-11-08
 
