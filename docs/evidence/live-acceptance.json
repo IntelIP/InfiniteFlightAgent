@@ -1,34 +1,34 @@
 {
   "schemaVersion": "ifd-live-acceptance/v1",
   "acceptance": "BUILD-04",
-  "recorded_at": "2026-11-10T01:08:35.023738+00:00",
+  "recorded_at": "2026-11-10T04:22:07.006549+00:00",
   "deployment": {
-    "commit": "f9769901dde443fab96b459855ac21e007d0c96a",
-    "worker_version": "43386d6e-0111-423b-8a54-080f333fc15d"
+    "commit": "c8ef97b712a3824bfbafd41cfff57ddf0a6f04c6",
+    "worker_version": "c87ae17e-ce80-444f-b464-6b45739d6250"
   },
-  "integration_digest": "b5c92679f2121cd6621c068cb5042553b45807ee991498f0a3027f5a7394dd28",
+  "integration_digest": "a99237fb48c759f9ab38604a497f189d1c985b0a8936b4de244f1602ca6dc0b9",
   "outcomes": {
     "generation_through_mcp": {
       "passed": true,
-      "detail": "v042-20261110T010552Z leg 1, v042-20261110T010552Z leg 2"
+      "detail": "pr21-20261110T041609Z leg 1, pr21-20261110T041609Z leg 2"
     },
     "neo_response": {
       "passed": true,
-      "detail": "v042-20261110T010552Z leg 1 (A20N), v042-20261110T010552Z leg 2 (A20N)"
+      "detail": "pr21-20261110T041609Z leg 1 (A20N), pr21-20261110T041609Z leg 2 (A20N)"
     },
     "two_legs_retained": {
       "passed": true,
-      "detail": "v042-20261110T010552Z legs 1 and 2"
+      "detail": "pr21-20261110T041609Z legs 1 and 2"
     },
     "authentication_and_resumption": {
       "passed": true,
-      "detail": "approval wait, resume and signed-in generation: v042-20261110T010552Z"
+      "detail": "approval wait, resume and signed-in generation: pr21-20261110T041609Z"
     }
   },
   "cases": [
     {
-      "thread": "v042-acceptance-20261110T010552Z",
-      "trip": "v042-20261110T010552Z",
+      "thread": "pr21-acceptance-20261110T041609Z",
+      "trip": "pr21-20261110T041609Z",
       "interrupts": 2,
       "resumes": 4,
       "legs": [
@@ -39,17 +39,17 @@
             "origin": "KIAD",
             "destination": "KEWR",
             "aircraft": "A20N",
-            "departure": "2026-11-10T14:00:00Z"
+            "departure": "2026-11-11T14:00:00Z"
           },
           "generation": {
             "status": "generated",
-            "clicked_at": "2026-11-10T01:06:49.678367+00:00",
+            "clicked_at": "2026-11-10T04:18:14.660144+00:00",
             "browser_session": true
           },
           "snapshot": {
-            "sha256": "6b9e5b800b22c03c67aa09d4ac81d718f4e02d3ed753ef5c08095166265d3e68",
-            "retrieved_at": "2026-11-10T01:07:03.258050+00:00",
-            "generated_at": "2026-11-10T01:06:50Z",
+            "sha256": "5ce589fc4ea43debef94cc8a2c5132594df18c54d49dd0b45e74d0b2b57aa699",
+            "retrieved_at": "2026-11-10T04:18:43.260322+00:00",
+            "generated_at": "2026-11-10T04:18:16Z",
             "origin": "KIAD",
             "destination": "KEWR",
             "aircraft": "A20N",
@@ -63,17 +63,17 @@
             "origin": "KEWR",
             "destination": "KIAD",
             "aircraft": "A20N",
-            "departure": "2026-11-10T18:00:00Z"
+            "departure": "2026-11-11T18:00:00Z"
           },
           "generation": {
             "status": "generated",
-            "clicked_at": "2026-11-10T01:07:47.979980+00:00",
+            "clicked_at": "2026-11-10T04:20:31.907796+00:00",
             "browser_session": true
           },
           "snapshot": {
-            "sha256": "2c1753d906392589175fc475255eba336c780514e3cb0d96c876d571ecd029b4",
-            "retrieved_at": "2026-11-10T01:08:00.640086+00:00",
-            "generated_at": "2026-11-10T01:07:49Z",
+            "sha256": "7ca42fd1f8f1f393a82751cef34b1eb1404eb944fa1af673b6a1efe65c39a6c3",
+            "retrieved_at": "2026-11-10T04:20:58.762263+00:00",
+            "generated_at": "2026-11-10T04:20:33Z",
             "origin": "KEWR",
             "destination": "KIAD",
             "aircraft": "A20N",
