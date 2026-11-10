@@ -21,12 +21,14 @@ Owner convention: Hudson owns product, cost, and authority decisions; the implem
 ## BROWSER-01 — Bound browser ownership, waiting, and runtime
 
 Hudson authorized implementation November 9 after upgrading Browserbase to Developer.
-Use the current single-user agent and existing store; do not start live browsers for this work.
+Use the current single-user agent and existing store. Initial implementation used offline
+checks; Hudson subsequently authorized live acceptance on November 9.
 The [browser policy](implementation/agent-usage.md#bounded-browser-management) owns limits,
 operator commands, and coordination boundaries. Acceptance: one active workflow, bounded FIFO
 admission, server lifetime and idle cleanup, no replacement after timeout, no scheduled browser
 usage, and honest release/billing telemetry. Check queuing and cleanup with controlled provider
-responses; live generation acceptance remains blocked until separately authorized.
+responses. Live generation acceptance passed on isolated Cloudflare staging for candidate
+`9363cd1`; [the acceptance report](evidence/pr20-live-acceptance.md) records results and limits.
 
 ## Research and decisions
 

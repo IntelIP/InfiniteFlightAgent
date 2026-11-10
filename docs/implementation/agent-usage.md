@@ -118,7 +118,8 @@ elapsed time; unknown invoice costs stay unknown.
 
 ## Bounded browser management
 
-November 9 working-tree implementation, not yet deployed or live-generation accepted.
+November 9 implementation, with [isolated Cloudflare staging acceptance](../evidence/pr20-live-acceptance.md)
+completed November 10 UTC. These controls have not been deployed to production.
 Browserbase's project now reports concurrency 25. The dispatcher deliberately admits just
 one active browser workflow for its shared SimBrief login. A transactional FIFO in the
 existing settings store allows two waiting workflows, each waiting at most 30 seconds
