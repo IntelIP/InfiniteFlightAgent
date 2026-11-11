@@ -42,46 +42,109 @@ def _relative(gap: timedelta) -> str:
 
 
 def connection(
-    trip: str, leg: str, departure: datetime | str, arrival: datetime | None = None
+    trip: str,
+    leg: str,
+    departure: datetime | str,
+    arrival: datetime | None = None,
+    *,
+    previous_leg: str | None = None,
+    previous_arrival_utc: str | None = None,
+    arrival_source: str | None = None,
 ) -> dict[str, Any]:
-    """How a leg fits around the trip's other dispatched legs, by time.
+    """Check retained arrivals, or a labeled proposed connection from supplied evidence.
 
-    Returns "follows" (the leg it departs after, its arrival, the connection) and, when the leg
-    leaves less than MIN_CONNECTION after that arrival or arrives too late for the next leg, a
-    "conflict" sentence. Legs without a known arrival (private flights) are not checked.
+    Proposed evidence never writes a leg or replaces a known retained arrival. The actual
+    dispatch still checks its saved neighbours after exact-input approval.
     """
     departure = _utc(departure) if isinstance(departure, str) else departure
+    supplied = any(v is not None for v in (previous_leg, previous_arrival_utc, arrival_source))
+    if supplied and not all(
+        isinstance(v, str) and v.strip()
+        for v in (previous_leg, previous_arrival_utc, arrival_source)
+    ):
+        raise ValueError(
+            "connection_evidence_required: provide previous_leg, previous_arrival_utc "
+            "with timezone, and arrival_source together"
+        )
+    proposed_arrival = _utc(previous_arrival_utc) if supplied else None
+    if supplied and previous_leg == leg:
+        raise ValueError("invalid_previous_leg: a leg cannot connect to itself")
     others = [
         (other, _utc(request["departure"]), _arrival(meta))
         for other, request, meta in _store().trip_legs(trip)
         if other != leg and request.get("departure")
     ]
+    # Numbered legs represent itinerary order even when a changed departure crosses
+    # another leg's departure. Legacy named-leg trips retain their time-based ordering.
+    numbered = str(leg).isdecimal() and all(str(o[0]).isdecimal() for o in others)
+    earlier = [o for o in others if (int(o[0]) < int(leg) if numbered else o[1] < departure)]
+    prior = max(earlier, key=lambda o: int(o[0]) if numbered else o[1]) if earlier else None
+    if prior and supplied and previous_leg != prior[0]:
+        raise ValueError(
+            "previous_leg_mismatch: supplied evidence is not for the preceding saved leg"
+        )
+    if prior and proposed_arrival and proposed_arrival <= prior[1]:
+        raise ValueError("invalid_previous_arrival: arrival must follow that leg's departure")
+
     fit: dict[str, Any] = {}
-    earlier = [o for o in others if o[1] < departure]
-    if earlier:
-        previous, _, landed = max(earlier, key=lambda o: o[1])
-        if landed:
-            gap = departure - landed
-            fit["follows"] = {
-                "leg": previous,
-                "arrival_utc": landed.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "connection": _duration(gap),
-            }
-            if gap < MIN_CONNECTION:
-                fit["conflict"] = (
-                    f"Leg {leg} departs {_relative(gap)} leg {previous} arrives "
-                    f"({landed:%Y-%m-%d %H:%MZ}); a connection needs at least "
-                    f"{_duration(MIN_CONNECTION)}. Choose a later flight for leg {leg}."
-                )
-    later = [o for o in others if o[1] >= departure]
-    if arrival and later and "conflict" not in fit:
-        following, leaves, _ = min(later, key=lambda o: o[1])
-        if leaves - arrival < MIN_CONNECTION:
+    landed = prior[2] if prior else None
+    if landed:
+        previous = prior[0]
+        fit.update(status="checked", arrival_source=f"retained leg {previous}")
+    elif proposed_arrival:
+        previous, landed = previous_leg, proposed_arrival
+        fit.update(
+            status="proposed",
+            arrival_source=arrival_source,
+            next="Proposed timing only; keep estimates labeled and recheck against the retained "
+            "prior leg before dispatching this leg. Do not ask to reconfirm settled choices.",
+        )
+    elif prior:
+        fit.update(
+            status="arrival_unavailable",
+            previous_leg=prior[0],
+            next="Finalize the prior leg to obtain its planned arrival, then recheck. "
+            "The connection remains unknown until that arrival is available.",
+        )
+    else:
+        fit.update(
+            status="no_previous_leg",
+            next="Prepare the first agreed leg. For a proposed later connection, supply the "
+            "previous leg's sourced arrival or finalize that leg first.",
+        )
+    if landed:
+        gap = departure - landed
+        fit["follows"] = {
+            "leg": previous,
+            "arrival_utc": landed.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "connection": _duration(gap),
+        }
+        if gap < MIN_CONNECTION:
+            fit["status"] = "conflict"
+            fit["conflict"] = (
+                f"Leg {leg} departs {_relative(gap)} leg {previous} arrives "
+                f"({landed:%Y-%m-%d %H:%MZ}); a connection needs at least "
+                f"{_duration(MIN_CONNECTION)}. Choose a later flight for leg {leg}."
+            )
+            fit["next"] = "Choose a later departure and recompute; do not dispatch this connection."
+    later = [o for o in others if (int(o[0]) > int(leg) if numbered else o[1] >= departure)]
+    if later and "conflict" not in fit:
+        following, leaves, _ = min(later, key=lambda o: int(o[0]) if numbered else o[1])
+        if departure >= leaves:
+            fit["status"] = "conflict"
+            fit["conflict"] = (
+                f"Leg {leg} departs at or after following leg {following}; choose an earlier "
+                "departure or revise the following leg."
+            )
+        elif arrival and leaves - arrival < MIN_CONNECTION:
+            fit["status"] = "conflict"
             fit["conflict"] = (
                 f"Leg {leg} arrives {arrival:%Y-%m-%d %H:%MZ}, {_relative(arrival - leaves)} "
                 f"leg {following} departs; a connection needs at least "
                 f"{_duration(MIN_CONNECTION)}."
             )
+        if "conflict" in fit:
+            fit["next"] = "Revise the conflicting departure and recompute before dispatching."
     return fit
 
 

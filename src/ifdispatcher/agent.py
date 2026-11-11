@@ -311,15 +311,34 @@ def simbrief_airframes(aircraft: str) -> dict:
 
 
 @tool(parse_docstring=True)
-def check_connection(trip: str, leg: str, departure_utc: str) -> dict:
-    """Compute a candidate leg's connection and any conflict before recommending it.
+def check_connection(
+    trip: str,
+    leg: str,
+    departure_utc: str,
+    previous_leg: str | None = None,
+    previous_arrival_utc: str | None = None,
+    arrival_source: str | None = None,
+) -> dict:
+    """Compute a retained or proposed connection without writing a leg or asking for consent.
 
     Args:
-        trip: Saved trip id.
+        trip: Saved or proposed trip id.
         leg: Candidate leg id.
         departure_utc: Candidate departure from a search or agreed private flight, with timezone.
+        previous_leg: Previous leg id when checking sourced timing before its arrival is saved.
+        previous_arrival_utc: Its arrival from itinerary/search evidence, with timezone. Never invent
+            it; provide previous_leg and arrival_source too. A retained arrival takes precedence.
+        arrival_source: Identify the occurrence/plan for the supplied arrival; label any estimate.
     """
-    return _safe(workflow.connection, trip, leg, departure_utc)
+    return _safe(
+        workflow.connection,
+        trip,
+        leg,
+        departure_utc,
+        previous_leg=previous_leg,
+        previous_arrival_utc=previous_arrival_utc,
+        arrival_source=arrival_source,
+    )
 
 
 @tool(parse_docstring=True)
