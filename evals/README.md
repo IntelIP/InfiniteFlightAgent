@@ -78,8 +78,9 @@ same scripted-model pattern as `tests/test_remote.py`. It adds no provider or mo
 
 The default is entirely scripted. FlightAware/Browserbase calls, R2 uploads, production
 stores, feedback writes and ambient LangSmith tracing are blocked or replaced with controlled
-responses. A temporary local store and in-memory checkpointer are created per case even when
-`DATABASE_URL` is set. These process-global provider patches make this a **sequential harness**;
+responses. A temporary local store is created per case even when `DATABASE_URL` is set.
+Direct graph replay uses an in-memory checkpointer; `--mcp` uses a temporary SQLite
+checkpointer. These process-global provider patches make this a **sequential harness**;
 do not run cases concurrently within one process.
 
 ```sh
@@ -126,10 +127,100 @@ cases/oracles require a new version/manifest identity; do not silently replace a
 | WF-008 | Explicit controlled SDK quota failure exposes a reason and next action, disables automatic retry and makes no click |
 
 WF-007 and WF-008 are regression cases: the original base is expected to fail them. The quota
-fixture is a constructed `browserbase.RateLimitError` with explicit quota evidence in its body;
+fixture is a constructed `browserbase.APIStatusError` with HTTP 429 and explicit quota
+evidence in its body;
 it does not establish the cause of a historical exception with an empty/unknown body. Broad
 scenario coverage, owner preference ratings, numeric quality thresholds, aircraft accuracy
 and simulator acceptance are outside this foundation.
+
+### Expanded v0.4.4 suite (INT-410)
+
+`workflow_cases_v044.json` is the separate `ifd-workflow-v044` manifest, with 28 cases
+and base application commit `710513f5d6c868a90e1aa8041dbcf689c0c476c0` (v0.4.3).
+The original eight case definitions remain in both manifests; the v0.4.4 manifest adds
+the scenarios below rather than silently changing the original suite identity.
+
+| Cases | Additional coverage |
+| --- | --- |
+| WF-009–011 | Dated airline/short automatic routing, incomplete private intent, retained multi-leg trip and checkpoint recovery |
+| WF-012–016 | Sourced proposed connections, no prior leg, changed departure/conflict, ambiguous DST arrival and date-line planning |
+| WF-017–019 | Long private-jet waypoint route, explicitly approved DCT and retained-route mismatch refusal |
+| WF-020–024 | Controlled provider authentication, concurrency, availability and timeout before/after Generate |
+| WF-025 | Approved revision, retained earlier revision and restart recovery |
+| WF-026–028 | Missing takeoff performance, unavailable previous arrival and an arrival-target constraint |
+
+Use `--mcp` to send requests through the actual production MCP tools over authenticated
+loopback Streamable HTTP. This exercises `plan_flight`, dispatch approval/resumption,
+`turn_status`, saved-trip retrieval and, in the marked restart cases, reconstruction of
+the graph and SQLite checkpoint connection from disk. The service runs only on
+`127.0.0.1` with a controlled internal token. It does not contact the deployed service or
+exercise Cloudflare Access OAuth. Providers remain controlled and the default model
+remains scripted; HTTP transport does not turn a scripted test into actual-model or
+live-provider evidence.
+
+```sh
+# Run in the v0.4.3 baseline checkout after applying the evaluation-only overlay below
+uv run python evals/run_workflow_replay.py run \
+  --manifest evals/workflow_cases_v044.json --mcp \
+  --output artifacts/evals/v044-baseline-scripted.json
+
+# Run the identical suite and transport in the candidate checkout
+uv run python evals/run_workflow_replay.py run \
+  --manifest evals/workflow_cases_v044.json --mcp \
+  --output artifacts/evals/v044-candidate-scripted.json
+uv run python evals/run_workflow_replay.py compare \
+  artifacts/evals/v044-baseline-scripted.json artifacts/evals/v044-candidate-scripted.json \
+  --output artifacts/evals/v044-scripted-comparison.json
+
+# Actual configured model over the same controlled MCP/provider lane; existing ChatGPT plan
+uv run python evals/run_workflow_replay.py run \
+  --manifest evals/workflow_cases_v044.json --mcp --real-model \
+  --ids WF-009,WF-012,WF-017 \
+  --output artifacts/evals/v044-candidate-model.json
+```
+
+For a matched baseline, overlay the same candidate versions of `run_workflow_replay.py`,
+`workflow_evaluations.py`, `mcp_replay.py` and `workflow_cases_v044.json` under `evals/`
+in a separate v0.4.3 checkout. Keep the remaining evaluation files/fixtures identical;
+leave baseline `src/`, `instructions.md`, package metadata and lockfile at v0.4.3. This
+is a harness overlay against the old application, not a claim that the untouched release
+contained the expanded suite. Copy its saved baseline report into the comparison checkout;
+retain the reported dirty worktree identity. Run the same
+selected cases with `--real-model` on both applications before comparing model results;
+compare the saved baseline and candidate reports with the same `compare` command.
+
+Every comparison must keep the case selection, manifest/case digests, verifier and harness
+hashes, fixture clock, transport and model/effort settings matched. Reports retain exact
+Git commit, dirty flag and per-file/combined source hashes. Freeze the manifest before
+measurement; changing cases or fixtures starts a new suite identity. A dirty run supports
+that measured worktree, while exact-commit acceptance requires a corresponding clean run.
+
+Replay makes zero FlightAware requests and Browserbase sessions. Missing controlled
+fixtures invalidate the affected run; no live fallback is allowed. Actual queue/browser
+latencies are `null` in replay because no real queue or browser is exercised. Stage, turn
+and case timings remain measured, and actual-model token metadata is retained when the
+model supplies it. These observations establish neither live browser timing nor aircraft
+numerical accuracy. Isolated pairs do not establish a statistical model-quality or latency
+improvement.
+
+Publish saved expanded-suite results using its own frozen dataset name. Replace
+`FROZEN_MANIFEST_HASH` with the saved batch's `suite_sha256`; use the same name for matched
+baseline/candidate experiments and separate prefixes for scripted and actual-model runs.
+
+```sh
+uv run python evals/run_workflow_replay.py upload artifacts/evals/v044-baseline-scripted.json \
+  --manifest evals/workflow_cases_v044.json \
+  --dataset-name ifd-workflow-v044-FROZEN_MANIFEST_HASH --experiment-prefix v044-baseline-scripted
+uv run python evals/run_workflow_replay.py upload artifacts/evals/v044-candidate-scripted.json \
+  --manifest evals/workflow_cases_v044.json \
+  --dataset-name ifd-workflow-v044-FROZEN_MANIFEST_HASH --experiment-prefix v044-candidate-scripted
+```
+
+Upload rechecks saved outcomes and publishes recorded outputs/feedback without rerunning
+the model or providers. LangSmith experiment-root latency measures lookup/upload; use
+`outputs.metrics` for agent/workflow timing and usage. Keep `scripted-controlled` and
+`real-model-replay` separate from live-provider acceptance, numerical references and
+simulator observations. No owner ratings or additional quality gates are introduced.
 
 Each JSON batch records `suite_sha256`, `case_ids`, `verifier_version`, `fixture_clock`,
 `base_commit`, and `source` (Git commit, dirty status, per-file SHA-256, combined source digest,
