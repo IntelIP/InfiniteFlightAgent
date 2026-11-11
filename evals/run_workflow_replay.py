@@ -9,6 +9,7 @@ import json
 import os
 import tempfile
 import time
+import sqlite3
 from collections import Counter
 from contextlib import ExitStack
 from datetime import datetime, timedelta, timezone
@@ -16,15 +17,24 @@ from pathlib import Path
 from unittest.mock import patch
 
 import httpx
-from browserbase import RateLimitError
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 from langsmith import tracing_context
 
-from ifdispatcher import agent, browser_budget, core, flights, observability, operations, workflow
+from ifdispatcher import (
+    agent,
+    browser_budget,
+    core,
+    flights,
+    observability,
+    operations,
+    remote,
+    workflow,
+)
 from ifdispatcher.core import Store
 from workflow_evaluations import (
     MANIFEST,
@@ -71,6 +81,16 @@ class Measurements(BaseCallbackHandler):
 
 
 def scripted_messages(case):
+    if "script" in case:
+        return [
+            AIMessage(step["text"])
+            if "text" in step
+            else AIMessage(
+                "",
+                tool_calls=[{"id": f"case-call-{i}", "name": step["tool"], "args": step["args"]}],
+            )
+            for i, step in enumerate(case["script"])
+        ]
     messages = []
 
     def call(name, args):
@@ -188,7 +208,7 @@ def read_state(store):
     return rows
 
 
-def run_case(case, manifest, model=None, max_turns=5):
+def run_case(case, manifest, model=None, max_turns=5, mcp_url=None):
     if Path(core.__file__).resolve().parent != ROOT / "src/ifdispatcher":
         raise ValueError(
             "application import targets a different checkout; set PYTHONPATH to this checkout's src"
@@ -237,14 +257,27 @@ def run_case(case, manifest, model=None, max_turns=5):
         ]
         ident = key(candidates[0]["request"])
         run["provider_attempts"].append({"key": ident, "fields": dict(fields)})
-        if case["scenario"] == "provider_failure":
-            raise RateLimitError(
-                "quota exhausted",
+        failure = case.get(
+            "provider_failure", "quota" if case["scenario"] == "provider_failure" else None
+        )
+        if failure in {"quota", "concurrency", "auth", "transient"}:
+            from browserbase import APIStatusError
+
+            status, message = {
+                "quota": (429, "quota exhausted"),
+                "concurrency": (429, "concurrent sessions limit exceeded"),
+                "auth": (401, "invalid API key"),
+                "transient": (503, "service unavailable"),
+            }[failure]
+            raise APIStatusError(
+                message,
                 response=httpx.Response(
-                    429, request=httpx.Request("POST", "https://controlled.invalid/sessions")
+                    status, request=httpx.Request("POST", "https://controlled.invalid/sessions")
                 ),
-                body={"message": "quota exhausted"},
+                body={"message": message},
             )
+        if failure == "timeout_before_click":
+            raise TimeoutError("controlled pre-click timeout")
         if case["scenario"] == "retry_duplicate" and len(run["provider_attempts"]) == 1:
             return {
                 "status": "fill_mismatch",
@@ -255,8 +288,30 @@ def run_case(case, manifest, model=None, max_turns=5):
             before_click()
         run["clicks"].append({"key": ident, "approved": list(approved)})
         body = controlled_ofp(source, fields, clock, case["scenario"] == "infeasible")
+        raw = json.loads(body)
+        if fields.get("airline"):
+            raw["general"].update(
+                icao_airline=fields["airline"], flight_number=fields["flight_number"]
+            )
+        if case.get("no_performance"):
+            raw.pop("tlr", None)
+        route = case.get("retained_route", fields.get("route") or "JCOBY4 SWANN PHLBO4")
+        if "route_evidence" in case:
+            raw["general"]["route"] = route
+            raw["navlog"] = {"fix": [{"ident": s} for s in case["route_evidence"]]}
+        body = json.dumps(raw).encode()
         run["provider_plans"].append({"key": ident, "sha256": sha256(body), "fields": fields})
-        return {"status": "generated", "session": "controlled-provider"}
+        if failure == "timeout_after_click":
+            raise TimeoutError("controlled post-click timeout")
+        return {
+            "status": "generated",
+            "session": "controlled-provider",
+            **(
+                {"values": {"route": fields.get("route") or route}}
+                if "route_evidence" in case
+                else {}
+            ),
+        }
 
     def observe():
         run["state"] = read_state(store)
@@ -309,7 +364,15 @@ def run_case(case, manifest, model=None, max_turns=5):
     ):
         store = Store(Path(directory))
         stack.enter_context(
-            patch.dict(os.environ, {"IFD_DATA_DIR": directory, "IFD_AIRPORT_CACHE_DIR": "disabled"})
+            patch.dict(
+                os.environ,
+                {
+                    "IFD_DATA_DIR": directory,
+                    "IFD_AIRPORT_CACHE_DIR": "disabled",
+                    "IFD_INTERNAL_TOKEN": "controlled-workflow-replay-token",
+                    "LANGSMITH_TRACING": "false",
+                },
+            )
         )
         for module, name, replacement in (
             (workflow, "_store", lambda: store),
@@ -319,7 +382,11 @@ def run_case(case, manifest, model=None, max_turns=5):
             (flights, "_get", blocked),
             (flights, "airport_name", lambda code: f"Controlled airport {code}"),
             (flights, "airport_elevation", lambda _: 312),
-            (flights, "airport_timezone", lambda _: "UTC"),
+            (
+                flights,
+                "airport_timezone",
+                lambda code: case.get("airport_timezones", {}).get(code, "UTC"),
+            ),
             (workflow.simbrief_browser, "generate", generate),
             (workflow.simbrief_browser, "airframes", blocked),
             (workflow, "fetch_sync", lambda *a, **k: body if body else blocked()),
@@ -331,15 +398,44 @@ def run_case(case, manifest, model=None, max_turns=5):
             (flights, "datetime", Clock),
             (agent, "datetime", Clock),
             (operations, "datetime", Clock),
+            (remote, "paid_operations_enabled", lambda: True),
         ):
             stack.enter_context(patch.object(module, name, replacement))
         # Do not export .env tracing settings or send ambient traces; explicit upload is separate.
         stack.enter_context(tracing_context(enabled=False))
         try:
-            graph = agent.build_agent(
-                model=model or ScriptedModel(messages=iter(scripted_messages(case))),
-                checkpointer=InMemorySaver(),
+            if case.get("airline_flight"):
+                stack.enter_context(
+                    patch.object(
+                        flights,
+                        "refresh_flight",
+                        lambda _: {
+                            "status": "ok",
+                            "data": case["airline_flight"],
+                            "sources": ["controlled flight fixture"],
+                        },
+                    )
+                )
+            selected_model = model or ScriptedModel(messages=iter(scripted_messages(case)))
+            checkpoint = (
+                SqliteSaver(
+                    sqlite3.connect(
+                        str(Path(directory) / "checkpoint.sqlite"), check_same_thread=False
+                    )
+                )
+                if mcp_url
+                else InMemorySaver()
             )
+            if mcp_url:
+                stack.callback(checkpoint.conn.close)
+            graph = agent.build_agent(model=selected_model, checkpointer=checkpoint)
+            driver = graph
+            if mcp_url:
+                from mcp_replay import MCPDriver
+
+                driver = MCPDriver(mcp_url, graph, measurement, run)
+                stack.enter_context(patch.object(remote, "_get_agent", lambda: driver))
+                stack.enter_context(patch.object(remote, "_turns", {}))
             config = {
                 "configurable": {"thread_id": case["id"]},
                 "callbacks": [measurement],
@@ -351,7 +447,7 @@ def run_case(case, manifest, model=None, max_turns=5):
             for _ in range(max_turns * 3):
                 turn_start = time.perf_counter()
                 in_turn = True
-                result = graph.invoke(payload, config=config, version="v2")
+                result = driver.invoke(payload, config=config, version="v2")
                 turns.append(
                     {
                         "stage": "approval_resume"
@@ -369,15 +465,25 @@ def run_case(case, manifest, model=None, max_turns=5):
                     for interrupt in result.interrupts:
                         for request in interrupt.value["action_requests"]:
                             decision = "reject" if case["scenario"] == "decline" else "approve"
-                            run["approvals"].append({**request, "decision": decision})
+                            resolved = request["args"]
+                            if request["name"] == "revise_dispatch":
+                                resolved = operations.revision_inputs(**request["args"])
+                            run["approvals"].append(
+                                {**request, "decision": decision, "resolved_args": resolved}
+                            )
                             decisions.append({"type": decision})
                             if decision == "approve":
-                                approved.append(request["args"])
+                                approved.append(resolved)
                     payload = Command(resume={"decisions": decisions})
                     continue
                 run["final_reply"] = messages[-1].text
-                if run["state"] or case["scenario"] == "decline":
+                followups = case.get("followups", [])
+                if clarification_turns < len(followups):
+                    content = followups[clarification_turns]
+                elif run["state"] or case["scenario"] == "decline" or case.get("no_dispatch"):
                     break
+                else:
+                    content = "All required inputs are supplied above. Prepare that exact itinerary and use the approval prompt."
                 if clarification_turns >= max_turns:
                     break
                 clarification_turns += 1
@@ -385,13 +491,41 @@ def run_case(case, manifest, model=None, max_turns=5):
                     "messages": [
                         {
                             "role": "user",
-                            "content": "All required inputs are supplied above. Prepare that exact itinerary and use the approval prompt.",
+                            "content": content,
                         }
                     ]
                 }
+            if mcp_url:
+                saved = driver.call("list_saved_trips", {"trip": case["legs"][0]["trip"]})
+                run["mcp_saved"] = saved
+                if case.get("restart"):
+                    remote._turns.clear()
+                    # Reconstruct both the graph and checkpoint connection from disk.
+                    checkpoint.conn.close()
+                    replacement = SqliteSaver(
+                        sqlite3.connect(
+                            str(Path(directory) / "checkpoint.sqlite"), check_same_thread=False
+                        )
+                    )
+                    stack.callback(replacement.conn.close)
+                    graph = agent.build_agent(model=selected_model, checkpointer=replacement)
+                    driver.graph = graph
+                    run["recovered"] = driver.call("conversation_status", {"thread_id": case["id"]})
             observe()
         except Exception as exc:
-            run["error"] = {"type": type(exc).__name__, "message": str(exc)[:1000]}
+
+            def describe(error):
+                return {
+                    "type": type(error).__name__,
+                    "message": str(error)[:1000],
+                    **(
+                        {"causes": [describe(e) for e in error.exceptions]}
+                        if isinstance(error, BaseExceptionGroup)
+                        else {}
+                    ),
+                }
+
+            run["error"] = describe(exc)
             if locals().get("in_turn"):
                 turns.append({"stage": "turn_error", "seconds": time.perf_counter() - turn_start})
             if "graph" in locals():
@@ -435,6 +569,9 @@ def run_case(case, manifest, model=None, max_turns=5):
         "browserbase_usd": 0,
         "provider_usage": events,
         "owner_ratings": None,
+        "queue_latency_s": None,
+        "browser_latency_s": None,
+        "transport": "mcp-http" if mcp_url else "graph",
     }
     run["workflow"] = observability.summarize(messages, set())
     run.update(verify(case, run))
@@ -449,6 +586,9 @@ def main():
     run_parser.add_argument("--ids", default="")
     run_parser.add_argument("--output", type=Path, required=True)
     run_parser.add_argument("--real-model", action="store_true")
+    run_parser.add_argument(
+        "--mcp", action="store_true", help="Use production MCP tools over loopback HTTP"
+    )
     compare_parser = commands.add_parser("compare")
     compare_parser.add_argument("baseline", type=Path)
     compare_parser.add_argument("candidate", type=Path)
@@ -540,23 +680,29 @@ def main():
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "owner_ratings": None,
     }
-    for case in manifest["cases"]:
-        if case["id"] in wanted:
-            result = run_case(case, manifest, model=model)
-            batch["results"].append(result)
-            args.output.parent.mkdir(parents=True, exist_ok=True)
-            args.output.write_text(json.dumps(batch, indent=2) + "\n")
-            print(
-                json.dumps(
-                    {
-                        "case_id": case["id"],
-                        "passed": result["passed"],
-                        "invalid": result["invalid"],
-                        "constraint_failures": result["constraint_failures"],
-                    }
-                ),
-                flush=True,
-            )
+    with ExitStack() as stack:
+        mcp_url = None
+        if args.mcp:
+            from mcp_replay import MCPServer
+
+            mcp_url = stack.enter_context(MCPServer()).url
+        for case in manifest["cases"]:
+            if case["id"] in wanted:
+                result = run_case(case, manifest, model=model, mcp_url=mcp_url)
+                batch["results"].append(result)
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                args.output.write_text(json.dumps(batch, indent=2) + "\n")
+                print(
+                    json.dumps(
+                        {
+                            "case_id": case["id"],
+                            "passed": result["passed"],
+                            "invalid": result["invalid"],
+                            "constraint_failures": result["constraint_failures"],
+                        }
+                    ),
+                    flush=True,
+                )
     raise SystemExit(int(any(r["invalid"] or not r["passed"] for r in batch["results"])))
 
 
