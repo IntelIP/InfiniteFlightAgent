@@ -1,0 +1,920 @@
+{
+  "schema_version": 1,
+  "id": "ifd-thrust-v045",
+  "baseline": "eef57bcaec856b1bd56bc9b1a1a2f992b67fb61f",
+  "clock_utc": "2026-11-11T12:00:00Z",
+  "scope": "Software contract and pinned simulation reference; not manufacturer accuracy or Infinite Flight verification",
+  "cases": [
+    {
+      "id": "TH-001",
+      "name": "A20N exact LEAP-1A26",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "LEAP-1A26",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "LEAP-1A26"
+      }
+    },
+    {
+      "id": "TH-002",
+      "name": "A20N exact PW1124G1-JM",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "PW1124G1-JM",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "PW1124G1-JM"
+      }
+    },
+    {
+      "id": "TH-003",
+      "name": "A20N exact PW1127G-JM",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "PW1127G-JM",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "PW1127G-JM"
+      }
+    },
+    {
+      "id": "TH-004",
+      "name": "A20N exact PW1129G-JM",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "PW1129G-JM",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "PW1129G-JM"
+      }
+    },
+    {
+      "id": "TH-005",
+      "name": "A21N exact LEAP-1A32",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A21N",
+        "engines": "LEAP-1A32",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "LEAP-1A32"
+      }
+    },
+    {
+      "id": "TH-006",
+      "name": "A21N exact LEAP-1A33",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A21N",
+        "engines": "LEAP-1A33",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "LEAP-1A33"
+      }
+    },
+    {
+      "id": "TH-007",
+      "name": "A21N exact LEAP-1A35A",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A21N",
+        "engines": "LEAP-1A35A",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "LEAP-1A35A"
+      }
+    },
+    {
+      "id": "TH-008",
+      "name": "A21N exact PW1130G-JM",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A21N",
+        "engines": "PW1130G-JM",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "PW1130G-JM"
+      }
+    },
+    {
+      "id": "TH-009",
+      "name": "A21N exact PW1133G-JM",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A21N",
+        "engines": "PW1133G-JM",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "PW1133G-JM"
+      }
+    },
+    {
+      "id": "TH-010",
+      "name": "B38M TO",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "B38M",
+        "engines": "LEAP-1B28",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "TO",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "LEAP-1B28"
+      }
+    },
+    {
+      "id": "TH-011",
+      "name": "B38M TO1",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "B38M",
+        "engines": "LEAP-1B28",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "TO1",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "LEAP-1B28"
+      }
+    },
+    {
+      "id": "TH-012",
+      "name": "B38M TO-1",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "B38M",
+        "engines": "LEAP-1B28",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "TO-1",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "LEAP-1B28"
+      }
+    },
+    {
+      "id": "TH-013",
+      "name": "B38M TO2",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "B38M",
+        "engines": "LEAP-1B28",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "TO2",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "LEAP-1B28"
+      }
+    },
+    {
+      "id": "TH-014",
+      "name": "B38M TO-2",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "B38M",
+        "engines": "LEAP-1B28",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "TO-2",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "LEAP-1B28"
+      }
+    },
+    {
+      "id": "TH-015",
+      "name": "B38M D-TO",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "B38M",
+        "engines": "LEAP-1B28",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "D-TO",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "LEAP-1B28"
+      }
+    },
+    {
+      "id": "TH-016",
+      "name": "B38M D-TO1",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "B38M",
+        "engines": "LEAP-1B28",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "D-TO1",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "LEAP-1B28"
+      }
+    },
+    {
+      "id": "TH-017",
+      "name": "B38M D-TO2",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "B38M",
+        "engines": "LEAP-1B28",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "D-TO2",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "estimated",
+        "engine": "LEAP-1B28"
+      }
+    },
+    {
+      "id": "TH-018",
+      "name": "refuse unresolved variant A20N/PW1127GA-JM",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "PW1127GA-JM",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "unsupported_profile"
+      }
+    },
+    {
+      "id": "TH-019",
+      "name": "refuse unresolved variant A20N/PW1124G-JM",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "PW1124G-JM",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "unsupported_profile"
+      }
+    },
+    {
+      "id": "TH-020",
+      "name": "refuse unresolved variant A21N/PW1133GA-JM",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A21N",
+        "engines": "PW1133GA-JM",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "unsupported_profile"
+      }
+    },
+    {
+      "id": "TH-021",
+      "name": "refuse unresolved variant B38M/LEAP-1B28B1",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "B38M",
+        "engines": "LEAP-1B28B1",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "unsupported_profile"
+      }
+    },
+    {
+      "id": "TH-022",
+      "name": "refuse unresolved variant A20N/LEAP-1A26UNKNOWN",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "LEAP-1A26UNKNOWN",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "unsupported_profile"
+      }
+    },
+    {
+      "id": "TH-023",
+      "name": "refuse unresolved variant A21N/PW1133G-JMUNKNOWN",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A21N",
+        "engines": "PW1133G-JMUNKNOWN",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "unsupported_profile"
+      }
+    },
+    {
+      "id": "TH-024",
+      "name": "refuse unresolved variant A21N/LEAP-1A26",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A21N",
+        "engines": "LEAP-1A26",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "unsupported_profile"
+      }
+    },
+    {
+      "id": "TH-025",
+      "name": "refuse unrecognized FLEXINVALID",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "LEAP-1A26",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEXINVALID",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "unsupported_thrust_mode"
+      }
+    },
+    {
+      "id": "TH-026",
+      "name": "refuse unrecognized TOGAINVALID",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "LEAP-1A26",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "TOGAINVALID",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "unsupported_thrust_mode"
+      }
+    },
+    {
+      "id": "TH-027",
+      "name": "refuse malformed Boeing derate",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "B38M",
+        "engines": "LEAP-1B28",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "D-TO--1",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "unsupported_thrust_mode"
+      }
+    },
+    {
+      "id": "TH-028",
+      "name": "FLEX above 100 C table endpoint",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "LEAP-1A26",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 300,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "unsupported_conditions"
+      }
+    },
+    {
+      "id": "TH-029",
+      "name": "OAT below absolute zero",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "LEAP-1A26",
+        "conditions": {
+          "temperature": -300,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "unsupported_conditions"
+      }
+    },
+    {
+      "id": "TH-030",
+      "name": "OAT above 100 C table endpoint",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "LEAP-1A26",
+        "conditions": {
+          "temperature": 101,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "unsupported_conditions"
+      }
+    },
+    {
+      "id": "TH-031",
+      "name": "assumed temperature below OAT",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "LEAP-1A26",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 10,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "unsupported_conditions"
+      }
+    },
+    {
+      "id": "TH-032",
+      "name": "boolean OAT is not degrees C",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "LEAP-1A26",
+        "conditions": {
+          "temperature": true,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "missing_input"
+      }
+    },
+    {
+      "id": "TH-033",
+      "name": "boolean altimeter is not pressure",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "LEAP-1A26",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": true
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "missing_input"
+      }
+    },
+    {
+      "id": "TH-034",
+      "name": "unknown bleed setting",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "LEAP-1A26",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "UNKNOWN",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "unsupported_conditions"
+      }
+    },
+    {
+      "id": "TH-035",
+      "name": "unknown anti-ice setting",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "LEAP-1A26",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "UNKNOWN"
+        }
+      },
+      "expected": {
+        "status": "unsupported_conditions"
+      }
+    },
+    {
+      "id": "TH-036",
+      "name": "missing bleed setting",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "LEAP-1A26",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": null,
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "missing_input"
+      }
+    },
+    {
+      "id": "TH-037",
+      "name": "missing anti-ice setting",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "LEAP-1A26",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": null
+        }
+      },
+      "expected": {
+        "status": "missing_input"
+      }
+    },
+    {
+      "id": "TH-038",
+      "name": "out-of-table pressure altitude",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "LEAP-1A26",
+        "conditions": {
+          "temperature": 15,
+          "altimeter": 1013.25
+        },
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 18000,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "unsupported_conditions"
+      }
+    },
+    {
+      "id": "TH-039",
+      "name": "unavailable TLR",
+      "evidence_class": "contract",
+      "input": {
+        "aircraft_icao": "A20N",
+        "engines": "LEAP-1A26",
+        "conditions": null,
+        "runway": {
+          "thrust_setting": "FLEX",
+          "flex_temperature": 50,
+          "elevation": 0,
+          "bleed_setting": "ON",
+          "anti_ice_setting": "OFF"
+        }
+      },
+      "expected": {
+        "status": "missing_input"
+      }
+    }
+  ]
+}
