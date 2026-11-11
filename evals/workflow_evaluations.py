@@ -313,12 +313,35 @@ def verify(case: dict, run: dict) -> dict:
         checks[assertion["id"]] = any(matches(o) for o in outputs)
     if run.get("mcp_saved") is not None:
         saved = run["mcp_saved"].get("legs", [])
-        checks["mcp_retained_results"] = len(saved) == len(
-            {key(r["request"])[:2] for r in state}
-        ) and all(
-            not row.get("snapshot_sha256")
-            or any(s["snapshot"]["raw_sha256"] == row["snapshot_sha256"] for s in snapshots)
-            for row in saved
+        latest = {}
+        for row in state:
+            ident = key(row["request"])[:2]
+            if (
+                ident not in latest
+                or row["request"]["revision"] > latest[ident]["request"]["revision"]
+            ):
+                latest[ident] = row
+        returned = {key(row["request"])[:2]: row for row in saved}
+        checks["mcp_retained_results"] = (
+            len(returned) == len(saved)
+            and set(returned) == set(latest)
+            and all(
+                returned[ident]["request"] == row["request"]
+                and returned[ident].get("snapshot_sha256")
+                == (row["snapshot"]["raw_sha256"] if row["snapshot"] else None)
+                and returned[ident].get("briefing_markdown") == row["meta"].get("briefing")
+                for ident, row in latest.items()
+            )
+        )
+    if case.get("claim_expected_status"):
+        checks["uncertain_claim_preserved"] = (
+            all(
+                row["meta"].get("generation", {}).get("status") == case["claim_expected_status"]
+                and row["meta"]["generation"].get("clicked") is True
+                and row["meta"]["generation"].get("automatic_retry_allowed") is False
+                for row in state
+            )
+            and len(run.get("provider_attempts", [])) == 1
         )
     if case.get("restart"):
         checks["restart_recovery"] = run.get("recovered", {}).get("status") == "saved" and run.get(

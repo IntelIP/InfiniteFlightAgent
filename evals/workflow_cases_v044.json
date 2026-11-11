@@ -267,7 +267,12 @@
         "aircraft_type": "A20N",
         "registration": "unavailable",
         "note": "Controlled fixture, not a live flight",
-        "observed_at": "2026-11-08T11:00:00Z"
+        "observed_at": "2026-11-08T11:00:00Z",
+        "codeshares": [],
+        "operator": "UA",
+        "cancelled": false,
+        "status": "Scheduled",
+        "temporal_class": "future_schedule"
       },
       "route_evidence": [
         "KIAD",
@@ -1234,9 +1239,18 @@
           }
         },
         {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-024",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
           "text": "The provider operation stopped. Do not retry automatically; inspect the saved generation state before proceeding."
         }
-      ]
+      ],
+      "claim_expected_status": "uncertain"
     },
     {
       "id": "WF-025",
@@ -1424,7 +1438,7 @@
       ],
       "expected_outcome": "blocked",
       "max_clarifications": 0,
-      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain its briefing. [{\"trip\": \"WF-027\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]",
+      "prompt": "Prepare only the first private leg WF-027 leg 1 revision 1, KIAD to KEWR on 2026-11-08 at12:00 UTC, A20N standard airframe, N320HD, four passengers, KGS. I will approve preparation, but do not generate yet. Then inspect whether leg2 departing16:00 UTC can have a verified connection before leg1 arrival is known. Do not invent arrival or ask me to confirm unknown timing.",
       "expected_clicks": 0,
       "tool_assertions": [
         {

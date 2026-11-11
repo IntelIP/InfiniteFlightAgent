@@ -405,6 +405,62 @@ def run_case(case, manifest, model=None, max_turns=5, mcp_url=None):
         stack.enter_context(tracing_context(enabled=False))
         try:
             if case.get("airline_flight"):
+                flight = case["airline_flight"]
+                required = {
+                    "flight_number",
+                    "ident_icao",
+                    "fa_flight_id",
+                    "codeshares",
+                    "times",
+                    "origin",
+                    "destination",
+                    "departure_gate",
+                    "departure_terminal",
+                    "arrival_gate",
+                    "aircraft_type",
+                    "registration",
+                    "note",
+                }
+                missing = sorted(required - flight.keys())
+                missing += [
+                    f"times.{field}"
+                    for field in flights.TIME_FIELDS
+                    if field not in flight.get("times", {})
+                ]
+                if missing:
+                    run["invalid"] = True
+                    run["invalid_reasons"].append(
+                        "missing controlled flight fixture fields: " + ", ".join(missing)
+                    )
+                    run.update(verify(case, run))
+                    return run
+
+                def flight_get(path, params=None):
+                    if (
+                        path.startswith("/flights/")
+                        or path
+                        == f"/airports/{flight['origin']['icao']}/flights/to/{flight['destination']['icao']}"
+                    ):
+                        raw = {
+                            "ident_iata": flight["flight_number"],
+                            "ident_icao": flight["ident_icao"],
+                            "fa_flight_id": flight["fa_flight_id"],
+                            "codeshares_iata": flight["codeshares"],
+                            "origin": {"code_icao": flight["origin"]["icao"], "timezone": "UTC"},
+                            "destination": {
+                                "code_icao": flight["destination"]["icao"],
+                                "timezone": "UTC",
+                            },
+                            "gate_origin": flight["departure_gate"],
+                            "gate_destination": flight["arrival_gate"],
+                            "terminal_origin": flight["departure_terminal"],
+                            "aircraft_type": flight["aircraft_type"],
+                            **{k: v["utc"] for k, v in flight["times"].items()},
+                        }
+                        return {"flights": [raw], "num_pages": 1}
+                    return blocked()
+
+                stack.enter_context(patch.object(flights, "_get", flight_get))
                 stack.enter_context(
                     patch.object(
                         flights,
