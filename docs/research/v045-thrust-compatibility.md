@@ -98,6 +98,12 @@ An initial storage-fixture setup error was corrected and both applications rerun
 same corrected fixtures; the earlier diagnostic errors remain retained and are not used as
 product evidence. Counts establish these contracts, not statistical quality or aircraft support.
 
+The recorded numerical/software results are published as separate LangSmith experiments:
+[baseline](https://smith.langchain.com/o/90b24546-f3e2-4f48-af72-b06e73b27b49/datasets/83ec5f1c-43f7-4a4b-accc-bba4831cd367/compare?selectedSessions=22d33c85-57d9-4611-837c-c107782b6362) and
+[candidate](https://smith.langchain.com/o/90b24546-f3e2-4f48-af72-b06e73b27b49/datasets/83ec5f1c-43f7-4a4b-accc-bba4831cd367/compare?selectedSessions=3f078b21-c33b-4814-950f-f21c67b28d02). These experiments publish recorded deterministic outputs;
+they do not call a model or a flight provider. The candidate source is
+`170c4f1415613d8504c4f60d0937644847fcdd58`; later changes add assessment/runner reporting only.
+
 The unchanged 28-case conversation suite passes on both controlled baseline and candidate,
 using identical fixtures, clock and MCP transport. Actual-model baseline/candidate attempts
 for WF-001/003/006/025/026 were blocked by the existing ChatGPT Subscription Sharing usage
