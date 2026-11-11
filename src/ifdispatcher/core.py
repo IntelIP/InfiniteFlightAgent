@@ -76,10 +76,13 @@ def normalize(raw: bytes) -> dict:
             selected, status = matches[0], "available"
     target = selected.get("thrust_value") if selected else None
     indication = selected.get("thrust_value_id") if selected else None
+    general = obj.get("general")
+    route = general.get("route") if isinstance(general, dict) else None
     return {
         "aircraft": {k: obj["aircraft"].get(k) for k in ("icao_code", "name", "engines")},
         "origin": obj["origin"].get("icao_code"),
         "destination": obj["destination"].get("icao_code"),
+        "flight_route": route if isinstance(route, str) else None,
         "generated_at": obj["params"].get("time_generated"),
         "weight_units": obj["params"]["units"],
         "takeoff_status": status,
@@ -190,6 +193,19 @@ class Store:
                 raise ValueError("identity_mismatch: selected SimBrief airframe differs")
             if normalized["weight_units"].upper() != expected["units"]:
                 raise ValueError("identity_mismatch: units differ")
+            meta_row = db.execute(
+                "SELECT payload FROM leg_meta WHERE trip=? AND leg=? AND revision=?",
+                (trip, leg, revision),
+            ).fetchone()
+            meta = json.loads(meta_row[0]) if meta_row else {}
+            readback = ((meta.get("generation") or {}).get("values") or {}).get("route")
+            route = (expected.get("route") or "").strip() or readback
+            if route and " ".join(route.upper().split()) != " ".join(
+                (normalized["flight_route"] or "").upper().split()
+            ):
+                raise ValueError(
+                    "identity_mismatch: route differs from approved input or form readback"
+                )
             if expected["runway"]:
                 selected = normalized["selected_takeoff"]
                 if not selected or selected.get("identifier") != expected["runway"]:

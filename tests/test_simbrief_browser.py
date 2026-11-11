@@ -78,6 +78,16 @@ def test_keepalive_route_respects_the_kill_switch(monkeypatch):
 
 
 @pytest.mark.parametrize(
+    "origin,destination,aircraft,airline,callsign",
+    [
+        ("KIAD", "KTEB", "CL35", None, "N350HD"),
+        ("KIAD", "KEWR", "A21N", "UAL", None),
+        ("KIAD", "LFMN", "A20N", None, "N320HD"),
+        ("KLAX", "KMIA", "B38M", "AAL", None),
+    ],
+    ids=["short-private", "short-airline", "long-private", "long-airline"],
+)
+@pytest.mark.parametrize(
     "route,found,prompts,timeout,status,finder_clicks",
     [
         (None, "DOTSS2 CLEEE BLH J169 KOFFA SNDBR3", [], False, "generated", 1),
@@ -93,7 +103,19 @@ def test_keepalive_route_respects_the_kill_switch(monkeypatch):
     ],
 )
 def test_generation_waits_for_routing_before_claiming_generate(
-    monkeypatch, tmp_path, route, found, prompts, timeout, status, finder_clicks
+    monkeypatch,
+    tmp_path,
+    route,
+    found,
+    prompts,
+    timeout,
+    status,
+    finder_clicks,
+    origin,
+    destination,
+    aircraft,
+    airline,
+    callsign,
 ):
     """Controlled form events exercise the real generation flow; no provider calls."""
     from playwright.sync_api import TimeoutError
@@ -117,6 +139,8 @@ def test_generation_waits_for_routing_before_claiming_generate(
 
         def select_option(self, selector, value):
             self.values[selector[1:]] = value
+            if selector == "#basetype":
+                self.values["type"] = value
 
         def fill(self, selector, value):
             self.values[selector[1:]] = value
@@ -197,11 +221,13 @@ def test_generation_waits_for_routing_before_claiming_generate(
 
     monkeypatch.setattr(simbrief_browser, "_answer_known_prompts", confirm_time)
     fields = dict(
-        origin="KLAX",
-        destination="KMIA",
-        aircraft="A20N",
+        origin=origin,
+        destination=destination,
+        aircraft=aircraft,
         units="KGS",
-        callsign="N320HD",
+        callsign=callsign,
+        airline=airline,
+        flight_number="123" if airline else None,
         departure_utc="2026-11-09T15:00:00Z",
         route=route,
         runway="25R",

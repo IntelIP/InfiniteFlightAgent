@@ -412,6 +412,12 @@ def _synopsis(raw: dict) -> dict[str, Any]:
     general, times, fuel = raw.get("general", {}), raw.get("times", {}), raw.get("fuel", {})
     weights, units = raw.get("weights", {}), raw.get("params", {}).get("units")
     altitude = general.get("initial_altitude")
+    navlog = raw.get("navlog")
+    fixes = navlog.get("fix") if isinstance(navlog, dict) else None
+    if isinstance(fixes, dict):
+        fixes = [fixes]
+    if not isinstance(fixes, list) or not all(isinstance(fix, dict) for fix in fixes):
+        fixes = None
     return {
         "generated_at": raw.get("params", {}).get("time_generated"),
         "flight": f"{general.get('icao_airline') or ''}{general.get('flight_number') or ''}",
@@ -428,6 +434,8 @@ def _synopsis(raw: dict) -> dict[str, Any]:
         "arrival": times.get("est_in"),
         "block_time": times.get("est_block"),
         "flight_route": general.get("route"),
+        "navlog_fix_count": len(fixes) if fixes is not None else None,
+        "navlog_idents": [fix.get("ident") for fix in fixes] if fixes is not None else None,
     }
 
 
@@ -492,6 +500,13 @@ def _briefing(syn: dict, flight: dict | None, est: dict, takeoff: dict | None, m
         f"**{plan_label}:** generated {syn['generated_at']} · {syn['route']} · "
         f"{syn['aircraft']} · {syn['cruise']} · {syn['distance_nm']} nm · ETE {syn['ete']} · "
         f"block fuel {syn['block_fuel']} · TOW {syn['takeoff_weight']}"
+    )
+    count = syn.get("navlog_fix_count")
+    navlog = f"{count} navlog entries" if count is not None else "navlog unavailable"
+    lines.append(
+        f"**Route:** {syn.get('flight_route') or 'unavailable'} "
+        f"(SimBrief OFP; {navlog}). "
+        "Airways/procedures can expand into navlog fixes; count does not establish route validity."
     )
     if takeoff:
         lines.append(

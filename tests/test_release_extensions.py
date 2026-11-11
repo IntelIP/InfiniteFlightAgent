@@ -144,6 +144,7 @@ def test_calibration_reused_only_for_matching_conditions_version_and_age(local_s
 def test_revision_requires_graph_approval_and_preserves_old_plan(local_store, monkeypatch):
     prepare(route="DCT", passengers=15)
     old = fuel_plan()
+    old.setdefault("general", {})["route"] = "DCT"
     local_store.save("T", "1", 1, json.dumps(old).encode(), None)
     call = {
         "name": "revise_dispatch",
