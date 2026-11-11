@@ -17,7 +17,7 @@ approval, promotion, trigger deployment and release publication.
 The exact uploaded image passed a two-leg A20N trip on temporary staging before
 promotion. The [release report](../evidence/v043-release.md) records acceptance,
 workflow evaluations, browser usage, cleanup and production observations. The
-[database-derived acceptance record](../evidence/live-acceptance.json) passes all four
+[database-derived acceptance record](https://github.com/IntelIP/InfiniteFlightAgent/blob/f979e649f2f7cbd9f9b1181d2e5acceda920b59a/docs/evidence/live-acceptance.json) passes all four
 BUILD-04 outcomes for the release source. Local product validation passed: 305 tests,
 Ruff and dead-code checks; three Postgres-only tests were skipped locally.
 
