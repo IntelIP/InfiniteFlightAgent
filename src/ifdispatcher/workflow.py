@@ -316,9 +316,8 @@ def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) ->
             "session": getattr(exc, "simbrief_session", None),
             "clicked": clicked,
             "retryable": not clicked,
+            **simbrief_browser.generation_failure(exc, clicked),
         }
-        if isinstance(exc, simbrief_browser.budget.BrowserLimit):
-            result.update(automatic_retry_allowed=False, reason=str(exc))
         meta["generation"] = {**meta.get("generation", {}), **result}
         store.save_meta(trip, leg, revision, meta)
         return result
@@ -327,6 +326,13 @@ def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) ->
         clicked=clicked,
         retryable=not clicked and result["status"] not in ("generated", "uncertain"),
     )
+    if result["status"] == "uncertain":
+        result.update(
+            reason_code="generation_outcome_unknown",
+            reason="Generate was clicked, but completion was not observed.",
+            next=simbrief_browser.UNCERTAIN_GENERATION_NEXT,
+            automatic_retry_allowed=False,
+        )
     try:
         result["r2_keys"] = artifacts.upload(
             result.get("screenshots") or [], f"screens/{fields['tag']}"

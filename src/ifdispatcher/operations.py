@@ -125,7 +125,12 @@ def revision_inputs(trip: str, leg: str, changes: dict, base_revision: int) -> d
 
     unknown = set(changes) - EDITABLE
     if unknown:
-        raise ValueError("unsupported_changes: " + ", ".join(sorted(unknown)))
+        raise ValueError(
+            "unsupported_changes: "
+            + ", ".join(sorted(unknown))
+            + ". Supported revision fields: "
+            + ", ".join(sorted(EDITABLE))
+        )
     store = open_store()
     history = store.revisions(trip, leg)
     if not history:
@@ -140,18 +145,28 @@ def revision_inputs(trip: str, leg: str, changes: dict, base_revision: int) -> d
     args.update(
         sim_aircraft=request["aircraft"],
         departure_utc=request["departure"],
-        departure_local_date=workflow.flights.local_time(request["departure"], request["origin"])[
-            :10
-        ],
         engine=meta.get("engine"),
         private_callsign=meta.get("private_callsign"),
         fa_flight_id=(meta.get("flight") or {}).get("fa_flight_id"),
     )
     args.update(changes)
+    # Reject unusable departures before any provider-backed airport/time lookup, both
+    # before approval and when an approved (possibly edited) revision executes.
+    departure = args.get("departure_utc")
+    try:
+        if not isinstance(departure, str) or not departure:
+            raise ValueError("missing departure")
+        departure = workflow._utc(departure)
+    except ValueError as exc:
+        raise ValueError(
+            "invalid_departure: departure_utc must include a valid date, time and timezone "
+            "(e.g. 2026-11-09T12:00:00Z)"
+        ) from exc
+    fit = workflow.connection(trip, leg, departure)
+    if "conflict" in fit:
+        raise ValueError("connection_conflict: " + fit["conflict"])
     # A changed departure needs an explicit local date, rather than inheriting a wrong day.
-    if (
-        "departure_utc" in changes or "origin" in changes
-    ) and "departure_local_date" not in changes:
+    if "departure_local_date" not in args:
         args["departure_local_date"] = workflow.flights.local_time(
             args["departure_utc"], args["origin"]
         )[:10]

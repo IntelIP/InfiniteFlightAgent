@@ -1,0 +1,207 @@
+{
+  "suite_id": "ifd-workflow-v1",
+  "schema_version": 1,
+  "verifier_version": "ifd-workflow-oracles-v1",
+  "clock_utc": "2026-11-08T11:00:00Z",
+  "base_commit": "bdb7fe78917bd9021fda1a30f3aba3dc7be18148",
+  "fixture": {
+    "path": "docs/research/evidence/simbrief-b38m-parser-fixture.json",
+    "sha256": "c4c22b55a9db64ea533e57a229946fb88243f5480253ed5d96cb324a8dd0b3af",
+    "provenance_path": "docs/research/evidence/simbrief-b38m-parser-fixture-provenance.json",
+    "kind": "controlled-derived-partial-ofp",
+    "transformation": "run_workflow_replay.controlled_ofp v1: explicit case identity, clock, profile, fuel and feasibility fields; no live/simulator claim",
+    "provenance_sha256": "0e5b65dfa34596d605ccacf7eea2bd423ce7032337dc6bb5cac559d33c094c6d"
+  },
+  "cases": [
+    {
+      "id": "WF-001",
+      "scenario": "complete",
+      "legs": [
+        {
+          "trip": "WF-001",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "prompt": "Prepare this exact private itinerary using the standard SimBrief profiles and default routes. Keep the specified trip/leg/revision IDs, aircraft, airframe, callsign, times, units and loads. I will decide in the approval prompt. After approval generate and finalize each approved leg; retain every leg. Report any infeasibility or unsupported thrust clearly.\n[{\"trip\": \"WF-001\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]"
+    },
+    {
+      "id": "WF-002",
+      "scenario": "decline",
+      "legs": [
+        {
+          "trip": "WF-002",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "declined",
+      "prompt": "Prepare this exact private itinerary using the standard SimBrief profiles and default routes. Keep the specified trip/leg/revision IDs, aircraft, airframe, callsign, times, units and loads. I will decide in the approval prompt. After approval generate and finalize each approved leg; retain every leg. Report any infeasibility or unsupported thrust clearly.\n[{\"trip\": \"WF-002\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]"
+    },
+    {
+      "id": "WF-003",
+      "scenario": "retry_duplicate",
+      "legs": [
+        {
+          "trip": "WF-003",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "prompt": "Prepare this exact private itinerary using the standard SimBrief profiles and default routes. Keep the specified trip/leg/revision IDs, aircraft, airframe, callsign, times, units and loads. I will decide in the approval prompt. After approval generate and finalize each approved leg; retain every leg. Report any infeasibility or unsupported thrust clearly.\n[{\"trip\": \"WF-003\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}] My controlled observed full-throttle N1 under those same conditions is 92%, simulator version 26.3. After saving the plan, update its calibration without regenerating."
+    },
+    {
+      "id": "WF-004",
+      "scenario": "two_leg",
+      "legs": [
+        {
+          "trip": "WF-004",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        },
+        {
+          "trip": "WF-004",
+          "leg": "2",
+          "revision": 1,
+          "origin": "KEWR",
+          "destination": "KBOS",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T16:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "prompt": "Prepare this exact private itinerary using the standard SimBrief profiles and default routes. Keep the specified trip/leg/revision IDs, aircraft, airframe, callsign, times, units and loads. I will decide in the approval prompt. After approval generate and finalize each approved leg; retain every leg. Report any infeasibility or unsupported thrust clearly.\n[{\"trip\": \"WF-004\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}, {\"trip\": \"WF-004\", \"leg\": \"2\", \"revision\": 1, \"origin\": \"KEWR\", \"destination\": \"KBOS\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T16:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]"
+    },
+    {
+      "id": "WF-005",
+      "scenario": "infeasible",
+      "legs": [
+        {
+          "trip": "WF-005",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KLAX",
+          "destination": "NZAA",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "infeasible",
+      "prompt": "Prepare this exact private itinerary using the standard SimBrief profiles and default routes. Keep the specified trip/leg/revision IDs, aircraft, airframe, callsign, times, units and loads. I will decide in the approval prompt. After approval generate and finalize each approved leg; retain every leg. Report any infeasibility or unsupported thrust clearly.\n[{\"trip\": \"WF-005\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KLAX\", \"destination\": \"NZAA\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]"
+    },
+    {
+      "id": "WF-006",
+      "scenario": "unsupported",
+      "legs": [
+        {
+          "trip": "WF-006",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "B738",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "B738"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "prompt": "Prepare this exact private itinerary using the standard SimBrief profiles and default routes. Keep the specified trip/leg/revision IDs, aircraft, airframe, callsign, times, units and loads. I will decide in the approval prompt. After approval generate and finalize each approved leg; retain every leg. Report any infeasibility or unsupported thrust clearly.\n[{\"trip\": \"WF-006\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"B738\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"B738\"}]"
+    },
+    {
+      "id": "WF-007",
+      "scenario": "revision_recovery",
+      "legs": [
+        {
+          "trip": "WF-007",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "prompt": "Prepare this exact private itinerary using the standard SimBrief profiles and default routes. Keep the specified trip/leg/revision IDs, aircraft, airframe, callsign, times, units and loads. I will decide in the approval prompt. After approval generate and finalize each approved leg; retain every leg. Report any infeasibility or unsupported thrust clearly.\n[{\"trip\": \"WF-007\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}] After saving it, call revise_dispatch for this trip and leg with changes={\"alternate\":\"KBWI\",\"cruise_altitude\":\"FL350\"}, base_revision=1. If unsupported, explain clearly and retain the saved plan."
+    },
+    {
+      "id": "WF-008",
+      "scenario": "provider_failure",
+      "legs": [
+        {
+          "trip": "WF-008",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "blocked",
+      "prompt": "Prepare this exact private itinerary using the standard SimBrief profiles and default routes. Keep the specified trip/leg/revision IDs, aircraft, airframe, callsign, times, units and loads. I will decide in the approval prompt. After approval generate and finalize each approved leg; retain every leg. Report any infeasibility or unsupported thrust clearly.\n[{\"trip\": \"WF-008\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]"
+    }
+  ]
+}

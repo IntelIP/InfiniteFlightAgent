@@ -11,6 +11,19 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Invalid saved-leg revisions return recoverable validation before approval rendering,
+  preserving prior plans and exact approval for supported changes.
+- Browser generation failures expose sanitized provider causes and recovery guidance.
+  Uncertain Generate outcomes retain their claim and require user confirmation before
+  finalization.
+
+### Added
+
+- Versioned whole-workflow evaluations with controlled providers, retained-state checks,
+  paired baseline comparisons, and explicitly labeled LangSmith experiments.
+
 ## [0.4.2] - 2026-11-09
 
 ### Added
