@@ -42,46 +42,109 @@ def _relative(gap: timedelta) -> str:
 
 
 def connection(
-    trip: str, leg: str, departure: datetime | str, arrival: datetime | None = None
+    trip: str,
+    leg: str,
+    departure: datetime | str,
+    arrival: datetime | None = None,
+    *,
+    previous_leg: str | None = None,
+    previous_arrival_utc: str | None = None,
+    arrival_source: str | None = None,
 ) -> dict[str, Any]:
-    """How a leg fits around the trip's other dispatched legs, by time.
+    """Check retained arrivals, or a labeled proposed connection from supplied evidence.
 
-    Returns "follows" (the leg it departs after, its arrival, the connection) and, when the leg
-    leaves less than MIN_CONNECTION after that arrival or arrives too late for the next leg, a
-    "conflict" sentence. Legs without a known arrival (private flights) are not checked.
+    Proposed evidence never writes a leg or replaces a known retained arrival. The actual
+    dispatch still checks its saved neighbours after exact-input approval.
     """
     departure = _utc(departure) if isinstance(departure, str) else departure
+    supplied = any(v is not None for v in (previous_leg, previous_arrival_utc, arrival_source))
+    if supplied and not all(
+        isinstance(v, str) and v.strip()
+        for v in (previous_leg, previous_arrival_utc, arrival_source)
+    ):
+        raise ValueError(
+            "connection_evidence_required: provide previous_leg, previous_arrival_utc "
+            "with timezone, and arrival_source together"
+        )
+    proposed_arrival = _utc(previous_arrival_utc) if supplied else None
+    if supplied and previous_leg == leg:
+        raise ValueError("invalid_previous_leg: a leg cannot connect to itself")
     others = [
         (other, _utc(request["departure"]), _arrival(meta))
         for other, request, meta in _store().trip_legs(trip)
         if other != leg and request.get("departure")
     ]
+    # Numbered legs represent itinerary order even when a changed departure crosses
+    # another leg's departure. Legacy named-leg trips retain their time-based ordering.
+    numbered = str(leg).isdecimal() and all(str(o[0]).isdecimal() for o in others)
+    earlier = [o for o in others if (int(o[0]) < int(leg) if numbered else o[1] < departure)]
+    prior = max(earlier, key=lambda o: int(o[0]) if numbered else o[1]) if earlier else None
+    if prior and supplied and previous_leg != prior[0]:
+        raise ValueError(
+            "previous_leg_mismatch: supplied evidence is not for the preceding saved leg"
+        )
+    if prior and proposed_arrival and proposed_arrival <= prior[1]:
+        raise ValueError("invalid_previous_arrival: arrival must follow that leg's departure")
+
     fit: dict[str, Any] = {}
-    earlier = [o for o in others if o[1] < departure]
-    if earlier:
-        previous, _, landed = max(earlier, key=lambda o: o[1])
-        if landed:
-            gap = departure - landed
-            fit["follows"] = {
-                "leg": previous,
-                "arrival_utc": landed.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "connection": _duration(gap),
-            }
-            if gap < MIN_CONNECTION:
-                fit["conflict"] = (
-                    f"Leg {leg} departs {_relative(gap)} leg {previous} arrives "
-                    f"({landed:%Y-%m-%d %H:%MZ}); a connection needs at least "
-                    f"{_duration(MIN_CONNECTION)}. Choose a later flight for leg {leg}."
-                )
-    later = [o for o in others if o[1] >= departure]
-    if arrival and later and "conflict" not in fit:
-        following, leaves, _ = min(later, key=lambda o: o[1])
-        if leaves - arrival < MIN_CONNECTION:
+    landed = prior[2] if prior else None
+    if landed:
+        previous = prior[0]
+        fit.update(status="checked", arrival_source=f"retained leg {previous}")
+    elif proposed_arrival:
+        previous, landed = previous_leg, proposed_arrival
+        fit.update(
+            status="proposed",
+            arrival_source=arrival_source,
+            next="Proposed timing only; keep estimates labeled and recheck against the retained "
+            "prior leg before dispatching this leg. Do not ask to reconfirm settled choices.",
+        )
+    elif prior:
+        fit.update(
+            status="arrival_unavailable",
+            previous_leg=prior[0],
+            next="Finalize the prior leg to obtain its planned arrival, then recheck. "
+            "The connection remains unknown until that arrival is available.",
+        )
+    else:
+        fit.update(
+            status="no_previous_leg",
+            next="Prepare the first agreed leg. For a proposed later connection, supply the "
+            "previous leg's sourced arrival or finalize that leg first.",
+        )
+    if landed:
+        gap = departure - landed
+        fit["follows"] = {
+            "leg": previous,
+            "arrival_utc": landed.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "connection": _duration(gap),
+        }
+        if gap < MIN_CONNECTION:
+            fit["status"] = "conflict"
+            fit["conflict"] = (
+                f"Leg {leg} departs {_relative(gap)} leg {previous} arrives "
+                f"({landed:%Y-%m-%d %H:%MZ}); a connection needs at least "
+                f"{_duration(MIN_CONNECTION)}. Choose a later flight for leg {leg}."
+            )
+            fit["next"] = "Choose a later departure and recompute; do not dispatch this connection."
+    later = [o for o in others if (int(o[0]) > int(leg) if numbered else o[1] >= departure)]
+    if later and "conflict" not in fit:
+        following, leaves, _ = min(later, key=lambda o: int(o[0]) if numbered else o[1])
+        if departure >= leaves:
+            fit["status"] = "conflict"
+            fit["conflict"] = (
+                f"Leg {leg} departs at or after following leg {following}; choose an earlier "
+                "departure or revise the following leg."
+            )
+        elif arrival and leaves - arrival < MIN_CONNECTION:
+            fit["status"] = "conflict"
             fit["conflict"] = (
                 f"Leg {leg} arrives {arrival:%Y-%m-%d %H:%MZ}, {_relative(arrival - leaves)} "
                 f"leg {following} departs; a connection needs at least "
                 f"{_duration(MIN_CONNECTION)}."
             )
+        if "conflict" in fit:
+            fit["next"] = "Revise the conflicting departure and recompute before dispatching."
     return fit
 
 
@@ -235,8 +298,9 @@ def dispatch_flight(
         if sim_aircraft in thrust.AIRCRAFT
         else f"unavailable: {sim_aircraft} is not modeled; tell the user before generating",
         "next_step": (
-            "Call generate_in_simbrief for this leg, then finalize_dispatch. If browser "
-            "generation fails, show these inputs so the user can generate manually."
+            "The exact dispatch inputs are already approved. Call generate_in_simbrief now "
+            "without asking for another go-ahead, then finalize_dispatch on generated. "
+            "If generation fails, follow its retry/recovery guidance."
         ),
         "flight": flight,
         "warnings": [
@@ -265,15 +329,21 @@ def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) ->
     previous = (meta.get("generation") or {}).get("status")
     if (
         click
-        and previous in ("clicking", "generated", "uncertain", "error")
+        and previous in ("clicking", "generated", "uncertain", "error", "fill_mismatch")
         and not (meta.get("generation") or {}).get("retryable")
     ):
         return {
             "status": "already_attempted",
-            "reason": f"generation already {previous} for this leg revision; finalize it, or "
-            "dispatch a new revision if the user wants to regenerate",
+            "reason": (
+                "Safe refill retry exhausted before Generate; review the mismatch. "
+                "Further generation requires a new approved revision; do not finalize."
+                if previous == "fill_mismatch"
+                else f"generation already {previous} for this leg revision; finalize it, or "
+                "dispatch a new revision if the user wants to regenerate"
+            ),
             "generation": meta.get("generation"),
             "retryable": False,
+            "automatic_retry_allowed": False,
         }
     flight = meta.get("flight") or {}
     ident = re.fullmatch(r"([A-Z]{3})(\d+[A-Z]?)", flight.get("ident_icao") or "")
@@ -325,7 +395,24 @@ def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) ->
     result.update(
         clicked=clicked,
         retryable=not clicked and result["status"] not in ("generated", "uncertain"),
+        automatic_retry_allowed=False,
     )
+    if click and result["status"] == "fill_mismatch" and not clicked:
+        mismatches = (meta.get("generation") or {}).get("fill_mismatch_count", 0) + 1
+        retry = mismatches == 1
+        result.update(
+            fill_mismatch_count=mismatches,
+            retryable=retry,
+            automatic_retry_allowed=retry,
+            next=(
+                "Refill the same approved inputs and call generate_in_simbrief once more in "
+                "the current browser workflow. Existing dispatch approval covers this "
+                "correction; do not ask for another go-ahead or open a replacement browser."
+                if retry
+                else "Form readback mismatched again before Generate. Stop and review the "
+                "mismatch; further generation requires a new approved revision. Do not finalize."
+            ),
+        )
     if result["status"] == "uncertain":
         result.update(
             reason_code="generation_outcome_unknown",
@@ -349,6 +436,12 @@ def _synopsis(raw: dict) -> dict[str, Any]:
     general, times, fuel = raw.get("general", {}), raw.get("times", {}), raw.get("fuel", {})
     weights, units = raw.get("weights", {}), raw.get("params", {}).get("units")
     altitude = general.get("initial_altitude")
+    navlog = raw.get("navlog")
+    fixes = navlog.get("fix") if isinstance(navlog, dict) else None
+    if isinstance(fixes, dict):
+        fixes = [fixes]
+    if not isinstance(fixes, list) or not all(isinstance(fix, dict) for fix in fixes):
+        fixes = None
     return {
         "generated_at": raw.get("params", {}).get("time_generated"),
         "flight": f"{general.get('icao_airline') or ''}{general.get('flight_number') or ''}",
@@ -365,6 +458,8 @@ def _synopsis(raw: dict) -> dict[str, Any]:
         "arrival": times.get("est_in"),
         "block_time": times.get("est_block"),
         "flight_route": general.get("route"),
+        "navlog_fix_count": len(fixes) if fixes is not None else None,
+        "navlog_idents": [fix.get("ident") for fix in fixes] if fixes is not None else None,
     }
 
 
@@ -429,6 +524,13 @@ def _briefing(syn: dict, flight: dict | None, est: dict, takeoff: dict | None, m
         f"**{plan_label}:** generated {syn['generated_at']} · {syn['route']} · "
         f"{syn['aircraft']} · {syn['cruise']} · {syn['distance_nm']} nm · ETE {syn['ete']} · "
         f"block fuel {syn['block_fuel']} · TOW {syn['takeoff_weight']}"
+    )
+    count = syn.get("navlog_fix_count")
+    navlog = f"{count} navlog entries" if count is not None else "navlog unavailable"
+    lines.append(
+        f"**Route:** {syn.get('flight_route') or 'unavailable'} "
+        f"(SimBrief OFP; {navlog}). "
+        "Airways/procedures can expand into navlog fixes; count does not establish route validity."
     )
     if takeoff:
         lines.append(

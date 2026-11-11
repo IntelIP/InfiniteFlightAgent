@@ -1,0 +1,3505 @@
+{
+  "schema_version": 1,
+  "snapshot_id": "ifd-fleet-v26-20261111",
+  "retrieved_at_utc": "2026-11-11T01:29:14.961096+00:00",
+  "purpose": "INT-409 research and expansion inventory; not runtime dispatch configuration or aircraft certification",
+  "simulator_baseline": {
+    "version": "26.5.2",
+    "build": 20344,
+    "release_date": "2026-11-06",
+    "source": "if-changelog",
+    "observation": "Official production release listing; owner installed build/content not inspected."
+  },
+  "denominator": {
+    "source_records": 62,
+    "current_fleet": 51,
+    "legacy_excluded": 11,
+    "strict_majority": 26,
+    "policy": "Count each non-legacy official airframe entry once, not each livery or engine. Retain legacy separately.",
+    "eligible_subset": null,
+    "eligible_subset_reason": "No eligible subset is used to reduce the raw51 denominator. Applicability and non-applicability remain per-profile work.",
+    "verified_supported": 0,
+    "implemented_estimate_entries": 3
+  },
+  "sources": [
+    {
+      "id": "if-fleet",
+      "url": "https://infiniteflight.com/fleet",
+      "retrieved_at_utc": "2026-11-11T01:29:14.961096+00:00",
+      "response_sha256": "cd53d2374c019972fc601d40e0210a30c272c7d241af5bb73cf9c6bd5b34600f",
+      "evidence_kind": "Official page props.types; all records including legacy flags",
+      "license": "Publicly readable; no open-data redistribution license established. Selected factual metadata only.",
+      "private_response": "artifacts/private/int409/fleet.html"
+    },
+    {
+      "id": "if-changelog",
+      "url": "https://www.infiniteflight.com/changelog",
+      "retrieved_at_utc": "2026-11-11T01:29:15.892909+00:00",
+      "response_sha256": "8bf2bc10ff963549b46cc348a860b3ee4f1261af985868934a09f04f9057c47e",
+      "evidence_kind": "Official production app releases and OTA content; beta excluded",
+      "license": "Publicly readable; no open-data redistribution license established. Selected factual metadata only.",
+      "private_response": "artifacts/private/int409/changelog.html"
+    },
+    {
+      "id": "if-retrofit",
+      "url": "https://infiniteflight.com/blog/a-fresh-look-and-more-to-explore-in-the-flight-deck",
+      "retrieved_at_utc": "2026-11-11T01:31:06.881313+00:00",
+      "response_sha256": "17ff729862ee7b53c225911b963c66e000117386f638cb365dd2785721bad9c1",
+      "evidence_kind": "Official dated developer overview; pre-release specificity retained alongside production notes",
+      "license": "Publicly readable; no open-data redistribution license established. Selected factual metadata only.",
+      "private_response": "artifacts/private/int409/cockpit-retrofit.html"
+    },
+    {
+      "id": "simbrief-catalog",
+      "url": "https://www.simbrief.com/api/inputs.list.json",
+      "retrieved_at_utc": "2026-11-11T01:30:07.394026+00:00",
+      "response_sha256": "727c5c9817ee2c0d15aeaa939ff5b8a39430db30e4c9e6a25f081dd9535b09a7",
+      "evidence_kind": "Unauthenticated public input catalog; no account, generation or performance calculation",
+      "license": "Publicly readable; no open-data redistribution license established. Selected factual metadata only.",
+      "private_response": "artifacts/private/int409/simbrief-inputs.json"
+    }
+  ],
+  "shared_gaps": {
+    "engine_rating": "Exact simulator rating and per-livery/airframe engine applicability are not established by fleet powerplant labels.",
+    "displayed_target": "No current-build simulator observation establishes displayed takeoff target type/units or native numerical thrust solution. Candidate classes are investigation leads only.",
+    "native_perf": "Documented FMS/system availability does not establish exact PERF-page outputs, available modes or automatic FLEX/ATM-to-target behavior.",
+    "profile_equivalence": "Public SimBrief catalog identity/data flags do not establish exact simulator engine, rating, tanks, loading or configuration equivalence.",
+    "performance_output": "Runway-data flag is a catalog advertisement, not an observed OFP, target or feasible performance solution.",
+    "simulator_acceptance": "No simulator import, usable thrust-setting instruction or numerical accuracy verification was performed for this snapshot."
+  },
+  "changes": [
+    {
+      "id": "app-26.1",
+      "kind": "app",
+      "version": "26.1",
+      "build": 16559,
+      "date": "2026-04-14",
+      "source": "if-changelog",
+      "scope": [
+        "a330-200",
+        "pa-28-archer",
+        "777-family"
+      ],
+      "categories": [
+        "aircraft_addition",
+        "navigation",
+        "efb",
+        "timezone"
+      ],
+      "assessment": "A330-200/Archer addition; basic 777 EFB; navigation and DST changes. No numeric thrust applicability established."
+    },
+    {
+      "id": "app-26.1.1",
+      "kind": "app",
+      "version": "26.1.1",
+      "build": 16614,
+      "date": "2026-04-18",
+      "source": "if-changelog",
+      "scope": [
+        "c-130-family"
+      ],
+      "categories": [
+        "visual"
+      ],
+      "assessment": "C-130 propeller visual fix; no thrust-model conclusion."
+    },
+    {
+      "id": "app-26.2",
+      "kind": "app",
+      "version": "26.2",
+      "build": 17303,
+      "date": "2026-06-03",
+      "source": "if-changelog",
+      "scope": [
+        "a330-800neo",
+        "global"
+      ],
+      "categories": [
+        "aircraft_addition",
+        "fuel_service",
+        "navigation",
+        "simbrief_import"
+      ],
+      "assessment": "A330-800neo addition; planning undo, fuel service and cargo-import fixes. Inspect imported loads separately from thrust."
+    },
+    {
+      "id": "app-26.3",
+      "kind": "app",
+      "version": "26.3",
+      "build": 17706,
+      "date": "2026-07-15",
+      "source": "if-changelog",
+      "scope": [
+        "a350-1000",
+        "global"
+      ],
+      "categories": [
+        "aircraft_addition",
+        "flight_assist"
+      ],
+      "assessment": "A350-1000 addition and Flight Assist; not evidence for a manual thrust translation."
+    },
+    {
+      "id": "app-26.4",
+      "kind": "app",
+      "version": "26.4",
+      "build": 19155,
+      "date": "2026-09-24",
+      "source": "if-changelog",
+      "scope": [
+        "a321neo",
+        "global"
+      ],
+      "categories": [
+        "aircraft_addition",
+        "fms",
+        "simbrief_import"
+      ],
+      "assessment": "A321neo addition, MCDU editing and SimBrief briefing/V-speed import. Native numerical thrust resolution remains unverified."
+    },
+    {
+      "id": "app-26.4.1",
+      "kind": "app",
+      "version": "26.4.1",
+      "build": 19359,
+      "date": "2026-10-02",
+      "source": "if-changelog",
+      "scope": [
+        "a321neo",
+        "global"
+      ],
+      "categories": [
+        "indication",
+        "navigation"
+      ],
+      "assessment": "A321neo reverse-thrust guidance/ECAM and navigation fixes; do not treat indication fixes as new takeoff targets."
+    },
+    {
+      "id": "app-26.5",
+      "kind": "app",
+      "version": "26.5",
+      "build": 20148,
+      "date": "2026-10-29",
+      "source": "if-changelog",
+      "scope": [
+        "a320neo",
+        "global"
+      ],
+      "categories": [
+        "aircraft_addition",
+        "fms",
+        "fuel_system",
+        "navigation",
+        "simbrief_import"
+      ],
+      "assessment": "A320neo addition and broad cockpit/fuel/navigation work. Recheck profile and native behavior before duplicating it; no universal thrust-model change inferred."
+    },
+    {
+      "id": "app-26.5.1",
+      "kind": "app",
+      "version": "26.5.1",
+      "build": 20241,
+      "date": "2026-10-31",
+      "source": "if-changelog",
+      "scope": [
+        "737-family",
+        "global"
+      ],
+      "categories": [
+        "indication"
+      ],
+      "assessment": "737 APU indication correction; no takeoff-thrust conclusion. Android also has build20234 dated October30."
+    },
+    {
+      "id": "app-26.5.2",
+      "kind": "app",
+      "version": "26.5.2",
+      "build": 20344,
+      "date": "2026-11-06",
+      "source": "if-changelog",
+      "scope": [
+        "f-a-18e-super-hornet",
+        "global"
+      ],
+      "categories": [
+        "display",
+        "simbrief_import"
+      ],
+      "assessment": "F/A-18E display and SimBrief duplicate-import/reauth fixes. Public release baseline; not observed on an owner device."
+    },
+    {
+      "id": "retrofit-26.5-systems",
+      "kind": "documentation",
+      "version": "26.5",
+      "date": "2026-10-27",
+      "source": "if-retrofit",
+      "scope": [
+        "crj-700",
+        "crj-900",
+        "crj-1000",
+        "dash-8-q400",
+        "a220-300",
+        "e175",
+        "e190",
+        "a380-800",
+        "a350-900",
+        "a350-1000",
+        "777-family",
+        "challenger-350",
+        "c-130-family",
+        "md-11"
+      ],
+      "categories": [
+        "fms",
+        "fuel_system",
+        "display"
+      ],
+      "assessment": "Specific official systems list documents working flight-management and fuel systems; individual PERF outputs still need observation."
+    },
+    {
+      "id": "retrofit-26.5-visual",
+      "kind": "documentation",
+      "version": "26.5",
+      "date": "2026-10-27",
+      "source": "if-retrofit",
+      "scope": [
+        "crj-700",
+        "crj-900",
+        "crj-1000",
+        "dash-8-q400",
+        "a220-300",
+        "e175",
+        "e190",
+        "a330-family",
+        "a350-family",
+        "a380-800",
+        "challenger-350",
+        "c-130-family",
+        "md-11-family",
+        "dc-10-family",
+        "737-family",
+        "777-family",
+        "757-200"
+      ],
+      "categories": [
+        "visual"
+      ],
+      "assessment": "Shading work is explicitly visual; it does not establish changed flight/thrust behavior."
+    },
+    {
+      "id": "ota-2026-11-05",
+      "kind": "ota",
+      "date": "2026-11-05",
+      "min_app_version": null,
+      "source": "if-changelog",
+      "scope": [
+        "a321neo"
+      ],
+      "categories": [
+        "visual"
+      ],
+      "assessment": "Dated content update; visual/livery or unspecified fixes only. No engine-rating or thrust-model change established."
+    },
+    {
+      "id": "ota-2026-11-04",
+      "kind": "ota",
+      "date": "2026-11-04",
+      "min_app_version": null,
+      "source": "if-changelog",
+      "scope": [
+        "a320neo"
+      ],
+      "categories": [
+        "visual"
+      ],
+      "assessment": "Dated content update; visual/livery or unspecified fixes only. No engine-rating or thrust-model change established."
+    },
+    {
+      "id": "ota-2026-11-02",
+      "kind": "ota",
+      "date": "2026-11-02",
+      "min_app_version": null,
+      "source": "if-changelog",
+      "scope": [
+        "737-700",
+        "737-8-max",
+        "737-800",
+        "737-900"
+      ],
+      "categories": [
+        "unspecified",
+        "visual"
+      ],
+      "assessment": "Dated content update; visual/livery or unspecified fixes only. No engine-rating or thrust-model change established."
+    },
+    {
+      "id": "ota-2026-10-23",
+      "kind": "ota",
+      "date": "2026-10-23",
+      "min_app_version": "26.4",
+      "source": "if-changelog",
+      "scope": [
+        "a321neo"
+      ],
+      "categories": [
+        "livery"
+      ],
+      "assessment": "Dated content update; visual/livery or unspecified fixes only. No engine-rating or thrust-model change established."
+    },
+    {
+      "id": "ota-2026-10-20",
+      "kind": "ota",
+      "date": "2026-10-20",
+      "min_app_version": "26.4",
+      "source": "if-changelog",
+      "scope": [
+        "a321neo"
+      ],
+      "categories": [
+        "livery"
+      ],
+      "assessment": "Dated content update; visual/livery or unspecified fixes only. No engine-rating or thrust-model change established."
+    },
+    {
+      "id": "ota-2026-10-12",
+      "kind": "ota",
+      "date": "2026-10-12",
+      "min_app_version": "26.4",
+      "source": "if-changelog",
+      "scope": [
+        "a321neo"
+      ],
+      "categories": [
+        "livery"
+      ],
+      "assessment": "Dated content update; visual/livery or unspecified fixes only. No engine-rating or thrust-model change established."
+    },
+    {
+      "id": "ota-2026-10-10",
+      "kind": "ota",
+      "date": "2026-10-10",
+      "min_app_version": "26.4",
+      "source": "if-changelog",
+      "scope": [
+        "a321neo"
+      ],
+      "categories": [
+        "livery"
+      ],
+      "assessment": "Dated content update; visual/livery or unspecified fixes only. No engine-rating or thrust-model change established."
+    },
+    {
+      "id": "ota-2026-09-30",
+      "kind": "ota",
+      "date": "2026-09-30",
+      "min_app_version": null,
+      "source": "if-changelog",
+      "scope": [
+        "c-130j",
+        "c-130j-30"
+      ],
+      "categories": [
+        "unspecified"
+      ],
+      "assessment": "Dated content update; visual/livery or unspecified fixes only. No engine-rating or thrust-model change established."
+    },
+    {
+      "id": "ota-2026-09-28",
+      "kind": "ota",
+      "date": "2026-09-28",
+      "min_app_version": "26.4",
+      "source": "if-changelog",
+      "scope": [
+        "a321neo"
+      ],
+      "categories": [
+        "livery",
+        "visual"
+      ],
+      "assessment": "Dated content update; visual/livery or unspecified fixes only. No engine-rating or thrust-model change established."
+    },
+    {
+      "id": "ota-2026-09-25",
+      "kind": "ota",
+      "date": "2026-09-25",
+      "min_app_version": "26.4",
+      "source": "if-changelog",
+      "scope": [
+        "a321neo"
+      ],
+      "categories": [
+        "livery"
+      ],
+      "assessment": "Dated content update; visual/livery or unspecified fixes only. No engine-rating or thrust-model change established."
+    }
+  ],
+  "private_configurations": [
+    {
+      "aircraft": "challenger-350",
+      "status": "official_current_business_jet",
+      "source_refs": [
+        "if-fleet",
+        "if-changelog",
+        "simbrief-catalog"
+      ],
+      "finding": "Official current CL35/HTF7350; named CL35 public catalog advertises runway data. Native systems documented; matching rating/target and numerical method unresolved."
+    },
+    {
+      "aircraft": "a320neo",
+      "configurations": [
+        "ACJ 1",
+        "ACJ 2"
+      ],
+      "status": "official_liveries_only",
+      "source_refs": [
+        "if-changelog"
+      ],
+      "finding": "26.5 production livery listing confirms ACJ liveries. Extra tanks, VIP load, range and custom airframe capacity are unverified; no ACJ preset inferred."
+    }
+  ],
+  "records": [
+    {
+      "id": "a220-300",
+      "name": "Airbus A220-300",
+      "icao_from_fleet": "BCS3",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a220-300",
+      "listed_powerplants": [
+        "2x Pratt & Whitney PW1500G"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "BCS3",
+        "name": "A220-300",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "fair",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "a318-100",
+      "name": "Airbus A318-100",
+      "icao_from_fleet": "A318",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a318-100",
+      "listed_powerplants": [
+        "2x CFM International CFM56-5B",
+        "2x Pratt & Whitney PW6000A"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "A318",
+        "name": "A318-100",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "a319-100",
+      "name": "Airbus A319-100",
+      "icao_from_fleet": "A319",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a319-100",
+      "listed_powerplants": [
+        "2x CFM International CFM56-5B",
+        "2x IAE V2500"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "A319",
+        "name": "A319-100",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "a320-200",
+      "name": "Airbus A320-200",
+      "icao_from_fleet": "A320",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a320-200",
+      "listed_powerplants": [
+        "2x CFM International CFM56-5B",
+        "2x IAE V2500"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "A320",
+        "name": "A320-200",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "a320neo",
+      "name": "Airbus A320neo",
+      "icao_from_fleet": "A20N",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a320neo",
+      "listed_powerplants": [
+        "2x CFM International LEAP-1A",
+        "2x Pratt & Whitney PW1100G-JM"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "A20N",
+        "name": "A320-200N",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "fair",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.5",
+        "ota-2026-11-04"
+      ],
+      "profile_status": "implemented_estimate_unverified",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "a321-200",
+      "name": "Airbus A321-200",
+      "icao_from_fleet": "A321",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a321-200",
+      "listed_powerplants": [
+        "2x CFM International CFM56-5B",
+        "2x IAE V2500"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "A321",
+        "name": "A321-200",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "a321neo",
+      "name": "Airbus A321neo",
+      "icao_from_fleet": "A21N",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a321neo",
+      "listed_powerplants": [
+        "2x CFM International LEAP-1A",
+        "2x Pratt & Whitney PW1100G"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "A21N",
+        "name": "A321-200N",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "fair",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "documented_new_airbus_mcdu",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.4",
+        "app-26.4.1",
+        "ota-2026-11-05",
+        "ota-2026-10-23",
+        "ota-2026-10-20",
+        "ota-2026-10-12",
+        "ota-2026-10-10",
+        "ota-2026-09-28",
+        "ota-2026-09-25"
+      ],
+      "profile_status": "implemented_estimate_unverified",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "a330-200",
+      "name": "Airbus A330-200",
+      "icao_from_fleet": "A332",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a330-200",
+      "listed_powerplants": [
+        "2x Pratt & Whitney PW4000",
+        "2x Rolls-Royce Trent 700"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "A332",
+        "name": "A330-200",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.1",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "a330-200f",
+      "name": "Airbus A330-200F",
+      "icao_from_fleet": "A332",
+      "legacy": true,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a330-200f",
+      "listed_powerplants": [
+        "2x Pratt & Whitney PW4000",
+        "2x Rolls-Royce Trent 700"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "A332",
+        "name": "A330-200",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "a330-300",
+      "name": "Airbus A330-300",
+      "icao_from_fleet": "A333",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a330-300",
+      "listed_powerplants": [
+        "2x General Electric CF6",
+        "2x Pratt & Whitney PW4000",
+        "2x Rolls-Royce Trent 700"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "A333",
+        "name": "A330-300",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "a330-800neo",
+      "name": "Airbus A330-800neo",
+      "icao_from_fleet": "A338",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a330-800neo",
+      "listed_powerplants": [
+        "2x Rolls-Royce Trent 7000-72"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "A338",
+        "name": "A330-800",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "average",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.2",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "a330-900neo",
+      "name": "Airbus A330-900neo",
+      "icao_from_fleet": "A339",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a330-900neo",
+      "listed_powerplants": [
+        "2x Rolls-Royce Trent 7000-72"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "A339",
+        "name": "A330-900",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "average",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "a340-600",
+      "name": "Airbus A340-600",
+      "icao_from_fleet": "A346",
+      "legacy": true,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a340-600",
+      "listed_powerplants": [
+        "4x Rolls-Royce Trent 500"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "A346",
+        "name": "A340-600",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "fair",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "a350-1000",
+      "name": "Airbus A350-1000",
+      "icao_from_fleet": "A35K",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a350-1000",
+      "listed_powerplants": [
+        "2x Rolls-Royce Trent XWB"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "A35K",
+        "name": "A350-1000",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "fair",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.3",
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "a350-900",
+      "name": "Airbus A350-900",
+      "icao_from_fleet": "A359",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a350-900",
+      "listed_powerplants": [
+        "2x Rolls-Royce Trent XWB"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "A359",
+        "name": "A350-900",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "fair",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "a380-800",
+      "name": "Airbus A380-800",
+      "icao_from_fleet": "A388",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a380-800",
+      "listed_powerplants": [
+        "4x Engine Alliance GP7000",
+        "4x Rolls-Royce Trent 900"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "A388",
+        "name": "A380-800",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "717-200",
+      "name": "Boeing 717-200",
+      "icao_from_fleet": "B712",
+      "legacy": true,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/717-200",
+      "listed_powerplants": [
+        "2x Rolls Royce BR715-C1-30"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B712",
+        "name": "B717-200",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "737-700",
+      "name": "Boeing 737-700",
+      "icao_from_fleet": "B737",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/737-700",
+      "listed_powerplants": [
+        "2x CFM International CFM56-7B20/22/24/26/27"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B737",
+        "name": "B737-700",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.5.1",
+        "retrofit-26.5-visual",
+        "ota-2026-11-02"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "737-800",
+      "name": "Boeing 737-800",
+      "icao_from_fleet": "B738",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/737-800",
+      "listed_powerplants": [
+        "2x CFM International CFM56-7B24/26/27"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B738",
+        "name": "B737-800",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.5.1",
+        "retrofit-26.5-visual",
+        "ota-2026-11-02"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "737-8-max",
+      "name": "Boeing 737-8 MAX",
+      "icao_from_fleet": "B38M",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/737-8-max",
+      "listed_powerplants": [
+        "2x CFM International LEAP-1B"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B38M",
+        "name": "B737 MAX 8",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "fair",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.5.1",
+        "retrofit-26.5-visual",
+        "ota-2026-11-02"
+      ],
+      "profile_status": "implemented_estimate_unverified",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "737-900",
+      "name": "Boeing 737-900",
+      "icao_from_fleet": "B739",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/737-900",
+      "listed_powerplants": [
+        "2x CFM International CFM56-7B24/26/27"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B739",
+        "name": "B737-900",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.5.1",
+        "retrofit-26.5-visual",
+        "ota-2026-11-02"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "747-200",
+      "name": "Boeing 747-200",
+      "icao_from_fleet": "B742",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/747-200",
+      "listed_powerplants": [
+        "4x Pratt & Whitney JT9D-7",
+        "4x General Electric CF6",
+        "4x Rolls-Royce RB211"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B742",
+        "name": "B747-200B",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": false,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "747-400",
+      "name": "Boeing 747-400",
+      "icao_from_fleet": "B744",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/747-400",
+      "listed_powerplants": [
+        "4x Pratt & Whitney 4000",
+        "4x General Electric CF6",
+        "4x Rolls-Royce RB211"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B744",
+        "name": "B747-400",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "747-8",
+      "name": "Boeing 747-8",
+      "icao_from_fleet": "B748",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/747-8",
+      "listed_powerplants": [
+        "4x General Electric GEnx-2B67"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B748",
+        "name": "B747-8",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "fair",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "757-200",
+      "name": "Boeing 757-200",
+      "icao_from_fleet": "B752",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/757-200",
+      "listed_powerplants": [
+        "2x Rolls-Royce RB211-535E4(B)",
+        "2x Pratt & Whitney PW2000-37/40/43"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B752",
+        "name": "B757-200",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "767-300",
+      "name": "Boeing 767-300",
+      "icao_from_fleet": "B763",
+      "legacy": true,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/767-300",
+      "listed_powerplants": [
+        "2x Pratt & Whitney JT9D / PW4000",
+        "2x General Electric CF6",
+        "2x Rolls-Royce RB211"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B763",
+        "name": "B767-300ER",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "777-200er",
+      "name": "Boeing 777-200ER",
+      "icao_from_fleet": "B772",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/777-200er",
+      "listed_powerplants": [
+        "2x Pratt & Whitney 4000",
+        "2x General Electric GE90",
+        "2x Rolls-Royce Trent 800"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B772",
+        "name": "B777-200ER",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.1",
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "777-200lr",
+      "name": "Boeing 777-200LR",
+      "icao_from_fleet": "B77L",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/777-200lr",
+      "listed_powerplants": [
+        "2x General Electric GE90-110B/-115B"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B77L",
+        "name": "B777-200LR",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.1",
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "777-300er",
+      "name": "Boeing 777-300ER",
+      "icao_from_fleet": "B77W",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/777-300er",
+      "listed_powerplants": [
+        "2x General Electric GE90-115B"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B77W",
+        "name": "B777-300ER",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.1",
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "777f",
+      "name": "Boeing 777F",
+      "icao_from_fleet": "B77L",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/777f",
+      "listed_powerplants": [
+        "2x General Electric GE90-110B/-115B"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B77F",
+        "name": "B777-F",
+        "mapping_status": "candidate_name_alias",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Official fleet says B77L (also 777-200LR); named SimBrief freighter is B77F. Do not map by ICAO alone."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.1",
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "787-10",
+      "name": "Boeing 787-10",
+      "icao_from_fleet": "B78X",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/787-10",
+      "listed_powerplants": [
+        "2x General Electric GEnx-1B",
+        "2x Rolls-Royce Trent 1000"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B78X",
+        "name": "B787-10",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "fair",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "787-8",
+      "name": "Boeing 787-8",
+      "icao_from_fleet": "B788",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/787-8",
+      "listed_powerplants": [
+        "2x General Electric GEnx-1B",
+        "2x Rolls-Royce Trent 1000"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B788",
+        "name": "B787-8",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "fair",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "787-9",
+      "name": "Boeing 787-9",
+      "icao_from_fleet": "B789",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/787-9",
+      "listed_powerplants": [
+        "2x General Electric GEnx-1B",
+        "2x Rolls-Royce Trent 1000"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "B789",
+        "name": "B787-9",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "fair",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "c-17-globemaster-iii",
+      "name": "Boeing C-17 Globemaster III",
+      "icao_from_fleet": "C17",
+      "legacy": true,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/c-17-globemaster-iii",
+      "listed_powerplants": [
+        "4x Pratt & Whitney F117-PW-100 (PW2040)"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "C17",
+        "name": "C-17A Globemaster",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "unknown",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "f-a-18e-super-hornet",
+      "name": "Boeing F/A-18E Super Hornet",
+      "icao_from_fleet": "F18S",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/f-a-18e-super-hornet",
+      "listed_powerplants": [
+        "2x General Electric F414-GE-400"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": null,
+        "name": null,
+        "mapping_status": "no_same_code_entry",
+        "tlr_data": null,
+        "chart_data": null,
+        "accuracy": null,
+        "note": "No same-code catalog entry; do not conclude the aircraft has no usable custom profile."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.5.2"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "challenger-350",
+      "name": "Bombardier Challenger 350",
+      "icao_from_fleet": "CL35",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/challenger-350",
+      "listed_powerplants": [
+        "2x Honeywell HTF7350"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "CL35",
+        "name": "Challenger 350",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "fair",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "crj-1000",
+      "name": "Bombardier CRJ-1000",
+      "icao_from_fleet": "CRJX",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/crj-1000",
+      "listed_powerplants": [
+        "2x General Electric GE CF34-8C5A1"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "CRJX",
+        "name": "CRJ-1000",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "crj-200",
+      "name": "Bombardier CRJ-200",
+      "icao_from_fleet": "CRJ2",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/crj-200",
+      "listed_powerplants": [
+        "2x General Electric GE CF34-3B1"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "CRJ2",
+        "name": "CRJ-200",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "crj-700",
+      "name": "Bombardier CRJ-700",
+      "icao_from_fleet": "CRJ7",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/crj-700",
+      "listed_powerplants": [
+        "2x General Electric GE CF34-8C5B1"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "CRJ7",
+        "name": "CRJ-700",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "crj-900",
+      "name": "Bombardier CRJ-900",
+      "icao_from_fleet": "CRJ9",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/crj-900",
+      "listed_powerplants": [
+        "2x General Electric GE CF34-8C5"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "CRJ9",
+        "name": "CRJ-900",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "dash-8-q400",
+      "name": "Bombardier Dash-8 Q400",
+      "icao_from_fleet": "DH8D",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/dash-8-q400",
+      "listed_powerplants": [
+        "2x Pratt & Whitney PW150"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "torque",
+        "propeller_RPM"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "DH8D",
+        "name": "DHC8-402",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "172",
+      "name": "Cessna 172",
+      "icao_from_fleet": "C172",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/172",
+      "listed_powerplants": [
+        "1x Lycoming IO-360-L2A"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "RPM",
+        "manifold_pressure"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "C172",
+        "name": "Cessna 172R",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Official fleet does not specify 172R; SimBrief catalog does."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "208-caravan",
+      "name": "Cessna 208 Caravan",
+      "icao_from_fleet": "C208",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/208-caravan",
+      "listed_powerplants": [
+        "1x Pratt & Whitney Canada PT6A-114A"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "torque",
+        "propeller_RPM"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "C208",
+        "name": "Cessna 208B",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Official fleet says 208 Caravan; SimBrief catalog says 208B."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "sr22",
+      "name": "Cirrus SR22",
+      "icao_from_fleet": "SR22",
+      "legacy": true,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/sr22",
+      "listed_powerplants": [
+        "1x Continental IO-550-N"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "RPM",
+        "manifold_pressure"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "SR22",
+        "name": "Cirrus SR22",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": false,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "xcub",
+      "name": "CubCrafters XCub",
+      "icao_from_fleet": "CC19",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/xcub",
+      "listed_powerplants": [
+        "1x Lycoming O-360-C1"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "RPM",
+        "manifold_pressure"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": null,
+        "name": null,
+        "mapping_status": "no_same_code_entry",
+        "tlr_data": null,
+        "chart_data": null,
+        "accuracy": null,
+        "note": "No same-code catalog entry; do not conclude the aircraft has no usable custom profile."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "tbm-930",
+      "name": "Daher TBM-930",
+      "icao_from_fleet": "TBM9",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/tbm-930",
+      "listed_powerplants": [
+        "1x Pratt & Whitney Canada PT6A-64"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "torque",
+        "propeller_RPM"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "TBM9",
+        "name": "TBM 900",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Official fleet is TBM-930; SimBrief TBM9 catalog name is TBM900."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "e175",
+      "name": "Embraer E175",
+      "icao_from_fleet": "E75L",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/e175",
+      "listed_powerplants": [
+        "2x General Electric GE CF34-8E"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "E175",
+        "name": "ERJ-175",
+        "mapping_status": "candidate_name_alias",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Official fleet says E75L; public SimBrief name match is E175. Verify exact variant/engine."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "e190",
+      "name": "Embraer E190",
+      "icao_from_fleet": "E190",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/e190",
+      "listed_powerplants": [
+        "2x General Electric GE CF34-10E"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "E190",
+        "name": "ERJ-190",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "a-10",
+      "name": "Fairchild Republic A-10",
+      "icao_from_fleet": "A10",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/a-10",
+      "listed_powerplants": [
+        "2x General Electric TF34-GE-100A"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": null,
+        "name": null,
+        "mapping_status": "no_same_code_entry",
+        "tlr_data": null,
+        "chart_data": null,
+        "accuracy": null,
+        "note": "No same-code catalog entry; do not conclude the aircraft has no usable custom profile."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "f-16c",
+      "name": "General Dynamics F-16C",
+      "icao_from_fleet": "F16",
+      "legacy": true,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/f-16c",
+      "listed_powerplants": [
+        "1x General Electric F110-GE-129"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": null,
+        "name": null,
+        "mapping_status": "no_same_code_entry",
+        "tlr_data": null,
+        "chart_data": null,
+        "accuracy": null,
+        "note": "No same-code catalog entry; do not conclude the aircraft has no usable custom profile."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "f-14",
+      "name": "Grumman Aerospace F-14",
+      "icao_from_fleet": "F14",
+      "legacy": true,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/f-14",
+      "listed_powerplants": [
+        "2x General Electric F110-GE-400"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": null,
+        "name": null,
+        "mapping_status": "no_same_code_entry",
+        "tlr_data": null,
+        "chart_data": null,
+        "accuracy": null,
+        "note": "No same-code catalog entry; do not conclude the aircraft has no usable custom profile."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "c-130h",
+      "name": "Lockheed C-130H",
+      "icao_from_fleet": "C130",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/c-130h",
+      "listed_powerplants": [
+        "4x Allison T56-A-15"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "torque",
+        "propeller_RPM"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": null,
+        "name": null,
+        "mapping_status": "no_same_code_entry",
+        "tlr_data": null,
+        "chart_data": null,
+        "accuracy": null,
+        "note": "No same-code catalog entry; do not conclude the aircraft has no usable custom profile."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.1.1",
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "c-130j",
+      "name": "Lockheed C-130J",
+      "icao_from_fleet": "C30J",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/c-130j",
+      "listed_powerplants": [
+        "4x Rolls-Royce AE 2100D3"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "torque",
+        "propeller_RPM"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "C30J",
+        "name": "C-130J Super Hercules",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": false,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.1.1",
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual",
+        "ota-2026-09-30"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "c-130j-30",
+      "name": "Lockheed C-130J-30",
+      "icao_from_fleet": "C30J",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/c-130j-30",
+      "listed_powerplants": [
+        "4x Rolls-Royce AE 2100D3"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "torque",
+        "propeller_RPM"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "C30J",
+        "name": "C-130J Super Hercules",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": false,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Same code as short C-130J; stretched variant equivalence is unresolved."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.1.1",
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual",
+        "ota-2026-09-30"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "p-38",
+      "name": "Lockheed P-38",
+      "icao_from_fleet": "P38",
+      "legacy": true,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/p-38",
+      "listed_powerplants": [
+        "2x Allison V-1710-111"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "RPM",
+        "manifold_pressure"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": null,
+        "name": null,
+        "mapping_status": "no_same_code_entry",
+        "tlr_data": null,
+        "chart_data": null,
+        "accuracy": null,
+        "note": "No same-code catalog entry; do not conclude the aircraft has no usable custom profile."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "f-22",
+      "name": "Lockheed Martin Aeronautics F-22",
+      "icao_from_fleet": "F22",
+      "legacy": true,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/f-22",
+      "listed_powerplants": [
+        "2x Pratt & Whitney F119-PW-100"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": null,
+        "name": null,
+        "mapping_status": "no_same_code_entry",
+        "tlr_data": null,
+        "chart_data": null,
+        "accuracy": null,
+        "note": "No same-code catalog entry; do not conclude the aircraft has no usable custom profile."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "dc-10",
+      "name": "McDonnell Douglas DC-10",
+      "icao_from_fleet": "DC10",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/dc-10",
+      "listed_powerplants": [
+        "3x General Electric GE CF6-50C"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "DC10",
+        "name": "DC-10-30",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": false,
+        "chart_data": false,
+        "accuracy": "unknown",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "dc-10f",
+      "name": "McDonnell Douglas DC-10F",
+      "icao_from_fleet": "DC10",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/dc-10f",
+      "listed_powerplants": [
+        "3x General Electric GE CF6-50C"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "DC10",
+        "name": "DC-10-30",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": false,
+        "chart_data": false,
+        "accuracy": "unknown",
+        "note": "Fleet freighter uses DC10; catalog DC-10-30 is not a verified freighter configuration."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "md-11",
+      "name": "McDonnell Douglas MD-11",
+      "icao_from_fleet": "MD11",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/md-11",
+      "listed_powerplants": [
+        "3x Pratt & Whitney 4460/62",
+        "3x General Electric CF6-80C2D1F"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "MD11",
+        "name": "MD-11",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Catalog candidate only; engine/rating/configuration equivalence not established."
+      },
+      "native": {
+        "fms_status": "documented_systems_retrofit",
+        "source_refs": [
+          "if-retrofit",
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-systems",
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "md-11f",
+      "name": "McDonnell Douglas MD-11F",
+      "icao_from_fleet": "MD11",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/md-11f",
+      "listed_powerplants": [
+        "3x Pratt & Whitney 4460/62",
+        "3x General Electric CF6-80C2D1F"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "N1",
+        "EPR"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": "MD11",
+        "name": "MD-11",
+        "mapping_status": "candidate_same_icao",
+        "tlr_data": true,
+        "chart_data": true,
+        "accuracy": "high",
+        "note": "Fleet freighter uses MD11; catalog entry alone does not establish freighter loading."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "retrofit-26.5-visual"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "pa-28-archer",
+      "name": "Piper PA-28 Archer",
+      "icao_from_fleet": "PA28A",
+      "legacy": false,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/pa-28-archer",
+      "listed_powerplants": [
+        "1x Lycoming O-360-A4M"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "RPM",
+        "manifold_pressure"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": null,
+        "name": null,
+        "mapping_status": "no_same_code_entry",
+        "tlr_data": null,
+        "chart_data": null,
+        "accuracy": null,
+        "note": "No same-code catalog entry; do not conclude the aircraft has no usable custom profile."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [
+        "app-26.1"
+      ],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    },
+    {
+      "id": "spitfire-mk-viii",
+      "name": "Supermarine Spitfire Mk VIII",
+      "icao_from_fleet": "SPIT",
+      "legacy": true,
+      "fleet_source": "if-fleet",
+      "fleet_detail_url": "https://infiniteflight.com/fleet/spitfire-mk-viii",
+      "listed_powerplants": [
+        "1x Rolls-Royce Merlin 45"
+      ],
+      "simulator_engine_rating": null,
+      "displayed_target_type": null,
+      "target_investigation_candidates": [
+        "RPM",
+        "manifold_pressure"
+      ],
+      "candidate_basis": "Engineering triage by listed engine class; not a measured simulator display or approved method.",
+      "simbrief": {
+        "source": "simbrief-catalog",
+        "id": null,
+        "name": null,
+        "mapping_status": "no_same_code_entry",
+        "tlr_data": null,
+        "chart_data": null,
+        "accuracy": null,
+        "note": "No same-code catalog entry; do not conclude the aircraft has no usable custom profile."
+      },
+      "native": {
+        "fms_status": "unresolved_per_airframe",
+        "source_refs": [
+          "if-changelog"
+        ],
+        "perf_to_thrust_status": "unresolved",
+        "simulator_observed": false
+      },
+      "change_refs": [],
+      "profile_status": "unassessed",
+      "support_verified": false,
+      "unresolved": [
+        "engine_rating",
+        "displayed_target",
+        "native_perf",
+        "profile_equivalence",
+        "performance_output",
+        "simulator_acceptance"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1561 @@
+{
+  "suite_id": "ifd-workflow-v044",
+  "schema_version": 1,
+  "verifier_version": "ifd-workflow-oracles-v3",
+  "clock_utc": "2026-11-08T11:00:00Z",
+  "base_commit": "710513f5d6c868a90e1aa8041dbcf689c0c476c0",
+  "fixture": {
+    "path": "docs/research/evidence/simbrief-b38m-parser-fixture.json",
+    "sha256": "c4c22b55a9db64ea533e57a229946fb88243f5480253ed5d96cb324a8dd0b3af",
+    "provenance_path": "docs/research/evidence/simbrief-b38m-parser-fixture-provenance.json",
+    "kind": "controlled-derived-partial-ofp",
+    "transformation": "run_workflow_replay.controlled_ofp v1: explicit case identity, clock, profile, fuel and feasibility fields; no live/simulator claim",
+    "provenance_sha256": "0e5b65dfa34596d605ccacf7eea2bd423ce7032337dc6bb5cac559d33c094c6d"
+  },
+  "cases": [
+    {
+      "id": "WF-001",
+      "scenario": "complete",
+      "legs": [
+        {
+          "trip": "WF-001",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "prompt": "Prepare this exact private itinerary using the standard SimBrief profiles and default routes. Keep the specified trip/leg/revision IDs, aircraft, airframe, callsign, times, units and loads. I will decide in the approval prompt. After approval generate and finalize each approved leg; retain every leg. Report any infeasibility or unsupported thrust clearly.\n[{\"trip\": \"WF-001\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]"
+    },
+    {
+      "id": "WF-002",
+      "scenario": "decline",
+      "legs": [
+        {
+          "trip": "WF-002",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "declined",
+      "prompt": "Prepare this exact private itinerary using the standard SimBrief profiles and default routes. Keep the specified trip/leg/revision IDs, aircraft, airframe, callsign, times, units and loads. I will decide in the approval prompt. After approval generate and finalize each approved leg; retain every leg. Report any infeasibility or unsupported thrust clearly.\n[{\"trip\": \"WF-002\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]"
+    },
+    {
+      "id": "WF-003",
+      "scenario": "retry_duplicate",
+      "legs": [
+        {
+          "trip": "WF-003",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "prompt": "Prepare this exact private itinerary using the standard SimBrief profiles and default routes. Keep the specified trip/leg/revision IDs, aircraft, airframe, callsign, times, units and loads. I will decide in the approval prompt. After approval generate and finalize each approved leg; retain every leg. Report any infeasibility or unsupported thrust clearly.\n[{\"trip\": \"WF-003\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}] My controlled observed full-throttle N1 under those same conditions is 92%, simulator version 26.3. After saving the plan, update its calibration without regenerating."
+    },
+    {
+      "id": "WF-004",
+      "scenario": "two_leg",
+      "legs": [
+        {
+          "trip": "WF-004",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        },
+        {
+          "trip": "WF-004",
+          "leg": "2",
+          "revision": 1,
+          "origin": "KEWR",
+          "destination": "KBOS",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T16:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "prompt": "Prepare this exact private itinerary using the standard SimBrief profiles and default routes. Keep the specified trip/leg/revision IDs, aircraft, airframe, callsign, times, units and loads. I will decide in the approval prompt. After approval generate and finalize each approved leg; retain every leg. Report any infeasibility or unsupported thrust clearly.\n[{\"trip\": \"WF-004\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}, {\"trip\": \"WF-004\", \"leg\": \"2\", \"revision\": 1, \"origin\": \"KEWR\", \"destination\": \"KBOS\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T16:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]"
+    },
+    {
+      "id": "WF-005",
+      "scenario": "infeasible",
+      "legs": [
+        {
+          "trip": "WF-005",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KLAX",
+          "destination": "NZAA",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "infeasible",
+      "prompt": "Prepare this exact private itinerary using the standard SimBrief profiles and default routes. Keep the specified trip/leg/revision IDs, aircraft, airframe, callsign, times, units and loads. I will decide in the approval prompt. After approval generate and finalize each approved leg; retain every leg. Report any infeasibility or unsupported thrust clearly.\n[{\"trip\": \"WF-005\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KLAX\", \"destination\": \"NZAA\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]"
+    },
+    {
+      "id": "WF-006",
+      "scenario": "unsupported",
+      "legs": [
+        {
+          "trip": "WF-006",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "B738",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "B738"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "prompt": "Prepare this exact private itinerary using the standard SimBrief profiles and default routes. Keep the specified trip/leg/revision IDs, aircraft, airframe, callsign, times, units and loads. I will decide in the approval prompt. After approval generate and finalize each approved leg; retain every leg. Report any infeasibility or unsupported thrust clearly.\n[{\"trip\": \"WF-006\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"B738\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"B738\"}]"
+    },
+    {
+      "id": "WF-007",
+      "scenario": "revision_recovery",
+      "legs": [
+        {
+          "trip": "WF-007",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "prompt": "Prepare this exact private itinerary using the standard SimBrief profiles and default routes. Keep the specified trip/leg/revision IDs, aircraft, airframe, callsign, times, units and loads. I will decide in the approval prompt. After approval generate and finalize each approved leg; retain every leg. Report any infeasibility or unsupported thrust clearly.\n[{\"trip\": \"WF-007\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}] After saving it, call revise_dispatch for this trip and leg with changes={\"alternate\":\"KBWI\",\"cruise_altitude\":\"FL350\"}, base_revision=1. If unsupported, explain clearly and retain the saved plan."
+    },
+    {
+      "id": "WF-008",
+      "scenario": "provider_failure",
+      "legs": [
+        {
+          "trip": "WF-008",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "blocked",
+      "prompt": "Prepare this exact private itinerary using the standard SimBrief profiles and default routes. Keep the specified trip/leg/revision IDs, aircraft, airframe, callsign, times, units and loads. I will decide in the approval prompt. After approval generate and finalize each approved leg; retain every leg. Report any infeasibility or unsupported thrust clearly.\n[{\"trip\": \"WF-008\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]"
+    },
+    {
+      "id": "WF-009",
+      "scenario": "complete",
+      "legs": [
+        {
+          "trip": "WF-009",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N",
+          "fa_flight_id": "UAL123-controlled"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "max_clarifications": 0,
+      "prompt": "Using the controlled dated UA123 occurrence already resolved above, dispatch trip WF-009 leg 1 revision 1 KIAD to KEWR on 2026-11-08 at 12:00 UTC. Simulator A20N, standard A20N airframe, four passengers, KGS, automatic route. fa_flight_id is UAL123-controlled. The exact dispatch approval is my decision; do not ask for the same details in chat.",
+      "airline_flight": {
+        "flight_number": "UA123",
+        "ident_icao": "UAL123",
+        "fa_flight_id": "UAL123-controlled",
+        "origin": {
+          "icao": "KIAD"
+        },
+        "destination": {
+          "icao": "KEWR"
+        },
+        "times": {
+          "scheduled_out": {
+            "utc": "2026-11-08T12:00:00Z",
+            "local": "2026-11-08 12:00 UTC"
+          },
+          "scheduled_in": {
+            "utc": "2026-11-08T14:00:00Z",
+            "local": "2026-11-08 14:00 UTC"
+          },
+          "estimated_out": {
+            "utc": null,
+            "local": null
+          },
+          "actual_out": {
+            "utc": null,
+            "local": null
+          },
+          "scheduled_off": {
+            "utc": null,
+            "local": null
+          },
+          "estimated_in": {
+            "utc": null,
+            "local": null
+          }
+        },
+        "departure_gate": "C4",
+        "departure_terminal": "C",
+        "arrival_gate": "unavailable",
+        "aircraft_type": "A20N",
+        "registration": "unavailable",
+        "note": "Controlled fixture, not a live flight",
+        "observed_at": "2026-11-08T11:00:00Z",
+        "codeshares": [],
+        "operator": "UA",
+        "cancelled": false,
+        "status": "Scheduled",
+        "temporal_class": "future_schedule"
+      },
+      "route_evidence": [
+        "KIAD",
+        "SWANN",
+        "KEWR"
+      ],
+      "restart": true,
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-009",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N",
+            "fa_flight_id": "UAL123-controlled"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-009",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "finalize_dispatch",
+          "args": {
+            "trip": "WF-009",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "text": "The saved briefing is ready; thrust remains a labeled estimate."
+        }
+      ]
+    },
+    {
+      "id": "WF-010",
+      "scenario": "complete",
+      "legs": [
+        {
+          "trip": "WF-010",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "max_clarifications": 1,
+      "prompt": "Prepare a private A320neo flight KIAD to KEWR, callsign N320HD, four passengers, standard A20N airframe and KGS. Ask for missing material inputs.",
+      "followups": [
+        "Use 2026-11-08, departing 12:00 UTC. Trip WF-010, leg 1 revision 1. Use automatic routing and the exact approval prompt."
+      ],
+      "script": [
+        {
+          "text": "Which departure date and time should I use?"
+        },
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-010",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-010",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "finalize_dispatch",
+          "args": {
+            "trip": "WF-010",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "text": "The saved briefing is ready; thrust remains a labeled estimate."
+        }
+      ]
+    },
+    {
+      "id": "WF-011",
+      "scenario": "complete",
+      "legs": [
+        {
+          "trip": "WF-011",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        },
+        {
+          "trip": "WF-011",
+          "leg": "2",
+          "revision": 1,
+          "origin": "KEWR",
+          "destination": "KBOS",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T16:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "max_clarifications": 0,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain its briefing. [{\"trip\": \"WF-011\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}, {\"trip\": \"WF-011\", \"leg\": \"2\", \"revision\": 1, \"origin\": \"KEWR\", \"destination\": \"KBOS\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T16:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]",
+      "restart": true,
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-011",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-011",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "finalize_dispatch",
+          "args": {
+            "trip": "WF-011",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-011",
+            "leg": "2",
+            "revision": 1,
+            "origin": "KEWR",
+            "destination": "KBOS",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T16:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-011",
+            "leg": "2",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "finalize_dispatch",
+          "args": {
+            "trip": "WF-011",
+            "leg": "2",
+            "revision": 1
+          }
+        },
+        {
+          "text": "The saved briefing is ready; thrust remains a labeled estimate."
+        }
+      ]
+    },
+    {
+      "id": "WF-012",
+      "scenario": "complete",
+      "legs": [
+        {
+          "trip": "WF-012",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "blocked",
+      "max_clarifications": 0,
+      "prompt": "Check only the proposed connection for trip WF-012 leg 2 departing 2026-11-08 at 16:00 UTC. The sourced candidate schedule says leg 1 arrives 15:00 UTC (source: dated controlled schedule). Use this proposed evidence without saving either leg or asking me to confirm it. Do not dispatch.",
+      "no_dispatch": true,
+      "tool_assertions": [
+        {
+          "id": "planning_result",
+          "tool": "check_connection",
+          "path": [
+            "follows",
+            "connection"
+          ],
+          "equals": "1 h 00 min"
+        }
+      ],
+      "script": [
+        {
+          "tool": "check_connection",
+          "args": {
+            "trip": "WF-012",
+            "leg": "2",
+            "departure_utc": "2026-11-08T16:00:00Z",
+            "previous_leg": "1",
+            "previous_arrival_utc": "2026-11-08T15:00:00Z",
+            "arrival_source": "dated controlled schedule"
+          }
+        },
+        {
+          "text": "The saved briefing is ready; thrust remains a labeled estimate."
+        }
+      ]
+    },
+    {
+      "id": "WF-013",
+      "scenario": "complete",
+      "legs": [
+        {
+          "trip": "WF-013",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "blocked",
+      "max_clarifications": 0,
+      "prompt": "Check the connection status for unsaved trip WF-013 first leg at 12:00 UTC 2026-11-08. Report the tool result; do not dispatch or invent an arrival.",
+      "no_dispatch": true,
+      "tool_assertions": [
+        {
+          "id": "planning_result",
+          "tool": "check_connection",
+          "path": [
+            "status"
+          ],
+          "equals": "no_previous_leg"
+        }
+      ],
+      "script": [
+        {
+          "tool": "check_connection",
+          "args": {
+            "trip": "WF-013",
+            "leg": "1",
+            "departure_utc": "2026-11-08T12:00:00Z"
+          }
+        },
+        {
+          "text": "The saved briefing is ready; thrust remains a labeled estimate."
+        }
+      ]
+    },
+    {
+      "id": "WF-014",
+      "scenario": "complete",
+      "legs": [
+        {
+          "trip": "WF-014",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "blocked",
+      "max_clarifications": 0,
+      "prompt": "Check only trip WF-014 leg 2 moved to 15:20 UTC on 2026-11-08. Sourced proposed leg 1 arrival is 15:00 UTC, source dated controlled schedule. Do not dispatch; report whether it meets the connection rule.",
+      "no_dispatch": true,
+      "tool_assertions": [
+        {
+          "id": "planning_result",
+          "tool": "check_connection",
+          "path": [
+            "status"
+          ],
+          "equals": "conflict"
+        }
+      ],
+      "script": [
+        {
+          "tool": "check_connection",
+          "args": {
+            "trip": "WF-014",
+            "leg": "2",
+            "departure_utc": "2026-11-08T15:20:00Z",
+            "previous_leg": "1",
+            "previous_arrival_utc": "2026-11-08T15:00:00Z",
+            "arrival_source": "dated controlled schedule"
+          }
+        },
+        {
+          "text": "The saved briefing is ready; thrust remains a labeled estimate."
+        }
+      ]
+    },
+    {
+      "id": "WF-015",
+      "scenario": "complete",
+      "legs": [
+        {
+          "trip": "WF-015",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "blocked",
+      "max_clarifications": 0,
+      "prompt": "Only plan arrival KIAD to KEWR at local 2026-11-01 01:30 using sourced two-hour block time (controlled schedule). If the local time is ambiguous, explain and ask for clarification. Do not dispatch.",
+      "no_dispatch": true,
+      "tool_assertions": [
+        {
+          "id": "planning_result",
+          "tool": "plan_arrival",
+          "path": [
+            "status"
+          ],
+          "equals": "error"
+        }
+      ],
+      "airport_timezones": {
+        "KIAD": "America/New_York",
+        "KEWR": "America/New_York"
+      },
+      "script": [
+        {
+          "tool": "plan_arrival",
+          "args": {
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "arrival_local": "2026-11-01T01:30",
+            "block_time": "02:00",
+            "duration_source": "controlled schedule"
+          }
+        },
+        {
+          "text": "The saved briefing is ready; thrust remains a labeled estimate."
+        }
+      ]
+    },
+    {
+      "id": "WF-016",
+      "scenario": "complete",
+      "legs": [
+        {
+          "trip": "WF-016",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "blocked",
+      "max_clarifications": 0,
+      "prompt": "Only calculate departure for KLAX to NZAA arriving 09:00 Auckland local on 2026-11-10 using a sourced 13-hour gate-to-gate block time (controlled schedule). Preserve both dates across the date line. Do not dispatch.",
+      "no_dispatch": true,
+      "tool_assertions": [
+        {
+          "id": "planning_result",
+          "tool": "plan_arrival",
+          "path": [
+            "arrival_utc"
+          ],
+          "equals": "2026-11-09T20:00:00+00:00"
+        }
+      ],
+      "airport_timezones": {
+        "KLAX": "America/Los_Angeles",
+        "NZAA": "Pacific/Auckland"
+      },
+      "script": [
+        {
+          "tool": "plan_arrival",
+          "args": {
+            "origin": "KLAX",
+            "destination": "NZAA",
+            "arrival_local": "2026-11-10T09:00",
+            "block_time": "13:00",
+            "duration_source": "controlled schedule"
+          }
+        },
+        {
+          "text": "The saved briefing is ready; thrust remains a labeled estimate."
+        }
+      ]
+    },
+    {
+      "id": "WF-017",
+      "scenario": "unsupported",
+      "legs": [
+        {
+          "trip": "WF-017",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KTEB",
+          "destination": "KSEA",
+          "sim_aircraft": "CL35",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "CL35",
+          "route": "DIXIE J60 PSB J60 JOT J70 MLP"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "max_clarifications": 0,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain its briefing. [{\"trip\": \"WF-017\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KTEB\", \"destination\": \"KSEA\", \"sim_aircraft\": \"CL35\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"CL35\", \"route\": \"DIXIE J60 PSB J60 JOT J70 MLP\"}]",
+      "route_evidence": [
+        "DIXIE",
+        "PSB",
+        "JOT",
+        "MLP"
+      ],
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-017",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KTEB",
+            "destination": "KSEA",
+            "sim_aircraft": "CL35",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "CL35",
+            "route": "DIXIE J60 PSB J60 JOT J70 MLP"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-017",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "finalize_dispatch",
+          "args": {
+            "trip": "WF-017",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "text": "The retained private-jet plan and route are ready. Takeoff thrust is unavailable for CL35."
+        }
+      ]
+    },
+    {
+      "id": "WF-018",
+      "scenario": "complete",
+      "legs": [
+        {
+          "trip": "WF-018",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N",
+          "route": "DCT"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "max_clarifications": 0,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain its briefing. [{\"trip\": \"WF-018\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\", \"route\": \"DCT\"}]",
+      "route_evidence": [
+        "KIAD",
+        "KEWR"
+      ],
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-018",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N",
+            "route": "DCT"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-018",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "finalize_dispatch",
+          "args": {
+            "trip": "WF-018",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "text": "The saved briefing is ready; thrust remains a labeled estimate."
+        }
+      ]
+    },
+    {
+      "id": "WF-019",
+      "scenario": "route_mismatch",
+      "legs": [
+        {
+          "trip": "WF-019",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N",
+          "route": "JCOBY4 SWANN PHLBO4"
+        }
+      ],
+      "expected_outcome": "blocked",
+      "max_clarifications": 0,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain its briefing. [{\"trip\": \"WF-019\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\", \"route\": \"JCOBY4 SWANN PHLBO4\"}]",
+      "route_evidence": [
+        "DCT"
+      ],
+      "retained_route": "DCT",
+      "expected_clicks": 1,
+      "tool_assertions": [
+        {
+          "id": "route_mismatch_refused",
+          "tool": "finalize_dispatch",
+          "path": [
+            "status"
+          ],
+          "equals": "plan_mismatch"
+        }
+      ],
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-019",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N",
+            "route": "JCOBY4 SWANN PHLBO4"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-019",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "finalize_dispatch",
+          "args": {
+            "trip": "WF-019",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "text": "The returned plan route differs from the approved route. Review it before using a briefing."
+        }
+      ]
+    },
+    {
+      "id": "WF-020",
+      "scenario": "provider_failure",
+      "legs": [
+        {
+          "trip": "WF-020",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "blocked",
+      "max_clarifications": 0,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain its briefing. [{\"trip\": \"WF-020\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]",
+      "provider_failure": "auth",
+      "reason_code": "provider_authentication_failed",
+      "expected_clicks": 0,
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-020",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-020",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "text": "The provider operation stopped. Do not retry automatically; inspect the saved generation state before proceeding."
+        }
+      ]
+    },
+    {
+      "id": "WF-021",
+      "scenario": "provider_failure",
+      "legs": [
+        {
+          "trip": "WF-021",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "blocked",
+      "max_clarifications": 0,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain its briefing. [{\"trip\": \"WF-021\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]",
+      "provider_failure": "concurrency",
+      "reason_code": "provider_concurrency_limited",
+      "expected_clicks": 0,
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-021",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-021",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "text": "The provider operation stopped. Do not retry automatically; inspect the saved generation state before proceeding."
+        }
+      ]
+    },
+    {
+      "id": "WF-022",
+      "scenario": "provider_failure",
+      "legs": [
+        {
+          "trip": "WF-022",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "blocked",
+      "max_clarifications": 0,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain its briefing. [{\"trip\": \"WF-022\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]",
+      "provider_failure": "transient",
+      "reason_code": "provider_unavailable",
+      "expected_clicks": 0,
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-022",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-022",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "text": "The provider operation stopped. Do not retry automatically; inspect the saved generation state before proceeding."
+        }
+      ]
+    },
+    {
+      "id": "WF-023",
+      "scenario": "provider_failure",
+      "legs": [
+        {
+          "trip": "WF-023",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "blocked",
+      "max_clarifications": 0,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain its briefing. [{\"trip\": \"WF-023\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]",
+      "provider_failure": "timeout_before_click",
+      "reason_code": null,
+      "expected_clicks": 0,
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-023",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-023",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "text": "The provider operation stopped. Do not retry automatically; inspect the saved generation state before proceeding."
+        }
+      ]
+    },
+    {
+      "id": "WF-024",
+      "scenario": "provider_failure",
+      "legs": [
+        {
+          "trip": "WF-024",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "blocked",
+      "max_clarifications": 0,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain its briefing. [{\"trip\": \"WF-024\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]",
+      "provider_failure": "timeout_after_click",
+      "reason_code": null,
+      "expected_clicks": 1,
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-024",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-024",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-024",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "text": "The provider operation stopped. Do not retry automatically; inspect the saved generation state before proceeding."
+        }
+      ],
+      "claim_expected_status": "uncertain"
+    },
+    {
+      "id": "WF-025",
+      "scenario": "complete",
+      "legs": [
+        {
+          "trip": "WF-025",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        },
+        {
+          "trip": "WF-025",
+          "leg": "1",
+          "revision": 2,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 5,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "max_clarifications": 0,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain its briefing. [{\"trip\": \"WF-025\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}, {\"trip\": \"WF-025\", \"leg\": \"1\", \"revision\": 2, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 5, \"airframe_id\": \"A20N\"}]",
+      "restart": true,
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-025",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-025",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "finalize_dispatch",
+          "args": {
+            "trip": "WF-025",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "revise_dispatch",
+          "args": {
+            "trip": "WF-025",
+            "leg": "1",
+            "changes": {
+              "passengers": 5
+            },
+            "base_revision": 1
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-025",
+            "leg": "1",
+            "revision": 2
+          }
+        },
+        {
+          "tool": "finalize_dispatch",
+          "args": {
+            "trip": "WF-025",
+            "leg": "1",
+            "revision": 2
+          }
+        },
+        {
+          "text": "The saved briefing is ready; thrust remains a labeled estimate."
+        }
+      ]
+    },
+    {
+      "id": "WF-026",
+      "scenario": "unsupported",
+      "legs": [
+        {
+          "trip": "WF-026",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "max_clarifications": 0,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain its briefing. [{\"trip\": \"WF-026\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]",
+      "no_performance": true,
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-026",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-026",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "finalize_dispatch",
+          "args": {
+            "trip": "WF-026",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "text": "The flight plan is retained. Takeoff thrust is unavailable because performance is missing."
+        }
+      ]
+    },
+    {
+      "id": "WF-027",
+      "scenario": "complete",
+      "legs": [
+        {
+          "trip": "WF-027",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "blocked",
+      "max_clarifications": 0,
+      "prompt": "Prepare only the first private leg WF-027 leg 1 revision 1, KIAD to KEWR on 2026-11-08 at12:00 UTC, A20N standard airframe, N320HD, four passengers, KGS. I will approve preparation, but do not generate yet. Then inspect whether leg2 departing16:00 UTC can have a verified connection before leg1 arrival is known. Do not invent arrival or ask me to confirm unknown timing.",
+      "expected_clicks": 0,
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-027",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "tool": "check_connection",
+          "args": {
+            "trip": "WF-027",
+            "leg": "2",
+            "departure_utc": "2026-11-08T16:00:00Z"
+          }
+        },
+        {
+          "text": "Arrival is unavailable until the prior plan is finalized. The connection is not verified."
+        }
+      ],
+      "unknown_connection": true,
+      "settled_approval": true
+    },
+    {
+      "id": "WF-028",
+      "scenario": "complete",
+      "legs": [
+        {
+          "trip": "WF-028",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N",
+          "arrival_target_utc": "2026-11-08T14:00:00Z"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "max_clarifications": 0,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain its briefing. [{\"trip\": \"WF-028\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\", \"arrival_target_utc\": \"2026-11-08T14:00:00Z\"}]",
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-028",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N",
+            "arrival_target_utc": "2026-11-08T14:00:00Z"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-028",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "finalize_dispatch",
+          "args": {
+            "trip": "WF-028",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "text": "The saved briefing is ready; thrust remains a labeled estimate."
+        }
+      ]
+    }
+  ],
+  "airframe_fixture_kind": "synthetic-standard-profile-options; no custom account-profile claim",
+  "airframe_options": {
+    "A20N": [
+      {
+        "id": "A20N",
+        "name": "Controlled standard A20N"
+      }
+    ],
+    "B738": [
+      {
+        "id": "B738",
+        "name": "Controlled standard B738"
+      }
+    ],
+    "CL35": [
+      {
+        "id": "CL35",
+        "name": "Controlled standard CL35"
+      }
+    ]
+  }
+}

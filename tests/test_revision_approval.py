@@ -48,11 +48,13 @@ def saved_leg(tmp_path, monkeypatch):
         == "awaiting_simbrief_generation"
     )
     store = open_store()
+    raw = json.loads(neo_plan(datetime.now(timezone.utc).isoformat(), "2026-11-08T12:00:00Z"))
+    raw["general"] = {"route": "DCT"}
     store.save(
         "T",
         "1",
         1,
-        neo_plan(datetime.now(timezone.utc).isoformat(), "2026-11-08T12:00:00Z"),
+        json.dumps(raw).encode(),
         None,
     )
     meta = store.read_meta("T", "1", 1)

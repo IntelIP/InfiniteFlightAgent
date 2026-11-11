@@ -11,6 +11,26 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-11-10
+
+### Fixed
+
+- Connection planning uses sourced proposed arrivals before a prior plan is retained,
+  reports unavailable timing explicitly, and preserves itinerary order when departures change.
+  Settled inputs proceed to exact dispatch approval without repeated chat confirmation.
+- Retained SimBrief routes must match the approved route or recorded automatic route
+  readback. A mismatch stops finalization before saving a snapshot or briefing.
+
+### Added
+
+- Briefings show the OFP route and available navlog evidence, with no route-validity claim
+  based on waypoint count alone.
+- A dated official aircraft catalog and v26 change/capability matrix: 51 current aircraft,
+  11 legacy records retained separately, profile candidates and explicit evidence gaps.
+  Catalog assessment establishes no new verified aircraft support.
+- Expanded matched workflow evaluations through the production MCP tools over local HTTP,
+  covering planning, routing, provider failures, approved revisions and persisted recovery.
+
 ## [0.4.3] - 2026-11-10
 
 ### Fixed
@@ -221,7 +241,8 @@ First public release, and the first version live on the self-hosted Cloudflare d
 - A SimBrief generation that fails before the Generate click leaves the leg retryable instead
   of blocking it permanently ([#3](https://github.com/IntelIP/InfiniteFlightAgent/pull/3)).
 
-[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.3...HEAD
+[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.4...HEAD
+[0.4.4]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.0...v0.4.1

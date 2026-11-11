@@ -2,6 +2,15 @@
 
 Status: planning; **zero aircraft have verified thrust-translation support in this project**. This describes available evidence, not a change to launch scope. The support definition is owned by [goal.md](goal.md#what-counts-as-aircraft-support).
 
+## Current fleet baseline
+
+The [November 11 v26 catalog assessment](research/aircraft-catalog-v26.md) freezes the
+official inventory and capability/change matrix: **51 current airframe entries, 11 legacy
+records retained separately, strict majority 26, verified support 0**. It records official
+powerplant labels, SimBrief candidates, native-system documentation and explicit unknowns.
+The published simulator baseline is 26.5.2 build 20344; no current-build simulator inspection
+was performed for this inventory. The dated launch research below remains historical.
+
 ## Launch register
 
 | Candidate profile | Infinite Flight / SimBrief identity | Engine family | Method and support | Verification |

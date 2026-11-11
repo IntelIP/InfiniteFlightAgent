@@ -48,7 +48,7 @@ checked the exact inputs and paused before approving each dispatch once.
 
 Both immutable OFPs and saved briefings remained available after the latest plan
 changed. Each included takeoff performance. The
-[database-derived record](live-acceptance.json) passes all four BUILD-04 outcomes
+[database-derived record](https://github.com/IntelIP/InfiniteFlightAgent/blob/f979e649f2f7cbd9f9b1181d2e5acceda920b59a/docs/evidence/live-acceptance.json) passes all four BUILD-04 outcomes
 for the exact release integration digest, including approval wait/resume and
 signed-in generation. No Generate retry was needed.
 
