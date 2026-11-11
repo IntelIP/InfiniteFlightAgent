@@ -298,8 +298,9 @@ def dispatch_flight(
         if sim_aircraft in thrust.AIRCRAFT
         else f"unavailable: {sim_aircraft} is not modeled; tell the user before generating",
         "next_step": (
-            "Call generate_in_simbrief for this leg, then finalize_dispatch. If browser "
-            "generation fails, show these inputs so the user can generate manually."
+            "The exact dispatch inputs are already approved. Call generate_in_simbrief now "
+            "without asking for another go-ahead, then finalize_dispatch on generated. "
+            "If generation fails, follow its retry/recovery guidance."
         ),
         "flight": flight,
         "warnings": [
@@ -328,15 +329,21 @@ def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) ->
     previous = (meta.get("generation") or {}).get("status")
     if (
         click
-        and previous in ("clicking", "generated", "uncertain", "error")
+        and previous in ("clicking", "generated", "uncertain", "error", "fill_mismatch")
         and not (meta.get("generation") or {}).get("retryable")
     ):
         return {
             "status": "already_attempted",
-            "reason": f"generation already {previous} for this leg revision; finalize it, or "
-            "dispatch a new revision if the user wants to regenerate",
+            "reason": (
+                "Safe refill retry exhausted before Generate; review the mismatch. "
+                "Further generation requires a new approved revision; do not finalize."
+                if previous == "fill_mismatch"
+                else f"generation already {previous} for this leg revision; finalize it, or "
+                "dispatch a new revision if the user wants to regenerate"
+            ),
             "generation": meta.get("generation"),
             "retryable": False,
+            "automatic_retry_allowed": False,
         }
     flight = meta.get("flight") or {}
     ident = re.fullmatch(r"([A-Z]{3})(\d+[A-Z]?)", flight.get("ident_icao") or "")
@@ -388,7 +395,24 @@ def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) ->
     result.update(
         clicked=clicked,
         retryable=not clicked and result["status"] not in ("generated", "uncertain"),
+        automatic_retry_allowed=False,
     )
+    if click and result["status"] == "fill_mismatch" and not clicked:
+        mismatches = (meta.get("generation") or {}).get("fill_mismatch_count", 0) + 1
+        retry = mismatches == 1
+        result.update(
+            fill_mismatch_count=mismatches,
+            retryable=retry,
+            automatic_retry_allowed=retry,
+            next=(
+                "Refill the same approved inputs and call generate_in_simbrief once more in "
+                "the current browser workflow. Existing dispatch approval covers this "
+                "correction; do not ask for another go-ahead or open a replacement browser."
+                if retry
+                else "Form readback mismatched again before Generate. Stop and review the "
+                "mismatch; further generation requires a new approved revision. Do not finalize."
+            ),
+        )
     if result["status"] == "uncertain":
         result.update(
             reason_code="generation_outcome_unknown",

@@ -492,7 +492,7 @@ class DispatchApproval(HumanInTheLoopMiddleware):
     """The dispatch approval gate, refusing dispatches the user should never be asked to approve.
 
     Replaces Deep Agents' HumanInTheLoopMiddleware in place (same name). Refused before approval:
-    invalid saved-leg revisions, several calls for one trip, leg, and revision, a call
+    invalid saved-leg revisions, multiple approval actions in one turn, a call
     without departure_utc (the user could not check the time), and a leg that leaves too soon
     after the trip's previous leg arrives. Every dispatch call in that turn is refused (never
     executed), so none runs without approval, and the model fixes the call or asks the user.
@@ -519,6 +519,13 @@ class DispatchApproval(HumanInTheLoopMiddleware):
             return (
                 "Several dispatch calls for the same leg. Dispatch exactly one flight per "
                 "leg: choose the best fit and say why in one line, or ask the user to choose."
+            )
+        if len(dispatches) > 1:
+            return (
+                "Multiple approval actions cannot share one decision. Prepare one leg at a time: "
+                "call dispatch_flight or revise_dispatch for only the first intended leg, "
+                "then generate/finalize it before preparing the next leg. Keep settled inputs; "
+                "the exact per-leg approval supplies consent."
             )
         for args in dispatches:
             if not args.get("departure_utc"):
