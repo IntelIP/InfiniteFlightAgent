@@ -1,6 +1,35 @@
 # Cloudflare deployment
 
-## Current release: v0.4.2
+## Current release: v0.4.3
+
+Observed November 11, 2026 UTC (November 10 in New York): [PR #21](https://github.com/IntelIP/InfiniteFlightAgent/pull/21)
+is merged and [v0.4.3](https://github.com/IntelIP/InfiniteFlightAgent/releases/tag/v0.4.3)
+is deployed to production at 100% traffic. The [Release workflow](https://github.com/IntelIP/InfiniteFlightAgent/actions/runs/42930216321)
+completed successfully, including CI, immutable image upload, owner-authorized production
+approval, promotion, trigger deployment and release publication.
+
+- Release source: `710513f5d6c868a90e1aa8041dbcf689c0c476c0`.
+- PR merge: `7cecc73024b958a7a554edbea839208fa0cd3304`.
+- Production Worker version: `06401807-3277-4077-b921-dc98ca348e08`.
+- Immutable image: `sha256:776b92ad22032475baa2d0f24da1e93c9811741c6830f4677511e93a1a3b6bd2`.
+- Previous production version, available for rollback: `42be74fa-87e9-4226-a3a5-debaec360173` (v0.4.2).
+
+The exact uploaded image passed a two-leg A20N trip on temporary staging before
+promotion. The [release report](../evidence/v043-release.md) records acceptance,
+workflow evaluations, browser usage, cleanup and production observations. The
+[database-derived acceptance record](../evidence/live-acceptance.json) passes all four
+BUILD-04 outcomes for the release source. Local product validation passed: 305 tests,
+Ruff and dead-code checks; three Postgres-only tests were skipped locally.
+
+Post-promotion reads confirmed the tagged version at 100%, the matching Git tag/release,
+HTTP 401 for unauthenticated production health, and zero active Browserbase sessions.
+No additional production flight generation or public Access OAuth client journey was run.
+The live flight evidence belongs to the exact image on staging, rather than a production
+runtime request. Aircraft thrust accuracy and simulator import remain unverified.
+
+<a id="current-release-v042"></a>
+
+## Previous release: v0.4.2
 
 Observed November 10, 2026 UTC (November 9 in New York): [PR #20](https://github.com/IntelIP/InfiniteFlightAgent/pull/20)
 is merged and [v0.4.2](https://github.com/IntelIP/InfiniteFlightAgent/releases/tag/v0.4.2)
@@ -15,7 +44,7 @@ approval, promotion and release publication.
 
 Before promotion, that exact uploaded image passed a two-leg trip through a separate
 Cloudflare staging Worker, version `43386d6e-0111-423b-8a54-080f333fc15d`. The
-[database-derived acceptance record](../evidence/live-acceptance.json) passes all four
+[database-derived acceptance record](https://github.com/IntelIP/InfiniteFlightAgent/blob/bdb7fe78917bd9021fda1a30f3aba3dc7be18148/docs/evidence/live-acceptance.json) passes all four
 BUILD-04 outcomes for the release source. Trip `v042-20261110T010552Z` retained both A20N
 OFPs and briefings, with takeoff performance, after approval waits. Routes were
 `JCOBY4 SWANN PHLBO4` and `PORTT4 PARKE HYPER9`, each with 17 navlog entries. Both dispatches
@@ -111,7 +140,7 @@ Cloudflare Access does the OAuth for MCP clients; the Worker does not implement 
 4. Validate: from an Access-authenticated browser open `https://<worker-host>/health` (expect 200 JSON); without Access, expect a block or 401/403. Connect one MCP client and make one call, such as a flight lookup.
 5. Set `IFD_PAID_OPERATIONS_ENABLED=true` in Doppler when ready, then release again.
 
-Later releases: run **Release** with `promote=true`, review the uploaded version while production approval is held, then approve promotion of that recorded version. `promote=false` supports upload-only preparation. Version preview URLs are not generated for Workers with Durable Objects; v0.4.2 acceptance used a separate temporary Worker with the exact uploaded image before production approval, as recorded above. Durable Object–managed containers do not take part in image rollouts; the Worker restarts the running container on its next request when the image or secrets differ from what it started with, ending any in-flight stream.
+Later releases: run **Release** with `promote=true`, review the uploaded version while production approval is held, then approve promotion of that recorded version. `promote=false` supports upload-only preparation. Version preview URLs are not generated for Workers with Durable Objects; the recorded v0.4.2 and v0.4.3 acceptance runs used separate temporary Workers with the exact uploaded images before production approval. Durable Object–managed containers do not take part in image rollouts; the Worker restarts the running container on its next request when the image or secrets differ from what it started with, ending any in-flight stream.
 
 ## Notes from Condere's release process
 

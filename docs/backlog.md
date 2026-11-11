@@ -1,6 +1,6 @@
 # Backlog
 
-Status updated November 10, 2026 UTC. Current release work is tracked in the
+Status updated November 11, 2026 UTC (November 10 in New York). Current release work is tracked in the
 [Infinite Flight Agent Linear project](https://linear.app/intelip/project/infinite-flight-agent-a2f7101e32e9).
 This file indexes that work and preserves earlier research. [goal.md](goal.md) owns the
 accepted product requirements and aircraft-support definition; the
@@ -10,7 +10,7 @@ the current implementation and evidence summarized here supersede those dated bl
 
 ## Current delivery baseline
 
-Production is [v0.4.2](implementation/deployment.md#current-release-v042). The exact release
+Production is [v0.4.3](implementation/deployment.md#current-release-v043). The exact release
 image passed a deployed two-leg staging trip before promotion. The production rollout,
 transport limitations, provider usage and cleanup are recorded in the deployment runbook.
 This proves the exercised dispatch integration, not simulator import or aircraft accuracy.
@@ -21,23 +21,22 @@ This proves the exercised dispatch integration, not simulator import or aircraft
 | SimBrief — DISC-03/06, BUILD-04 | Browser generation, Route Finder, exact-input approval/readback, correlated immutable OFPs and two retained legs are observed | More dispatch inputs and broader recovery/scenario coverage; generation does not prove every provider option |
 | Flight research — BUILD-03 | Dated FlightAware research, connection checks, reported gates and explicitly unverified spawn suggestions are implemented | Verified simulator stand mapping, private configuration evidence and import behavior |
 | Thrust — BUILD-05, VERIFY-01 | Labeled A20N/A21N/B38M estimates and condition-specific observed N1 calibration are implemented | Zero aircraft have verified support under the accepted definition; engine/build applicability and simulator evidence remain open |
-| Trip management and evaluation | Saved legs/briefings, approved revisions, refresh differences, persisted conversation inspection and trace/replay tooling are implemented | Revision approval crash, useful provider failure causes and versioned workflow evaluation baseline are first-wave work |
+| Trip management and evaluation | Saved legs/briefings, approved revisions, recoverable revision validation, sanitized provider failure guidance, refresh differences, conversation inspection and versioned workflow evaluations are shipped | Broader conversation/recovery scenarios and durable progress/cancellation remain planned |
 | Expansion — EXPAND-01 | Versioned catalog and aircraft-batch tasks are defined in Linear | Freeze the current official catalog/engine matrix, establish reference cases and verify profiles before counting support |
 
 ## Active release work
 
 | Version | Linear work | Outcome |
 | --- | --- | --- |
-| v0.4.3 | INT-402–406; [release task](https://linear.app/intelip/issue/INT-406) | Reliable revision approval and provider failure handling, planning reconciliation and measured evaluation baseline |
+| v0.4.3 — shipped | INT-402–406; [release evidence](evidence/v043-release.md) | Recoverable revision validation and provider failure guidance, planning reconciliation and measured evaluation baseline |
 | v0.4.4 | INT-407–411; [release task](https://linear.app/intelip/issue/INT-411) | Predictable existing conversations/routing, current catalog assessment and broader end-to-end scenarios |
 | v0.4.5 | INT-412–415; [release task](https://linear.app/intelip/issue/INT-415) | Evidence-based compatibility corrections for existing estimate profiles on the v26 baseline |
 | v0.5.0 | INT-416–428; [release task](https://linear.app/intelip/issue/INT-428) | Durable trip control, expanded dispatch inputs, private-flight configurations and measured aircraft expansion |
 
-The first implementation wave is active: INT-404 owns revision validation, INT-405 provider
-failure handling and INT-403 workflow evaluations. Each worker has an isolated branch and
-source surface; the integrator owns INT-402 and combines the changes for INT-406. Parallel
-development does not increase the one-browser production limit. No first-wave change is
-represented as released merely because implementation has started.
+The first implementation wave shipped through PR #21 and v0.4.3: INT-404 covers revision
+validation, INT-405 provider failure handling, INT-403 workflow evaluations, INT-402 planning
+reconciliation and INT-406 release assembly. Isolated worker branches were integrated before
+CI, exact-image acceptance and promotion. The one-browser production limit is unchanged.
 
 All mandatory deterministic workflow invariants must pass; model quality, stage latency,
 clarification and usage comparisons use the same versioned scenario baseline. Controlled

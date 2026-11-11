@@ -1,7 +1,7 @@
 # Roadmap
 
-Status updated November 10, 2026 UTC. Production is **v0.4.2**; its
-[deployment and exact-image acceptance record](implementation/deployment.md#current-release-v042)
+Status updated November 11, 2026 UTC (November 10 in New York). Production is **v0.4.3**; its
+[deployment and exact-image acceptance record](implementation/deployment.md#current-release-v043)
 own the observed release facts. New release work is tracked in the
 [Infinite Flight Agent Linear project](https://linear.app/intelip/project/infinite-flight-agent-a2f7101e32e9).
 The [backlog](backlog.md) indexes current capability and historical research;
@@ -12,7 +12,7 @@ The [backlog](backlog.md) indexes current capability and historical research;
 | Version | User outcome | Owning acceptance |
 | --- | --- | --- |
 | v0.4.2 — shipped | Automatic routing, retained plans and bounded single-user browser workflows | [Deployment and acceptance](implementation/deployment.md#current-release-v042) |
-| v0.4.3 — first implementation wave | Invalid revisions return useful validation; provider failures explain the cause; workflow evaluation has a versioned baseline | [INT-402–406](https://linear.app/intelip/issue/INT-406) |
+| v0.4.3 — shipped | Invalid revisions return useful validation; provider failures explain the cause; workflow evaluation has a versioned baseline | [Release evidence](evidence/v043-release.md); [INT-402–406](https://linear.app/intelip/issue/INT-406) |
 | v0.4.4 — planned | Existing conversations and routing are predictable across broader scenarios; the v26 catalog/native-capability matrix is recorded | [INT-407–411](https://linear.app/intelip/issue/INT-411) |
 | v0.4.5 — planned | Current neo/MAX estimate paths have evidenced v26 compatibility corrections and honest profile outcomes | [INT-412–415](https://linear.app/intelip/issue/INT-415) |
 | v0.5.0 — planned | Trips expose durable progress and safe cancellation/recovery, support more dispatch inputs and private configurations, and report measured aircraft expansion | [INT-416–428](https://linear.app/intelip/issue/INT-428) |
@@ -22,10 +22,10 @@ dispatch capabilities. A separate v0.4.5 release is reviewed if compatibility in
 finds no runtime correction to ship. Linear owns the detailed task acceptance and actual
 blocking relationships, rather than this map duplicating those specifications.
 
-The first parallel wave covers revision validation (INT-404), provider failures (INT-405)
+The first parallel wave shipped revision validation (INT-404), provider failures (INT-405)
 and workflow evaluations (INT-403), with one integrator handling documentation (INT-402)
-and release assembly. Each worker has an isolated branch. Integration, publication,
-required acceptance and production promotion remain separate observed steps.
+and release assembly (INT-406). Isolated worker branches were integrated in PR #21; CI,
+exact-image acceptance and production promotion are recorded as distinct observed steps.
 
 ## Original product milestones and current gaps
 

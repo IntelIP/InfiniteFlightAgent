@@ -2,7 +2,7 @@
 
 Observed November 10, 2026 UTC (November 9 in New York). Candidate:
 `c8ef97b712a3824bfbafd41cfff57ddf0a6f04c6`. The integration source was unchanged
-throughout this run. The [database-derived acceptance record](live-acceptance.json)
+throughout this run. The [database-derived acceptance record](https://github.com/IntelIP/InfiniteFlightAgent/blob/05021ebbdf73d20d88c9da3f42f8c4a03b7a604b/docs/evidence/live-acceptance.json)
 passes all four BUILD-04 outcomes: deployed MCP generation, real neo takeoff
 performance, two retained legs, and approval wait/resume with signed-in generation.
 
