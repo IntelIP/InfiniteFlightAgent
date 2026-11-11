@@ -116,6 +116,9 @@ be drawn from those attempts. No alternate model, API billing route or provider 
 - Current-build simulator observations are not available in this assessment. Native PERF,
   engine/rating/livery identity, displayed target and usable manual setting must be observed.
   The operator was asked for the available device/build and authorized observation source.
+  The [observation checklist](../verification/v045-simulator-observations.md) specifies the
+  minimum identity/native-PERF and matched-case records. A follow-up Xcode/Windows check
+  found no connected Apple device, Infinite Flight Windows package or running process.
 - Each affected profile needs independent reference cases and an evidence-based numerical
   tolerance/envelope. A copied formula or a successful plan is insufficient.
 - Actual-model replay must be completed after the existing access quota resets.
