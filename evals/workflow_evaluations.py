@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import re
 import subprocess
 from collections import Counter
 from datetime import datetime, timedelta
@@ -10,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "evals/workflow_cases.json"
-VERIFIER_VERSION = "ifd-workflow-oracles-v2"
+VERIFIER_VERSION = "ifd-workflow-oracles-v3"
 EVIDENCE_MODES = {
     "scripted-controlled",
     "real-model-replay",
@@ -32,6 +33,7 @@ def load_manifest(path=MANIFEST) -> dict:
     manifest = json.loads(Path(path).read_text())
     if manifest.get("schema_version") != 1 or manifest.get("verifier_version") not in {
         "ifd-workflow-oracles-v1",
+        "ifd-workflow-oracles-v2",
         VERIFIER_VERSION,
     }:
         raise ValueError("unsupported workflow manifest/verifier version")
@@ -110,6 +112,20 @@ def same_value(field, left, right):
     return left == right
 
 
+def same_input(field, left, right, aircraft):
+    # Selecting basetype waits for #type == aircraft before an optional airframe override.
+    # Omission and that same built-in type select the same profile; custom IDs do not.
+    if (
+        field == "airframe_id"
+        and isinstance(aircraft, str)
+        and re.fullmatch(r"[A-Z0-9]{2,4}", aircraft)
+        and left in (None, aircraft)
+        and right in (None, aircraft)
+    ):
+        return True
+    return same_value(field, left, right)
+
+
 def verify(case: dict, run: dict) -> dict:
     """Check observed end state, not a prescribed model tool sequence or a blended score."""
     state = run.get("state", [])
@@ -125,7 +141,7 @@ def verify(case: dict, run: dict) -> dict:
             checks["intent_input_identity"] = False
             continue
         checks["intent_input_identity"] &= all(
-            same_value(field, row["request"].get(field), value)
+            same_input(field, row["request"].get(field), value, want["sim_aircraft"])
             for field, value in expected_request(want).items()
         ) and row["meta"].get("private_callsign") == want.get("private_callsign")
 
@@ -137,12 +153,13 @@ def verify(case: dict, run: dict) -> dict:
         a["name"] in {"dispatch_flight", "revise_dispatch"}
         and key(a.get("resolved_args", a["args"])) in expected
         and all(
-            same_value(
+            same_input(
                 f,
                 a.get("resolved_args", a["args"]).get(
                     f, 1 if f == "revision" else "KGS" if f == "units" else None
                 ),
                 v,
+                expected[key(a.get("resolved_args", a["args"]))]["sim_aircraft"],
             )
             for f, v in expected[key(a.get("resolved_args", a["args"]))].items()
         )
@@ -196,7 +213,12 @@ def verify(case: dict, run: dict) -> dict:
             and raw["origin"]["icao_code"] == request["origin"]
             and raw["destination"]["icao_code"] == request["destination"]
             and raw["aircraft"]["icao_code"] == request["aircraft"]
-            and raw["aircraft"]["internal_id"] == request["airframe_id"]
+            and same_input(
+                "airframe_id",
+                raw["aircraft"]["internal_id"],
+                request.get("airframe_id"),
+                request["aircraft"],
+            )
             and raw["params"]["units"].upper() == request["units"]
             and same_value("departure", raw["times"]["sched_out"], request["departure"])
             and int(raw["weights"]["pax_count"]) == request["passengers"]
@@ -311,6 +333,67 @@ def verify(case: dict, run: dict) -> dict:
             return output == assertion["equals"]
 
         checks[assertion["id"]] = any(matches(o) for o in outputs)
+    if case.get("unknown_connection"):
+        unknown_results = [
+            t["output"]
+            for t in run.get("tool_results", [])
+            if t["name"] == "check_connection"
+            and t["output"].get("status") in {"no_previous_leg", "arrival_unavailable"}
+            and not t["output"].get("follows")
+            and not t["output"].get("arrival_utc")
+        ]
+        inspections = [
+            t["output"]
+            for t in run.get("tool_results", [])
+            if t["name"] == "saved_trips" and t["output"].get("status") == "ok"
+        ]
+        reply = run.get("final_reply", "").lower()
+        # This is a narrow language guard, not a semantic judge: pair it with observed
+        # unknown state, no generation, and no asserted numeric arrival in this case.
+        qualified = (
+            "arriv" in reply
+            and "connect" in reply
+            and bool(
+                re.search(
+                    r"cannot|can't|can’t|unverified|unknown|unavailable|not (?:yet )?(?:known|verified)",
+                    reply,
+                )
+            )
+        )
+        asserted_arrival = re.search(
+            r"\b(?:arriv(?:e[sd]?|al(?: time)?)|lands?)\s*(?:is|:)?\s*(?:at|by)?\s*\d{1,2}:\d{2}",
+            reply,
+        )
+        unknown_state = bool(state) and all(
+            not row.get("snapshot")
+            and not row["meta"].get("planned_arrival")
+            and not row["meta"].get("flight")
+            for row in state
+        )
+        inspected_preparation = any(
+            any(
+                saved.get("request") == row["request"]
+                and saved.get("status") == "prepared"
+                and not saved.get("snapshot_sha256")
+                for saved in inspection.get("legs", [])
+            )
+            for inspection in inspections
+            for row in state
+        )
+        checks["missing_arrival_explicit"] = (
+            unknown_state
+            and bool(unknown_results or inspected_preparation)
+            and qualified
+            and not asserted_arrival
+            and not clicks
+        )
+    if case.get("settled_approval"):
+        checks["settled_approval_not_reasked"] = bool(approved) and not re.search(
+            r"\bawaiting (?:your |the )?(?:approval|confirmation)\b|"
+            r"\bwaiting for (?:your )?(?:approval|confirmation)\b|"
+            r"\bplease (?:approve|confirm)\b|\b(?:need|require)s? (?:your )?(?:approval|confirmation)\b",
+            run.get("final_reply", "").lower(),
+        )
     if run.get("mcp_saved") is not None:
         saved = run["mcp_saved"].get("legs", [])
         latest = {}
