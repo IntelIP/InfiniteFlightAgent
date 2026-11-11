@@ -6,6 +6,7 @@ import json
 import socket
 import threading
 import time
+from datetime import timedelta
 from types import SimpleNamespace
 
 import httpx
@@ -112,9 +113,17 @@ class MCPDriver:
 
     def call(self, name, args):
         async def request():
-            async with httpx.AsyncClient(headers={remote.TOKEN_HEADER: TOKEN}) as client:
+            # A supplied HTTP client bypasses the SDK's long SSE-read defaults. Keep
+            # it above the server's long-poll interval and also bound a lost RPC reply.
+            rpc_seconds = remote.WAIT_SECONDS + 10
+            async with httpx.AsyncClient(
+                headers={remote.TOKEN_HEADER: TOKEN},
+                timeout=httpx.Timeout(rpc_seconds, connect=5),
+            ) as client:
                 async with streamable_http_client(self.url, http_client=client) as (read, write, _):
-                    async with ClientSession(read, write) as session:
+                    async with ClientSession(
+                        read, write, read_timeout_seconds=timedelta(seconds=rpc_seconds)
+                    ) as session:
                         await session.initialize()
                         result = await session.call_tool(name, args)
 
