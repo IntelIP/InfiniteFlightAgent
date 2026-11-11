@@ -170,7 +170,7 @@ def test_unavailable_fixture_cannot_be_reported_as_a_matched_success(
     monkeypatch.setattr(socket.socket, "connect", forbidden)
     case = copy.deepcopy(release_manifest["cases"][12])
     case["script"] = [
-        {"tool": "simbrief_airframes", "args": {"aircraft": "A20N"}},
+        {"tool": "simbrief_airframes", "args": {"aircraft": "ZZZZ"}},
         {"text": "No controlled airframe fixture is available."},
     ]
     run = run_case(case, release_manifest)

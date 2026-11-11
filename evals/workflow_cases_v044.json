@@ -1,7 +1,7 @@
 {
   "suite_id": "ifd-workflow-v044",
   "schema_version": 1,
-  "verifier_version": "ifd-workflow-oracles-v2",
+  "verifier_version": "ifd-workflow-oracles-v3",
   "clock_utc": "2026-11-08T11:00:00Z",
   "base_commit": "710513f5d6c868a90e1aa8041dbcf689c0c476c0",
   "fixture": {
@@ -1440,16 +1440,6 @@
       "max_clarifications": 0,
       "prompt": "Prepare only the first private leg WF-027 leg 1 revision 1, KIAD to KEWR on 2026-11-08 at12:00 UTC, A20N standard airframe, N320HD, four passengers, KGS. I will approve preparation, but do not generate yet. Then inspect whether leg2 departing16:00 UTC can have a verified connection before leg1 arrival is known. Do not invent arrival or ask me to confirm unknown timing.",
       "expected_clicks": 0,
-      "tool_assertions": [
-        {
-          "id": "missing_arrival_explicit",
-          "tool": "check_connection",
-          "path": [
-            "status"
-          ],
-          "equals": "arrival_unavailable"
-        }
-      ],
       "script": [
         {
           "tool": "dispatch_flight",
@@ -1479,7 +1469,9 @@
         {
           "text": "Arrival is unavailable until the prior plan is finalized. The connection is not verified."
         }
-      ]
+      ],
+      "unknown_connection": true,
+      "settled_approval": true
     },
     {
       "id": "WF-028",
@@ -1544,5 +1536,26 @@
         }
       ]
     }
-  ]
+  ],
+  "airframe_fixture_kind": "synthetic-standard-profile-options; no custom account-profile claim",
+  "airframe_options": {
+    "A20N": [
+      {
+        "id": "A20N",
+        "name": "Controlled standard A20N"
+      }
+    ],
+    "B738": [
+      {
+        "id": "B738",
+        "name": "Controlled standard B738"
+      }
+    ],
+    "CL35": [
+      {
+        "id": "CL35",
+        "name": "Controlled standard CL35"
+      }
+    ]
+  }
 }

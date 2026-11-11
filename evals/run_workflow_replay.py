@@ -241,6 +241,7 @@ def run_case(case, manifest, model=None, max_turns=5, mcp_url=None):
     approved = []
     messages = []
     clarification_turns = 0
+    continuation_turns = 0
     turns = []
     source = (ROOT / manifest["fixture"]["path"]).read_bytes()
 
@@ -248,6 +249,17 @@ def run_case(case, manifest, model=None, max_turns=5, mcp_url=None):
         run["invalid"] = True
         run["invalid_reasons"].append("fixture/provider isolation lacks requested operation")
         raise RuntimeError("evaluation isolation: live provider access forbidden")
+
+    def airframes(aircraft):
+        options = manifest.get("airframe_options", {}).get(aircraft)
+        if options is None:
+            return blocked()
+        return {
+            "status": "ok",
+            "aircraft": aircraft,
+            "airframes": options,
+            "note": "Controlled standard-profile fixture; no custom account profiles or simulator applicability established.",
+        }
 
     def generate(fields, click, shots_dir, before_click=None):
         nonlocal body
@@ -388,7 +400,7 @@ def run_case(case, manifest, model=None, max_turns=5, mcp_url=None):
                 lambda code: case.get("airport_timezones", {}).get(code, "UTC"),
             ),
             (workflow.simbrief_browser, "generate", generate),
-            (workflow.simbrief_browser, "airframes", blocked),
+            (workflow.simbrief_browser, "airframes", airframes),
             (workflow, "fetch_sync", lambda *a, **k: body if body else blocked()),
             (core, "fetch_sync", blocked),
             (workflow.artifacts, "upload", lambda *a, **k: []),
@@ -533,6 +545,27 @@ def run_case(case, manifest, model=None, max_turns=5, mcp_url=None):
                     payload = Command(resume={"decisions": decisions})
                     continue
                 run["final_reply"] = messages[-1].text
+                retained = sum(bool(row.get("snapshot")) for row in run["state"])
+                if (
+                    0 < retained < len(case["legs"])
+                    and case["expected_outcome"] == "briefing_ready"
+                    and continuation_turns < len(case["legs"])
+                ):
+                    # The production client shows a finished leg before requesting the
+                    # next exact approval. Continuing a settled itinerary supplies no new
+                    # flight inputs and is distinct from asking the user to clarify them.
+                    continuation_turns += 1
+                    payload = {
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": "Continue the same settled itinerary. Preserve every finished leg and revision. "
+                                "Prepare the remaining leg or requested revision for its exact approval; "
+                                "do not regenerate an existing revision.",
+                            }
+                        ]
+                    }
+                    continue
                 followups = case.get("followups", [])
                 if clarification_turns < len(followups):
                     content = followups[clarification_turns]
@@ -610,6 +643,7 @@ def run_case(case, manifest, model=None, max_turns=5, mcp_url=None):
     ]
     run["metrics"] = {
         "clarification_turns": clarification_turns,
+        "continuation_turns": continuation_turns,
         "assistant_question_turns": sum(m.type == "ai" and "?" in m.text for m in messages),
         "tool_calls": len(calls),
         "tool_calls_by_name": dict(Counter(c["name"] for c in calls)),
