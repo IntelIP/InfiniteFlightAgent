@@ -1,7 +1,7 @@
 # Roadmap
 
-Status updated November 11, 2026 UTC (November 10 in New York). Production is **v0.4.3**; its
-[deployment and exact-image acceptance record](implementation/deployment.md#current-release-v043)
+Status updated November 11, 2026 UTC (November 10 in New York). Production is **v0.4.4**; its
+[deployment and exact-image acceptance record](implementation/deployment.md#current-release-v044)
 own the observed release facts. New release work is tracked in the
 [Infinite Flight Agent Linear project](https://linear.app/intelip/project/infinite-flight-agent-a2f7101e32e9).
 The [backlog](backlog.md) indexes current capability and historical research;
@@ -13,7 +13,7 @@ The [backlog](backlog.md) indexes current capability and historical research;
 | --- | --- | --- |
 | v0.4.2 — shipped | Automatic routing, retained plans and bounded single-user browser workflows | [Deployment and acceptance](implementation/deployment.md#current-release-v042) |
 | v0.4.3 — shipped | Invalid revisions return useful validation; provider failures explain the cause; workflow evaluation has a versioned baseline | [Release evidence](evidence/v043-release.md); [INT-402–406](https://linear.app/intelip/issue/INT-406) |
-| v0.4.4 — planned | Existing conversations and routing are predictable across broader scenarios; the v26 catalog/native-capability matrix is recorded | [INT-407–411](https://linear.app/intelip/issue/INT-411) |
+| v0.4.4 — shipped | Existing conversations and routing are predictable across broader scenarios; the v26 catalog/native-capability matrix is recorded | [Release evidence](evidence/v044-release.md); [INT-407–411](https://linear.app/intelip/issue/INT-411) |
 | v0.4.5 — planned | Current neo/MAX estimate paths have evidenced v26 compatibility corrections and honest profile outcomes | [INT-412–415](https://linear.app/intelip/issue/INT-415) |
 | v0.5.0 — planned | Trips expose durable progress and safe cancellation/recovery, support more dispatch inputs and private configurations, and report measured aircraft expansion | [INT-416–428](https://linear.app/intelip/issue/INT-428) |
 
@@ -33,21 +33,21 @@ exact-image acceptance and production promotion are recorded as distinct observe
 | --- | --- | --- | --- |
 | M0 — Resolve integration feasibility | The selected generation, flight-data and hosted MCP paths run | Exact launch engine/profile applicability and simulator findings remain incomplete | DISC-01 through DISC-08 |
 | M1 — Establish the application foundation | Deployed Deep Agent, MCP, storage/checkpoints and runnable quality gates exist | Durable execution progress/cancellation and client-specific journeys are tracked separately | SETUP-01, BUILD-01/02; INT-416/417/426 |
-| M2 — Prepare a real flight collaboratively | Approval, browser generation, correlated OFPs and retained multi-leg briefings are observed | Broader scenarios, configuration evidence and simulator parking correspondence | BUILD-03/04; INT-407–410/419/426 |
+| M2 — Prepare a real flight collaboratively | Approval, browser generation, route-correlated OFPs, retained multi-leg briefings and 28-case MCP evaluation are observed | Broader live-provider scenarios, configuration evidence and simulator parking correspondence | BUILD-03/04; INT-419/426 |
 | M3 — Deliver launch-aircraft thrust guidance | Labeled estimates and observed-reading calibration are implemented | Zero aircraft currently meet verified support criteria; per-profile references and simulator cases remain required | BUILD-05, VERIFY-01; INT-412–414/420–425 |
 | M4 — Prove the usable release | Remote MCP and deployment acceptance are observed | Full intended-client journeys, simulator import-field matrix and usable aircraft-specific instructions | VERIFY-02/03; INT-426 |
-| M5 — Expand aircraft coverage in batches | Catalog and family-batch work is defined | Source-backed methods and verified outcomes for individual aircraft | EXPAND-01; INT-409/420–427 |
+| M5 — Expand aircraft coverage in batches | Official v26 catalog/capability matrix is frozen; family-batch work is defined | Source-backed methods, resolved applicability and simulator verification for individual aircraft | EXPAND-01; INT-420–427 |
 
 These milestones are distinct from release numbering. Shipping v0.5 does not automatically
 complete all original launch or aircraft-support criteria.
 
 ## Aircraft expansion
 
-[INT-409](https://linear.app/intelip/issue/INT-409) freezes the official fleet and v26 change
-matrix, including engine/configuration variants and native PERF/FMS capabilities. The
-initial observed official fleet page lists 51 aircraft entries, so the strict-majority target
-is 26 fully verified entries. The frozen manifest must establish the denominator before it
-is used as a delivery metric; partial profile support is reported separately.
+[INT-409](https://linear.app/intelip/issue/INT-409) froze the [official fleet and v26 matrix](research/aircraft-catalog-v26.md):
+51 current aircraft and 11 legacy records retained separately. Strict majority is 26 fully
+verified current entries; verified support is zero. Engine/configuration, exact profile,
+displayed-target and native PERF/FMS unknowns remain explicit. Partial profile support is
+reported separately and does not reduce the raw denominator.
 
 Priorities include the current Challenger 350, confirmed ACJ configurations and aircraft
 with relevant v26 changes. An ACJ livery does not establish extra fuel capacity. Cockpit,

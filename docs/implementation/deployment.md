@@ -1,6 +1,37 @@
 # Cloudflare deployment
 
-## Current release: v0.4.3
+## Current release: v0.4.4
+
+Observed November 11, 2026 UTC (November 10 in New York): [PR #22](https://github.com/IntelIP/InfiniteFlightAgent/pull/22)
+is merged and [v0.4.4](https://github.com/IntelIP/InfiniteFlightAgent/releases/tag/v0.4.4)
+is serving production at 100% traffic. The [Release workflow](https://github.com/IntelIP/InfiniteFlightAgent/actions/runs/42951639308)
+passed CI, image upload, the existing owner-authorized production gate, promotion,
+trigger deployment and release publication.
+
+- Release/merge source: `eef57bcaec856b1bd56bc9b1a1a2f992b67fb61f`.
+- Production Worker: `74da7217-f7bf-45b0-b3b4-a0115c335b9d`.
+- Immutable image: `sha256:3db056ca9cb6eba027332ea9caa3534fb91798d71fb8471d08d6bee9f779f657`.
+- Rollback Worker: `06401807-3277-4077-b921-dc98ca348e08` (v0.4.3).
+
+The exact uploaded image passed a two-leg A20N trip on isolated staging before promotion.
+The [release report](../evidence/v044-release.md) records source/image identity, paired
+LangSmith evaluations, usage, limitations and cleanup. The
+[database-derived record](../evidence/live-acceptance.json) passes all BUILD-04 outcomes.
+Final local product validation passed: 401 tests, Ruff and dead-code checks; three
+Postgres-only tests were skipped. Controlled and actual-model replay each passed all
+28 cases; the original eight definitions are preserved.
+
+Authenticated production health returned `status=ok`, `version=0.4.4`, `database=true`
+and `paid_operations_enabled=true` through the existing Access/Worker path. Public
+unauthenticated health returned 401. Post-promotion inventory showed zero active browsers
+and no sessions beyond the four authorized acceptance sessions. Those sessions totaled
+254.685 seconds; FlightAware usage totaled four requests. Temporary staging resources
+were removed. Simulator import, numerical thrust accuracy and a fresh OAuth consent
+journey remain unverified; verified aircraft support remains zero.
+
+<a id="current-release-v043"></a>
+
+## Previous release: v0.4.3
 
 Observed November 11, 2026 UTC (November 10 in New York): [PR #21](https://github.com/IntelIP/InfiniteFlightAgent/pull/21)
 is merged and [v0.4.3](https://github.com/IntelIP/InfiniteFlightAgent/releases/tag/v0.4.3)

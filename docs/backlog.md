@@ -10,7 +10,7 @@ the current implementation and evidence summarized here supersede those dated bl
 
 ## Current delivery baseline
 
-Production is [v0.4.3](implementation/deployment.md#current-release-v043). The exact release
+Production is [v0.4.4](implementation/deployment.md#current-release-v044). The exact release
 image passed a deployed two-leg staging trip before promotion. The production rollout,
 transport limitations, provider usage and cleanup are recorded in the deployment runbook.
 This proves the exercised dispatch integration, not simulator import or aircraft accuracy.
@@ -18,18 +18,18 @@ This proves the exercised dispatch integration, not simulator import or aircraft
 | Surface | Current capability | Remaining work |
 | --- | --- | --- |
 | Foundation — SETUP-01, BUILD-01/02 | Locked Python application, Deep Agent, MCP, transactional storage/checkpoints, CI and product-validation manifest are installed; deployed generation is observed | Whole-operation progress, cancellation/deadlines and intended-client acceptance remain separate tasks |
-| SimBrief — DISC-03/06, BUILD-04 | Browser generation, Route Finder, exact-input approval/readback, correlated immutable OFPs and two retained legs are observed | More dispatch inputs and broader recovery/scenario coverage; generation does not prove every provider option |
+| SimBrief — DISC-03/06, BUILD-04 | Browser generation, Route Finder, exact-input approval/readback, retained route/navlog correlation and two retained legs are observed | More dispatch inputs and broader live-provider coverage; controlled recovery scenarios do not prove every provider option |
 | Flight research — BUILD-03 | Dated FlightAware research, connection checks, reported gates and explicitly unverified spawn suggestions are implemented | Verified simulator stand mapping, private configuration evidence and import behavior |
 | Thrust — BUILD-05, VERIFY-01 | Labeled A20N/A21N/B38M estimates and condition-specific observed N1 calibration are implemented | Zero aircraft have verified support under the accepted definition; engine/build applicability and simulator evidence remain open |
-| Trip management and evaluation | Saved legs/briefings, approved revisions, recoverable revision validation, sanitized provider failure guidance, refresh differences, conversation inspection and versioned workflow evaluations are shipped | Broader conversation/recovery scenarios and durable progress/cancellation remain planned |
-| Expansion — EXPAND-01 | Versioned catalog and aircraft-batch tasks are defined in Linear | Freeze the current official catalog/engine matrix, establish reference cases and verify profiles before counting support |
+| Trip management and evaluation | Saved legs/briefings, approved revisions, recoverable validation/provider guidance and a matched 28-case whole-conversation MCP/recovery suite are shipped | Durable progress/cancellation and more dispatch/configuration inputs remain planned |
+| Expansion — EXPAND-01 | Official v26 matrix is frozen: 51 current aircraft, 11 legacy records and explicit engine/native-system/profile gaps | Establish references, resolve applicability and verify simulator profiles before counting support |
 
 ## Active release work
 
 | Version | Linear work | Outcome |
 | --- | --- | --- |
 | v0.4.3 — shipped | INT-402–406; [release evidence](evidence/v043-release.md) | Recoverable revision validation and provider failure guidance, planning reconciliation and measured evaluation baseline |
-| v0.4.4 | INT-407–411; [release task](https://linear.app/intelip/issue/INT-411) | Predictable existing conversations/routing, current catalog assessment and broader end-to-end scenarios |
+| v0.4.4 — shipped | INT-407–411; [release evidence](evidence/v044-release.md) | Predictable existing conversations/routing, current catalog assessment and broader end-to-end scenarios |
 | v0.4.5 | INT-412–415; [release task](https://linear.app/intelip/issue/INT-415) | Evidence-based compatibility corrections for existing estimate profiles on the v26 baseline |
 | v0.5.0 | INT-416–428; [release task](https://linear.app/intelip/issue/INT-428) | Durable trip control, expanded dispatch inputs, private-flight configurations and measured aircraft expansion |
 
@@ -37,6 +37,13 @@ The first implementation wave shipped through PR #21 and v0.4.3: INT-404 covers 
 validation, INT-405 provider failure handling, INT-403 workflow evaluations, INT-402 planning
 reconciliation and INT-406 release assembly. Isolated worker branches were integrated before
 CI, exact-image acceptance and promotion. The one-browser production limit is unchanged.
+
+The second wave shipped INT-407–411 through PR #22 and v0.4.4. It removes redundant
+settled-input confirmation, preserves exact per-leg approval, correlates retained routing,
+freezes the official v26 matrix and expands matched MCP evaluations to 28 cases. Controlled
+and actual-model candidate replay each passed 28/28; bounded exact-image acceptance and
+authenticated production health passed. [Release evidence](evidence/v044-release.md) owns
+measurements and limitations. Verified aircraft support remains zero; v0.4.5/v0.5 work is open.
 
 All mandatory deterministic workflow invariants must pass; model quality, stage latency,
 clarification and usage comparisons use the same versioned scenario baseline. Controlled

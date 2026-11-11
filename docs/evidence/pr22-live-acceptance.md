@@ -24,7 +24,7 @@ No settled-input clarification, route correction, extra go-ahead or Generate ret
 Both retained raw OFP routes match the recorded form readback. Distinct immutable
 snapshots and saved briefings remain available after the latest plan changed; both have
 takeoff performance. Navlog counts describe retained evidence, not navigation validity.
-The [database-derived acceptance record](live-acceptance.json) passes all BUILD-04
+The [database-derived acceptance record](https://github.com/IntelIP/InfiniteFlightAgent/blob/da5980f6000e5b80e5abd67e765fe688c74a12f7/docs/evidence/live-acceptance.json) passes all BUILD-04
 outcomes, including signed-in generation following approval wait/resume.
 
 Exactly two sessions completed without overlap, totaling 155.549 seconds. Each used
