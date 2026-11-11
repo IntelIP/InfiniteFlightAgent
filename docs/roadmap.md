@@ -14,7 +14,7 @@ The [backlog](backlog.md) indexes current capability and historical research;
 | v0.4.2 — shipped | Automatic routing, retained plans and bounded single-user browser workflows | [Deployment and acceptance](implementation/deployment.md#current-release-v042) |
 | v0.4.3 — shipped | Invalid revisions return useful validation; provider failures explain the cause; workflow evaluation has a versioned baseline | [Release evidence](evidence/v043-release.md); [INT-402–406](https://linear.app/intelip/issue/INT-406) |
 | v0.4.4 — shipped | Existing conversations and routing are predictable across broader scenarios; the v26 catalog/native-capability matrix is recorded | [Release evidence](evidence/v044-release.md); [INT-407–411](https://linear.app/intelip/issue/INT-411) |
-| v0.4.5 — planned | Current neo/MAX estimate paths have evidenced v26 compatibility corrections and honest profile outcomes | [INT-412–415](https://linear.app/intelip/issue/INT-415) |
+| v0.4.5 — in progress | Current neo/MAX estimate paths have evidenced v26 compatibility corrections and honest profile outcomes | [INT-412–415](https://linear.app/intelip/issue/INT-415) |
 | v0.5.0 — planned | Trips expose durable progress and safe cancellation/recovery, support more dispatch inputs and private configurations, and report measured aircraft expansion | [INT-416–428](https://linear.app/intelip/issue/INT-428) |
 
 For this sequence, v0.4.x repairs and verifies existing behavior; v0.5 adds trip-control and

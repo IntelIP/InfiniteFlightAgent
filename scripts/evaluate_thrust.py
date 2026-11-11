@@ -59,6 +59,8 @@ def run(module_file, manifest_file, reference_file):
         "suite": manifest["id"],
         "recorded_at": datetime.now(timezone.utc).isoformat(),
         "fixture_clock": manifest["clock_utc"],
+        "baseline_commit": manifest["baseline"],
+        "module_file": str(module_file),
         "worktree_commit": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
         ).strip(),
@@ -81,7 +83,10 @@ def upload(report):
     from ifdispatcher.config import setting
 
     client = Client(api_key=setting("LANGSMITH_API_KEY"))
-    name = "Infinite Flight thrust v045 " + report["inputs_sha256"]["thrust_cases_v045.json"][:12]
+    fixture_id = hashlib.sha256(
+        json.dumps(report["inputs_sha256"], sort_keys=True).encode()
+    ).hexdigest()
+    name = "Infinite Flight thrust v045 " + fixture_id[:12]
     dataset = (
         client.read_dataset(dataset_name=name)
         if client.has_dataset(dataset_name=name)
@@ -89,6 +94,14 @@ def upload(report):
     )
     examples = list(client.list_examples(dataset_id=dataset.id))
     by_id = {e.inputs["id"]: e for e in examples}
+    if examples and (
+        set(by_id) != {row["id"] for row in report["results"]}
+        or any(
+            by_id[row["id"]].inputs != {"id": row["id"], "input": row["input"]}
+            for row in report["results"]
+        )
+    ):
+        raise ValueError("LangSmith examples differ from the frozen numerical fixtures")
     for row in report["results"]:
         if row["id"] not in by_id:
             by_id[row["id"]] = client.create_example(
@@ -99,7 +112,7 @@ def upload(report):
         lambda inputs: rows[inputs["id"]],
         data=[by_id[row["id"]] for row in report["results"]],
         evaluators=[
-            lambda run, example: {
+            lambda run: {
                 "key": "software_case_passed",
                 "score": int(run.outputs["passed"]),
             }
