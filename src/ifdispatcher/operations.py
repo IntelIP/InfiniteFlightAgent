@@ -15,6 +15,7 @@ def calibrated_estimate(store, data, engine, estimate, reading, simulator_versio
         "aircraft": data["aircraft"],
         "airframe_id": data.get("airframe_id"),
         "configuration": data.get("configuration"),
+        "weight_units": data.get("weight_units"),
         "engine_override": engine,
         "conditions": (data.get("tlr") or {}).get("takeoff", {}).get("conditions"),
         "runway": data.get("selected_takeoff"),
@@ -32,18 +33,22 @@ def calibrated_estimate(store, data, engine, estimate, reading, simulator_versio
     elif reading is None and simulator_version:
         raw = store.read_setting(key)
         if raw:
-            candidate = json.loads(raw)
-            age = datetime.now(timezone.utc) - datetime.fromisoformat(candidate["observed_at"])
-            if timedelta(0) <= age <= timedelta(days=7):
-                record = candidate
-                estimate = thrust.estimate_takeoff_n1(
-                    data["aircraft"].get("icao_code"),
-                    data["aircraft"].get("engines"),
-                    scope["conditions"],
-                    scope["runway"],
-                    engine_override=engine,
-                    full_thrust_n1=candidate["full_thrust_n1"],
-                )
+            try:
+                candidate = json.loads(raw)
+                age = datetime.now(timezone.utc) - datetime.fromisoformat(candidate["observed_at"])
+                if candidate["scope"] == scope and timedelta(0) <= age <= timedelta(days=7):
+                    calibrated = thrust.estimate_takeoff_n1(
+                        data["aircraft"].get("icao_code"),
+                        data["aircraft"].get("engines"),
+                        scope["conditions"],
+                        scope["runway"],
+                        engine_override=engine,
+                        full_thrust_n1=candidate["full_thrust_n1"],
+                    )
+                    if calibrated["status"] == "estimated" and "target_n1" in calibrated["data"]:
+                        record, estimate = candidate, calibrated
+            except (ValueError, TypeError, KeyError):
+                pass  # Keep the uncalibrated result; request a new observed reading.
     return estimate, {
         "status": "saved"
         if reading is not None and record

@@ -63,7 +63,8 @@ def test_calibration_does_not_cross_weight_units(tmp_path):
 
 
 @pytest.mark.parametrize(
-    "corruption", ["bad-json", "bad-time", "naive-time", "wrong-scope", "bad-reading"]
+    "corruption",
+    ["bad-json", "bad-time", "naive-time", "wrong-scope", "bad-reading", "null-reading"],
 )
 def test_bad_saved_calibration_keeps_uncalibrated_briefing(tmp_path, corruption):
     store = Store(tmp_path)
@@ -80,6 +81,8 @@ def test_bad_saved_calibration_keeps_uncalibrated_briefing(tmp_path, corruption)
         record["scope"]["simulator_version"] = "25.0"
     elif corruption == "bad-reading":
         record["full_thrust_n1"] = "invalid N1"
+    elif corruption == "null-reading":
+        record["full_thrust_n1"] = None
     store.save_setting(key, "{broken" if corruption == "bad-json" else json.dumps(record))
     result, calibration = operations.calibrated_estimate(
         store, data, None, calculated(data), None, "26.5.2/build20344"
@@ -104,6 +107,7 @@ def test_unmodeled_engine_retains_ofp_but_withholds_saved_briefing_target(
             origin=raw["origin"]["icao_code"],
             destination=raw["destination"]["icao_code"],
             aircraft="B38M",
+            units="KGS",
             departure="2026-11-13T12:00:00Z",
             route="DCT",
         )
@@ -165,6 +169,7 @@ def test_saved_briefing_keeps_method_assumptions_and_sources(tmp_path, monkeypat
             origin=raw["origin"]["icao_code"],
             destination=raw["destination"]["icao_code"],
             aircraft="B38M",
+            units="KGS",
             departure="2026-11-13T12:00:00Z",
             route="DCT",
         )
