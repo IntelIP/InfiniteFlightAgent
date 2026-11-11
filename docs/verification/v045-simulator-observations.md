@@ -90,10 +90,12 @@ Flight process. No simulator observation is available through those access paths
 must identify another accessible device or provide actual observations. No app was installed,
 launched or configured by those checks.
 
-The configured ChatGPT model recheck at 2026-11-11T22:29:10Z still returned its Subscription
-Sharing usage limit. The existing access must become available before actual-model replay
-and the normal agent-based live acceptance can complete. No alternative billing route was used.
+The earlier model rechecks returned a Subscription Sharing usage limit. On November 11,
+Hudson increased the sharing cap from 10% to 100%; the configured GPT-6-Luna/low route
+responded successfully at 23:31 UTC. The existing credential and billing route were reused.
+The [resumed evaluation report](../evidence/v045-evaluations.md) records actual-model results.
 
-The requested new Browserbase/FlightAware allowance remains pending; the prior four-session
-allowance was used for v0.4.4. No new provider session/request is authorized by elapsed time
-or by this checklist. Production remains v0.4.4, and profile support remains 0/51 verified.
+Hudson separately approved four new sequential Browserbase sessions, capped at 180 seconds
+each and 720 seconds total, and eight necessary FlightAware requests across PR/release
+acceptance. This allowance does not authorize simulator observations or establish aircraft
+accuracy. Production remains v0.4.4, and profile support remains 0/51 verified.

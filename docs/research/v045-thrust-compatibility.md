@@ -105,11 +105,13 @@ they do not call a model or a flight provider. The candidate source is
 `170c4f1415613d8504c4f60d0937644847fcdd58`; later changes add assessment/runner reporting only.
 
 The unchanged 28-case conversation suite passes on both controlled baseline and candidate,
-using identical fixtures, clock and MCP transport. Actual-model baseline/candidate attempts
-for WF-001/003/006/025/026 were blocked by the existing ChatGPT Subscription Sharing usage
-limit before an agent conversation could execute. Their error recordings are retained;
-there is no successful actual-model result for this candidate and no quality comparison can
-be drawn from those attempts. No alternate model, API billing route or provider was selected.
+using identical fixtures, clock and MCP transport. Initial actual-model attempts were blocked
+by the ChatGPT Subscription Sharing limit. After Hudson increased the sharing cap from 10%
+to 100%, the configured GPT-6-Luna/low connection succeeded at 23:31 UTC on November 11.
+The [resumed evaluation report](../evidence/v045-evaluations.md) records the paired replay,
+including failed WF-025 observations and a separately frozen explicit revision-sequence
+supplement. It does not replace failed results with passing reruns. The existing model,
+credential and billing route were reused; no credit purchase or provider change was needed.
 
 ## Open acceptance and operating limits
 
@@ -121,11 +123,17 @@ be drawn from those attempts. No alternate model, API billing route or provider 
   found no connected Apple device, Infinite Flight Windows package or running process.
 - Each affected profile needs independent reference cases and an evidence-based numerical
   tolerance/envelope. A copied formula or a successful plan is insufficient.
-- Actual-model replay must be completed after the existing access quota resets.
-- No new Browserbase session or FlightAware API request has been made. The v0.4.4 allowance
-  was exhausted; a new allowance has been requested and is pending.
-- Required product validation is blocked because the integration changed since v0.4.4 live
-  acceptance. The existing release gate remains in place; no promotion is claimed.
+- Model access is restored and targeted paired actual-model replay has run. The original
+  WF-025 conversation/evaluation finding remains visible in the resumed report.
+- Hudson approved a fresh allowance of four sequential Browserbase sessions, each capped
+  at 180 seconds (720 seconds cumulative), and eight necessary FlightAware requests across
+  PR/release acceptance. The existing one-workflow/two-waiter/30-second queue and cleanup/
+  fencing controls remain unchanged. [PR live acceptance](../evidence/pr23-live-acceptance.md)
+  passed using two sessions and two requests; two sessions and six requests remain reserved
+  for exact release-image acceptance.
+- Fresh PR live evidence covers the changed integration and passes all four BUILD-04
+  outcomes. Exact-head product checks and the existing release/promotion gates remain
+  separate requirements; no production promotion is claimed.
 
 Verified aircraft support remains **0/51**. INT-412–414 remain open for profile/reference/
 simulator acceptance, and INT-415 remains open for exact-candidate live validation and release.

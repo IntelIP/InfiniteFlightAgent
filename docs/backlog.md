@@ -48,8 +48,12 @@ measurements and limitations. Verified aircraft support remains zero; v0.4.5/v0.
 v0.4.5 compatibility work is in progress on `codex/v045-compatibility`. The
 [candidate assessment](research/v045-thrust-compatibility.md) records reproduced engine,
 condition and calibration defects and their software corrections. Current simulator/profile
-accuracy remains unverified; reference/simulator access, model quota and fresh bounded live
-acceptance are explicit open dependencies. Production remains v0.4.4.
+accuracy remains unverified; reference/simulator access remains an open dependency. Model
+access is restored after the owner raised the Subscription Sharing cap, paired replay is
+recorded with its WF-025 limitations, and [PR live acceptance](evidence/pr23-live-acceptance.md)
+passed using two sessions and two FlightAware requests from the fresh allowance. The
+[resumed evaluation report](evidence/v045-evaluations.md) owns replay results. Production
+remains v0.4.4 pending exact release-image acceptance and approval.
 
 All mandatory deterministic workflow invariants must pass; model quality, stage latency,
 clarification and usage comparisons use the same versioned scenario baseline. Controlled

@@ -1,0 +1,142 @@
+{
+  "suite_id": "ifd-workflow-v045-revision-sequence-supplement",
+  "schema_version": 1,
+  "verifier_version": "ifd-workflow-oracles-v3",
+  "clock_utc": "2026-11-08T11:00:00Z",
+  "base_commit": "eef57bcaec856b1bd56bc9b1a1a2f992b67fb61f",
+  "fixture": {
+    "path": "docs/research/evidence/simbrief-b38m-parser-fixture.json",
+    "sha256": "c4c22b55a9db64ea533e57a229946fb88243f5480253ed5d96cb324a8dd0b3af",
+    "provenance_path": "docs/research/evidence/simbrief-b38m-parser-fixture-provenance.json",
+    "kind": "controlled-derived-partial-ofp",
+    "transformation": "run_workflow_replay.controlled_ofp v1: explicit case identity, clock, profile, fuel and feasibility fields; no live/simulator claim",
+    "provenance_sha256": "0e5b65dfa34596d605ccacf7eea2bd423ce7032337dc6bb5cac559d33c094c6d"
+  },
+  "airframe_fixture_kind": "synthetic-standard-profile-options; no custom account-profile claim",
+  "airframe_options": {
+    "A20N": [
+      {
+        "id": "A20N",
+        "name": "Controlled standard A20N"
+      }
+    ],
+    "B738": [
+      {
+        "id": "B738",
+        "name": "Controlled standard B738"
+      }
+    ],
+    "CL35": [
+      {
+        "id": "CL35",
+        "name": "Controlled standard CL35"
+      }
+    ]
+  },
+  "purpose": "Supplement the unchanged WF-025 fixture with explicit ordered generation intent after both applications interpreted its simultaneous revision list inconsistently. Original failures remain reported; this does not replace WF-025.",
+  "cases": [
+    {
+      "id": "WF-025-S1",
+      "scenario": "complete",
+      "legs": [
+        {
+          "trip": "WF-025-S1",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        },
+        {
+          "trip": "WF-025-S1",
+          "leg": "1",
+          "revision": 2,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 5,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "briefing_ready",
+      "max_clarifications": 0,
+      "prompt": "Execute these two explicitly ordered dispatch steps for the same leg. First prepare revision 1 with four passengers, obtain its exact dispatch approval, generate it once, finalize and retain its briefing. Only after revision 1 is saved, revise that same leg to revision 2 with five passengers, obtain a separate exact approval for that revision, generate it once, and retain both revisions and briefings. Both steps are requested now; do not collapse them into only the latest revision or ask me to repeat the revision request. Never bypass either approval. Exact inputs: [{\"trip\": \"WF-025-S1\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}, {\"trip\": \"WF-025-S1\", \"leg\": \"1\", \"revision\": 2, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 5, \"airframe_id\": \"A20N\"}]",
+      "restart": true,
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-025-S1",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-025-S1",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "finalize_dispatch",
+          "args": {
+            "trip": "WF-025-S1",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "revise_dispatch",
+          "args": {
+            "trip": "WF-025-S1",
+            "leg": "1",
+            "changes": {
+              "passengers": 5
+            },
+            "base_revision": 1
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-025-S1",
+            "leg": "1",
+            "revision": 2
+          }
+        },
+        {
+          "tool": "finalize_dispatch",
+          "args": {
+            "trip": "WF-025-S1",
+            "leg": "1",
+            "revision": 2
+          }
+        },
+        {
+          "text": "The saved briefing is ready; thrust remains a labeled estimate."
+        }
+      ]
+    }
+  ]
+}
