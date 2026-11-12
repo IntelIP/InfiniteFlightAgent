@@ -11,13 +11,14 @@ powerplant labels, SimBrief candidates, native-system documentation and explicit
 The published simulator baseline is 26.5.2 build 20344; no current-build simulator inspection
 was performed for this inventory. The dated launch research below remains historical.
 
-## v0.4.5 compatibility work
+## v0.4.5 compatibility corrections
 
-The [candidate compatibility assessment](research/v045-thrust-compatibility.md) records exact
+The [compatibility assessment](research/v045-thrust-compatibility.md) records exact
 engine matching, condition validation, calibration scope and retained-source corrections.
 Software checks and pinned simulation-source agreement are separate from aircraft verification.
-Independent profile references, current-build simulator observations and release acceptance
-remain open; this patch establishes no new aircraft support.
+The [release and exact-image acceptance](evidence/v045-release.md) are recorded. Independent
+profile references and current-build simulator observations remain open; this patch establishes
+no new aircraft support. INT-412–414 retain those verification requirements.
 
 ## Launch register
 

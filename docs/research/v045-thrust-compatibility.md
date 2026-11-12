@@ -1,10 +1,11 @@
-# v0.4.5 thrust compatibility candidate
+# v0.4.5 thrust compatibility assessment
 
 Assessment dated November 11, 2026. Tasks: [INT-412](https://linear.app/intelip/issue/INT-412),
 [INT-413](https://linear.app/intelip/issue/INT-413), [INT-414](https://linear.app/intelip/issue/INT-414),
 [INT-415](https://linear.app/intelip/issue/INT-415). Comparison application: v0.4.4 source
-`eef57bcaec856b1bd56bc9b1a1a2f992b67fb61f`. This is candidate evidence, not a release or
-simulator-support declaration. Production remains v0.4.4.
+`eef57bcaec856b1bd56bc9b1a1a2f992b67fb61f`. The software corrections shipped in
+[v0.4.5 on November 12 UTC](../evidence/v045-release.md). Candidate comparisons below
+retain their original identity and limitations; they do not establish simulator support.
 
 ## Corrections justified by observed software failures
 
@@ -129,12 +130,13 @@ credential and billing route were reused; no credit purchase or provider change 
   at 180 seconds (720 seconds cumulative), and eight necessary FlightAware requests across
   PR/release acceptance. The existing one-workflow/two-waiter/30-second queue and cleanup/
   fencing controls remain unchanged. [PR live acceptance](../evidence/pr23-live-acceptance.md)
-  passed using two sessions and two requests; two sessions and six requests remain reserved
-  for exact release-image acceptance.
-- Fresh PR live evidence covers the changed integration and passes all four BUILD-04
-  outcomes. Exact-head product checks and the existing release/promotion gates remain
-  separate requirements; no production promotion is claimed.
+  and exact release-image acceptance both passed, using all four sessions and four requests.
+  The [release report](../evidence/v045-release.md) records the closed browser allowance,
+  production/rollback identities, cleanup and the unavailable authenticated production check.
+- Product checks, release CI, the owner-authorized production gate, promotion and publication
+  passed. Production is observed at 100%; public health returned 401. Authenticated production
+  runtime health could not be rerun while the Realm browser host was disconnected.
 
 Verified aircraft support remains **0/51**. INT-412–414 remain open for profile/reference/
-simulator acceptance, and INT-415 remains open for exact-candidate live validation and release.
+simulator acceptance. INT-415 owns the completed software release and its recorded limitations.
 v0.5 aircraft expansion, presets and trip-control features remain outside this patch.

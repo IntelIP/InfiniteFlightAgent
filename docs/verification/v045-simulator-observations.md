@@ -98,4 +98,7 @@ The [resumed evaluation report](../evidence/v045-evaluations.md) records actual-
 Hudson separately approved four new sequential Browserbase sessions, capped at 180 seconds
 each and 720 seconds total, and eight necessary FlightAware requests across PR/release
 acceptance. This allowance does not authorize simulator observations or establish aircraft
-accuracy. Production remains v0.4.4, and profile support remains 0/51 verified.
+accuracy. That browser batch completed across PR/release acceptance; it authorizes no further
+session. [v0.4.5 is deployed](../evidence/v045-release.md), with the authenticated production
+health check unavailable while the Realm host was disconnected. Profile support remains
+0/51 verified, and INT-412–414 remain open for the observations described here.

@@ -1,6 +1,44 @@
 # Cloudflare deployment
 
-## Current release: v0.4.4
+<a id="current-release-v045"></a>
+
+## Current release: v0.4.5
+
+Observed November 12, 2026 UTC (November 11 in New York): [PR #23](https://github.com/IntelIP/InfiniteFlightAgent/pull/23)
+is merged and [v0.4.5](https://github.com/IntelIP/InfiniteFlightAgent/releases/tag/v0.4.5)
+is deployed to production at 100% traffic. The [Release workflow](https://github.com/IntelIP/InfiniteFlightAgent/actions/runs/43126314847)
+passed exact-source CI, image upload, the owner-authorized production gate, promotion,
+trigger deployment and release publication. The exact uploaded image passed staged acceptance
+and final product validation before the production environment was approved.
+
+- Release/merge source: `f434f85bd63cfd92d0ab136668a91895d6ba4d9f`.
+- Production Worker: `c569ec9f-ca03-48ee-a0fe-6aab246ed23e`.
+- Immutable image: `sha256:3554b740b1ac4cc28d635fc5dd91f80e9aa6db7e7de9461d12b81207dfe6fab8`.
+- Rollback Worker: `74da7217-f7bf-45b0-b3b4-a0115c335b9d` (v0.4.4).
+
+The [release report](../evidence/v045-release.md) owns exact-image acceptance, source/image
+identity, usage, cleanup, replay limitations and rollback details. The
+[database-derived record](../evidence/live-acceptance.json) passes all four BUILD-04 outcomes.
+Final product validation passed: 458 tests, Ruff and dead-code checks; three Postgres-only
+tests were skipped. Controlled and actual-model evaluations remain distinct; the original
+WF-025 failures and the separate explicit sequence supplement are retained in the
+[evaluation report](../evidence/v045-evaluations.md).
+
+Post-promotion deployment metadata shows 100%, the tag resolves to the release source, and
+public production health returns 401 without authentication. An authenticated production
+health rerun was unavailable because Realm's browser host was disconnected. Authenticated
+health and the two-leg trip were verified on the exact release image at isolated staging;
+those observations are not represented as a successful authenticated production request.
+
+All four authorized Browserbase sessions across PR/release acceptance completed sequentially
+in 223.875 seconds total, with four FlightAware requests and zero active browsers afterward.
+Temporary staging resources were removed. Estimates retain SUSPECT warnings; simulator
+import, aircraft accuracy and independent profile references remain unverified. Verified
+aircraft support is 0/51; INT-412–414 remain open.
+
+<a id="current-release-v044"></a>
+
+## Previous release: v0.4.4
 
 Observed November 11, 2026 UTC (November 10 in New York): [PR #22](https://github.com/IntelIP/InfiniteFlightAgent/pull/22)
 is merged and [v0.4.4](https://github.com/IntelIP/InfiniteFlightAgent/releases/tag/v0.4.4)
@@ -15,8 +53,8 @@ trigger deployment and release publication.
 
 The exact uploaded image passed a two-leg A20N trip on isolated staging before promotion.
 The [release report](../evidence/v044-release.md) records source/image identity, paired
-LangSmith evaluations, usage, limitations and cleanup. The
-[database-derived record](../evidence/live-acceptance.json) passes all BUILD-04 outcomes.
+LangSmith evaluations, usage, limitations and cleanup. Its
+[database-derived record](https://github.com/IntelIP/InfiniteFlightAgent/blob/6da9eb3c90debec9f165044e21f6357cccc59c5b/docs/evidence/live-acceptance.json) passes all BUILD-04 outcomes.
 Final local product validation passed: 401 tests, Ruff and dead-code checks; three
 Postgres-only tests were skipped. Controlled and actual-model replay each passed all
 28 cases; the original eight definitions are preserved.
