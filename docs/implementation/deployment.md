@@ -1,8 +1,35 @@
 # Cloudflare deployment
 
+<a id="current-release-v046"></a>
+
+## Current release: v0.4.6
+
+Observed November 12, 2026 UTC: [PR #24](https://github.com/IntelIP/InfiniteFlightAgent/pull/24)
+is merged and [v0.4.6](https://github.com/IntelIP/InfiniteFlightAgent/releases/tag/v0.4.6)
+is deployed at 100%. The [Release workflow](https://github.com/IntelIP/InfiniteFlightAgent/actions/runs/43258004984)
+passed exact-source CI, upload, owner-authorized production approval, promotion, trigger
+deployment and release publication. The exact uploaded image passed the two-leg acceptance
+and final product validator before promotion.
+
+- Release source: `3c257da34faf637a4c8c70cb2e3799cb54e11347`.
+- PR merge: `85b7f1f911c1830f1a55e4aba25abea381f4fbb7`.
+- Production Worker: `2226a90f-baba-4123-9022-d1ac8e137890`.
+- Immutable image: `sha256:c75bb04e64b4118caec27a623663da1e68c3e32871ddb79371de4a92c859455d`.
+- Rollback Worker: `c569ec9f-ca03-48ee-a0fe-6aab246ed23e` (v0.4.5).
+
+The [release report](../evidence/v046-release.md) owns identities, exact-image evidence,
+production verification, usage, cleanup and limitations. All four
+[database-derived BUILD-04 outcomes](../evidence/live-acceptance.json) pass for this release
+integration; product validation passed 458 tests, Ruff and dead-code checks with three
+Postgres-only skips. Two sequential browser sessions used 151.080 telemetry seconds and two
+FlightAware requests; zero active browsers remained. Temporary acceptance resources were
+removed. Verified aircraft support remains 0/51, and INT-412–414 remain open.
+
+Authenticated production health is pending completion of the renewed Access sign-in.
+
 <a id="current-release-v045"></a>
 
-## Current release: v0.4.5
+## Previous release: v0.4.5
 
 Observed November 12, 2026 UTC (November 11 in New York): [PR #23](https://github.com/IntelIP/InfiniteFlightAgent/pull/23)
 is merged and [v0.4.5](https://github.com/IntelIP/InfiniteFlightAgent/releases/tag/v0.4.5)

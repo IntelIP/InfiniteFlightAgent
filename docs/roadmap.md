@@ -1,7 +1,7 @@
 # Roadmap
 
-Status updated November 12, 2026 UTC (November 11 in New York). Production is **v0.4.5**; its
-[deployment and exact-image acceptance record](implementation/deployment.md#current-release-v045)
+Status updated November 12, 2026 UTC. Production is **v0.4.6**; its
+[deployment and exact-image acceptance record](implementation/deployment.md#current-release-v046)
 own the observed release facts. New release work is tracked in the
 [Infinite Flight Agent Linear project](https://linear.app/intelip/project/infinite-flight-agent-a2f7101e32e9).
 The [backlog](backlog.md) indexes current capability and historical research;
@@ -15,6 +15,7 @@ The [backlog](backlog.md) indexes current capability and historical research;
 | v0.4.3 — shipped | Invalid revisions return useful validation; provider failures explain the cause; workflow evaluation has a versioned baseline | [Release evidence](evidence/v043-release.md); [INT-402–406](https://linear.app/intelip/issue/INT-406) |
 | v0.4.4 — shipped | Existing conversations and routing are predictable across broader scenarios; the v26 catalog/native-capability matrix is recorded | [Release evidence](evidence/v044-release.md); [INT-407–411](https://linear.app/intelip/issue/INT-411) |
 | v0.4.5 — shipped | Existing neo/MAX estimate paths enforce exact engine/condition identity, safe calibration reuse and retained disclosures; profile accuracy remains unverified | [Release evidence](evidence/v045-release.md); INT-415 release, INT-412–414 verification open |
+| v0.4.6 — shipped | Numbered revisions finish generation and finalization in order while retaining previous OFPs/briefings and exact approvals | [Release evidence](evidence/v046-release.md); [PR #24](https://github.com/IntelIP/InfiniteFlightAgent/pull/24) |
 | v0.5.0 — planned | Trips expose durable progress and safe cancellation/recovery, support more dispatch inputs and private configurations, and report measured aircraft expansion | [INT-416–428](https://linear.app/intelip/issue/INT-428) |
 
 For this sequence, v0.4.x repairs and verifies existing behavior; v0.5 adds trip-control and

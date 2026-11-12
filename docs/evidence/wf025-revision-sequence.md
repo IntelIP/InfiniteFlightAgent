@@ -1,10 +1,11 @@
 # WF-025 revision sequence correction
 
-Observed November 12, 2026 UTC. This **unreleased correction** is committed as
+Observed November 12, 2026 UTC. This correction shipped in [v0.4.6](v046-release.md) through
+[PR #24](https://github.com/IntelIP/InfiniteFlightAgent/pull/24). The original fix was committed as
 `c5deeee3aa8ba2582cf67926f91568cc4ca93510` on `codex/wf025-revision-sequence`, based on
 `b2e4fbf9f815da1c716fd4d4618f69e6c7f58ed2`.
-Production remains v0.4.5. The [original release observations](v045-evaluations.md) remain
-unchanged; the explicit WF-025-S1 supplement is not used to score this fix.
+The following pre-release observations retain their original source/image identities. The
+[original release observations](v045-evaluations.md) remain unchanged; the explicit WF-025-S1 supplement is not used to score this fix.
 
 ## Original scenario and cause
 
@@ -112,8 +113,9 @@ recovery above belongs to actual-model replay.
 The temporary Worker/cron, container application, registry/local image, SSH tunnel/keys and
 tail watcher were removed. Test snapshots/briefings and private evidence are retained.
 Production remained at 100% on v0.4.5 Worker `c569ec9f-ca03-48ee-a0fe-6aab246ed23e`;
-The code was uncommitted at acceptance time; its unchanged integration bytes are now bound
-to the commit above. The correction has not been published or promoted.
+the code was uncommitted at acceptance time; its unchanged integration bytes are now bound
+to the commit above. The correction had not been promoted at that acceptance time;
+release evidence is linked above.
 
 ## Two-distinct-leg live acceptance
 
@@ -165,7 +167,7 @@ counter increased from 80 to 82 browser minutes. Invoice/credit costs remain unk
 All three LangSmith roots ended without errors; the
 [final turn](https://smith.langchain.com/o/90b24546-f3e2-4f48-af72-b06e73b27b49/projects/p/1314924f-9909-482f-aeae-5d78ab59b99c/r/1ecc4238-bc60-4d2b-8c76-d0825b216384)
 reported `briefing_ready`. The temporary Worker/cron, container application, registry/local
-image, SSH tunnel/keys and tail watcher were removed. Production remains on the unchanged
+image, SSH tunnel/keys and tail watcher were removed. Production remained on the unchanged
 v0.4.5 Worker `c569ec9f-ca03-48ee-a0fe-6aab246ed23e` at 100%.
 
 ## Checks and release boundary
@@ -173,7 +175,7 @@ v0.4.5 Worker `c569ec9f-ca03-48ee-a0fe-6aab246ed23e` at 100%.
 Local validation passed **458 tests**, including all 28 controlled MCP scenarios and the
 original eight regressions, with three Postgres-only skips. Ruff and dead-code checks passed.
 All required BUILD-04 live outcomes pass for this unchanged candidate, in addition to the
-focused revision test. The [canonical acceptance record](live-acceptance.json) now binds the
+focused revision test. The [original source-bound acceptance record](https://github.com/IntelIP/InfiniteFlightAgent/blob/ddd03f6cff915ad2f099441ed90287195e7b606d/docs/evidence/live-acceptance.json) now binds the
 two-leg service records to `c5deeee3aa8ba2582cf67926f91568cc4ca93510` and Worker version
 `689f5882-bc64-49cf-9ab5-eeaee9582942`, using the existing recorder without changing its
 guard or oracle. Its integration digest is
@@ -181,8 +183,9 @@ guard or oracle. Its integration digest is
 retained working-tree/image identity from both live tests. The commit was created after
 those tests from the same integration bytes; this is a source binding, not a new deployment.
 Recording it read the retained database rows and made no Browserbase or FlightAware calls.
-No further live flight run is needed for these unchanged integration bytes. Publication and
-production promotion remain separate steps.
+No further live flight run was needed for those unchanged integration bytes. Subsequent
+version preparation changed the integration fingerprint; the [v0.4.6 report](v046-release.md)
+records the exact release-image acceptance and production promotion separately.
 
 Replay used **zero Browserbase sessions and zero FlightAware requests**, isolated temporary
 stores and no production plan writes. Its observations remain separate from the live test.

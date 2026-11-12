@@ -1,6 +1,6 @@
 # Backlog
 
-Status updated November 12, 2026 UTC (November 11 in New York). Current release work is tracked in the
+Status updated November 12, 2026 UTC. Current release work is tracked in the
 [Infinite Flight Agent Linear project](https://linear.app/intelip/project/infinite-flight-agent-a2f7101e32e9).
 This file indexes that work and preserves earlier research. [goal.md](goal.md) owns the
 accepted product requirements and aircraft-support definition; the
@@ -10,7 +10,7 @@ the current implementation and evidence summarized here supersede those dated bl
 
 ## Current delivery baseline
 
-Production is [v0.4.5](implementation/deployment.md#current-release-v045). The exact release
+Production is [v0.4.6](implementation/deployment.md#current-release-v046). The exact release
 image passed a deployed two-leg staging trip before promotion. The production rollout,
 transport limitations, provider usage and cleanup are recorded in the deployment runbook.
 This proves the exercised dispatch integration, not simulator import or aircraft accuracy.
@@ -31,6 +31,7 @@ This proves the exercised dispatch integration, not simulator import or aircraft
 | v0.4.3 — shipped | INT-402–406; [release evidence](evidence/v043-release.md) | Recoverable revision validation and provider failure guidance, planning reconciliation and measured evaluation baseline |
 | v0.4.4 — shipped | INT-407–411; [release evidence](evidence/v044-release.md) | Predictable existing conversations/routing, current catalog assessment and broader end-to-end scenarios |
 | v0.4.5 — shipped | [INT-415](https://linear.app/intelip/issue/INT-415); INT-412–414 verification remains open | Existing-profile software corrections shipped; independent reference/simulator applicability remains unverified |
+| v0.4.6 — shipped | [PR #24](https://github.com/IntelIP/InfiniteFlightAgent/pull/24); [release evidence](evidence/v046-release.md) | Ordered revisions complete generation/finalization with retained earlier results and exact approvals |
 | v0.5.0 | INT-416–428; [release task](https://linear.app/intelip/issue/INT-428) | Durable trip control, expanded dispatch inputs, private-flight configurations and measured aircraft expansion |
 
 The first implementation wave shipped through PR #21 and v0.4.3: INT-404 covers revision
@@ -56,13 +57,13 @@ Independent profile references and simulator observations remain required under 
 An authenticated production-health rerun was unavailable because the Realm browser host
 was disconnected; deployment at 100% and public HTTP 401 were observed separately.
 
-Unreleased follow-up: the [WF-025 revision-sequence correction](evidence/wf025-revision-sequence.md)
-passes the original actual-model MCP scenario, a bounded live revision test and the
-two-distinct-leg test on the same immutable candidate image. All four BUILD-04 live outcomes
-pass using the existing database-derived checks; local regression checks pass. The frozen
-replay prompt/verifier are unchanged. The fix is committed as
-`c5deeee3aa8ba2582cf67926f91568cc4ca93510`; the canonical acceptance record binds the
-retained live results to that unchanged integration. It remains unreleased.
+v0.4.6 ships the [WF-025 revision-sequence correction](evidence/wf025-revision-sequence.md)
+through PR #24. The original actual-model MCP scenario, bounded same-leg revision acceptance
+and two-distinct-leg candidate tests pass without changing the frozen replay prompt/verifier.
+The exact v0.4.6 release image passed a new two-leg trip and all four BUILD-04 outcomes before
+promotion. Product checks pass; the [release report](evidence/v046-release.md) records source,
+image, production/rollback identities, usage and cleanup. Existing aircraft-verification
+and v0.5 task scope remain unchanged.
 
 All mandatory deterministic workflow invariants must pass; model quality, stage latency,
 clarification and usage comparisons use the same versioned scenario baseline. Controlled
