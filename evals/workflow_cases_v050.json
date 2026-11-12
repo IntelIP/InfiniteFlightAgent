@@ -1,0 +1,614 @@
+{
+  "suite_id": "ifd-workflow-v050-trip-control",
+  "schema_version": 1,
+  "verifier_version": "ifd-workflow-oracles-v4",
+  "clock_utc": "2026-11-08T11:00:00Z",
+  "base_commit": "0cbbe49d53944947824e18941782dcd5edb930f1",
+  "fixture": {
+    "path": "docs/research/evidence/simbrief-b38m-parser-fixture.json",
+    "sha256": "c4c22b55a9db64ea533e57a229946fb88243f5480253ed5d96cb324a8dd0b3af",
+    "provenance_path": "docs/research/evidence/simbrief-b38m-parser-fixture-provenance.json",
+    "kind": "controlled-derived-partial-ofp",
+    "transformation": "run_workflow_replay.controlled_ofp v1: explicit case identity, clock, profile, fuel and feasibility fields; no live/simulator claim",
+    "provenance_sha256": "0e5b65dfa34596d605ccacf7eea2bd423ce7032337dc6bb5cac559d33c094c6d"
+  },
+  "airframe_fixture_kind": "synthetic-standard-profile-options; no custom account-profile claim",
+  "airframe_options": {
+    "A20N": [
+      {
+        "id": "A20N",
+        "name": "Controlled standard A20N"
+      }
+    ],
+    "B738": [
+      {
+        "id": "B738",
+        "name": "Controlled standard B738"
+      }
+    ],
+    "CL35": [
+      {
+        "id": "CL35",
+        "name": "Controlled standard CL35"
+      }
+    ]
+  },
+  "purpose": "INT-416/417 trip progress, cancellation and deadline scenarios over the production MCP tools with controlled providers. Separate suite; the v0.4.4 manifest and v0.4.5 supplement are unchanged.",
+  "cases": [
+    {
+      "id": "WF-029",
+      "scenario": "trip_control",
+      "legs": [
+        {
+          "trip": "WF-029",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "no_dispatch": true,
+      "expected_outcome": "cancelled",
+      "max_clarifications": 0,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain each briefing. [{\"trip\": \"WF-029\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]",
+      "control": {
+        "cancel_at": "approval",
+        "approval_index": 0
+      },
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-029",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "text": "Cancelled before dispatch."
+        }
+      ],
+      "mcp_assertions": [
+        {
+          "id": "cancel_withdrew_pending_approval",
+          "tool": "cancel_trip",
+          "path": [
+            "withdrawn_approval",
+            "inputs",
+            "leg"
+          ],
+          "equals": "1"
+        },
+        {
+          "id": "cancelled_approval_cannot_be_approved",
+          "tool": "approve_dispatch",
+          "path": [
+            "status"
+          ],
+          "equals": "cancelled"
+        },
+        {
+          "id": "progress_reports_cancelled_approval",
+          "tool": "trip_progress",
+          "path": [
+            "approval",
+            "pending",
+            "status"
+          ],
+          "equals": "cancelled"
+        },
+        {
+          "id": "progress_reports_cancelled_turn",
+          "tool": "trip_progress",
+          "path": [
+            "turn",
+            "status"
+          ],
+          "equals": "cancelled"
+        },
+        {
+          "id": "no_completed_legs",
+          "tool": "trip_progress",
+          "path": [
+            "completed_legs"
+          ],
+          "equals": []
+        }
+      ]
+    },
+    {
+      "id": "WF-030",
+      "scenario": "trip_control",
+      "legs": [
+        {
+          "trip": "WF-030",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "cancelled",
+      "max_clarifications": 0,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain each briefing. After the first briefing I may stop the trip. [{\"trip\": \"WF-030\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}, {\"trip\": \"WF-030\", \"leg\": \"2\", \"revision\": 1, \"origin\": \"KEWR\", \"destination\": \"KBOS\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T16:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]",
+      "restart": true,
+      "recovered_status": "approval_cancelled",
+      "control": {
+        "cancel_at": "approval",
+        "approval_index": 1
+      },
+      "expected_clicks": 1,
+      "expected_snapshots": 1,
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-030",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-030",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "finalize_dispatch",
+          "args": {
+            "trip": "WF-030",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-030",
+            "leg": "2",
+            "revision": 1,
+            "origin": "KEWR",
+            "destination": "KBOS",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T16:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "text": "Leg 2 was cancelled; leg 1 briefing is kept."
+        }
+      ],
+      "mcp_assertions": [
+        {
+          "id": "cancel_withdrew_leg2_approval",
+          "tool": "cancel_trip",
+          "path": [
+            "withdrawn_approval",
+            "inputs",
+            "leg"
+          ],
+          "equals": "2"
+        },
+        {
+          "id": "cancel_keeps_completed_leg",
+          "tool": "cancel_trip",
+          "path": [
+            "progress",
+            "completed_legs",
+            0,
+            "stage"
+          ],
+          "equals": "briefing_ready"
+        },
+        {
+          "id": "cancelled_approval_cannot_be_approved",
+          "tool": "approve_dispatch",
+          "path": [
+            "status"
+          ],
+          "equals": "cancelled"
+        },
+        {
+          "id": "progress_after_restart_keeps_leg1",
+          "tool": "trip_progress",
+          "path": [
+            "completed_legs",
+            0
+          ],
+          "equals": {
+            "trip": "WF-030",
+            "leg": "1",
+            "revision": 1,
+            "stage": "briefing_ready"
+          }
+        },
+        {
+          "id": "progress_after_restart_turn_cancelled",
+          "tool": "trip_progress",
+          "path": [
+            "turn",
+            "status"
+          ],
+          "equals": "cancelled"
+        },
+        {
+          "id": "no_withdrawn_completed_revision",
+          "tool": "cancel_trip",
+          "path": [
+            "withdrawn_revisions"
+          ],
+          "equals": []
+        }
+      ]
+    },
+    {
+      "id": "WF-031",
+      "scenario": "trip_control",
+      "legs": [
+        {
+          "trip": "WF-031",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "cancelled",
+      "max_clarifications": 1,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain each briefing. [{\"trip\": \"WF-031\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]",
+      "control": {
+        "cancel_at": "pre_click"
+      },
+      "followups": [
+        "Continue with the same revision now."
+      ],
+      "expected_clicks": 0,
+      "expected_snapshots": 0,
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-031",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-031",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-031",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "text": "That revision was cancelled before Generate. A new approved revision is needed to continue."
+        }
+      ],
+      "tool_assertions": [
+        {
+          "id": "cancelled_revision_not_regenerated",
+          "tool": "generate_in_simbrief",
+          "path": [
+            "status"
+          ],
+          "equals": "cancelled"
+        }
+      ],
+      "mcp_assertions": [
+        {
+          "id": "turn_stopped_by_cancel",
+          "tool": "approve_dispatch",
+          "path": [
+            "status"
+          ],
+          "equals": "cancelled"
+        },
+        {
+          "id": "cancel_reported_no_running_turn_left",
+          "tool": "cancel_trip",
+          "path": [
+            "status"
+          ],
+          "equals": "cancelled"
+        },
+        {
+          "id": "progress_leg_cancelled",
+          "tool": "trip_progress",
+          "path": [
+            "trips",
+            0,
+            "legs",
+            0,
+            "stage"
+          ],
+          "equals": "cancelled"
+        },
+        {
+          "id": "progress_no_click",
+          "tool": "trip_progress",
+          "path": [
+            "trips",
+            0,
+            "legs",
+            0,
+            "generation",
+            "clicked"
+          ],
+          "equals": false
+        }
+      ]
+    },
+    {
+      "id": "WF-032",
+      "scenario": "trip_control",
+      "legs": [
+        {
+          "trip": "WF-032",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "cancelled",
+      "max_clarifications": 0,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain each briefing. [{\"trip\": \"WF-032\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]",
+      "control": {
+        "cancel_at": "post_click"
+      },
+      "provider_failure": "timeout_after_click",
+      "expected_clicks": 1,
+      "expected_snapshots": 0,
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-032",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-032",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-032",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "text": "unreachable after cancellation"
+        }
+      ],
+      "tool_assertions": [
+        {
+          "id": "uncertain_generation_reported",
+          "tool": "generate_in_simbrief",
+          "path": [
+            "status"
+          ],
+          "equals": "uncertain"
+        }
+      ],
+      "mcp_assertions": [
+        {
+          "id": "turn_stopped_by_cancel",
+          "tool": "approve_dispatch",
+          "path": [
+            "status"
+          ],
+          "equals": "cancelled"
+        },
+        {
+          "id": "progress_reports_uncertain",
+          "tool": "trip_progress",
+          "path": [
+            "uncertain_generations",
+            0,
+            "stage"
+          ],
+          "equals": "generation_uncertain"
+        },
+        {
+          "id": "uncertain_revision_not_withdrawn",
+          "tool": "cancel_trip",
+          "path": [
+            "withdrawn_revisions"
+          ],
+          "equals": []
+        },
+        {
+          "id": "progress_click_recorded",
+          "tool": "trip_progress",
+          "path": [
+            "trips",
+            0,
+            "legs",
+            0,
+            "generation",
+            "clicked"
+          ],
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "WF-033",
+      "scenario": "trip_control",
+      "legs": [
+        {
+          "trip": "WF-033",
+          "leg": "1",
+          "revision": 1,
+          "origin": "KIAD",
+          "destination": "KEWR",
+          "sim_aircraft": "A20N",
+          "departure_local_date": "2026-11-08",
+          "departure_utc": "2026-11-08T12:00:00Z",
+          "private_callsign": "N320HD",
+          "units": "KGS",
+          "passengers": 4,
+          "airframe_id": "A20N"
+        }
+      ],
+      "expected_outcome": "cancelled",
+      "max_clarifications": 0,
+      "prompt": "Prepare this exact private itinerary. Use the approval prompt for my decision, then generate and retain each briefing. [{\"trip\": \"WF-033\", \"leg\": \"1\", \"revision\": 1, \"origin\": \"KIAD\", \"destination\": \"KEWR\", \"sim_aircraft\": \"A20N\", \"departure_local_date\": \"2026-11-08\", \"departure_utc\": \"2026-11-08T12:00:00Z\", \"private_callsign\": \"N320HD\", \"units\": \"KGS\", \"passengers\": 4, \"airframe_id\": \"A20N\"}]",
+      "control": {
+        "cancel_at": "deadline_pre_click",
+        "deadline_seconds": 2
+      },
+      "expected_clicks": 0,
+      "expected_snapshots": 0,
+      "script": [
+        {
+          "tool": "dispatch_flight",
+          "args": {
+            "trip": "WF-033",
+            "leg": "1",
+            "revision": 1,
+            "origin": "KIAD",
+            "destination": "KEWR",
+            "sim_aircraft": "A20N",
+            "departure_local_date": "2026-11-08",
+            "departure_utc": "2026-11-08T12:00:00Z",
+            "private_callsign": "N320HD",
+            "units": "KGS",
+            "passengers": 4,
+            "airframe_id": "A20N"
+          }
+        },
+        {
+          "tool": "generate_in_simbrief",
+          "args": {
+            "trip": "WF-033",
+            "leg": "1",
+            "revision": 1
+          }
+        },
+        {
+          "text": "unreachable after the deadline"
+        }
+      ],
+      "mcp_assertions": [
+        {
+          "id": "deadline_stops_turn",
+          "tool": "approve_dispatch",
+          "path": [
+            "reason"
+          ],
+          "equals": "deadline_exceeded"
+        },
+        {
+          "id": "progress_turn_deadline",
+          "tool": "trip_progress",
+          "path": [
+            "turn",
+            "status"
+          ],
+          "equals": "deadline_exceeded"
+        },
+        {
+          "id": "progress_leg_cancelled",
+          "tool": "trip_progress",
+          "path": [
+            "trips",
+            0,
+            "legs",
+            0,
+            "stage"
+          ],
+          "equals": "cancelled"
+        }
+      ]
+    }
+  ]
+}

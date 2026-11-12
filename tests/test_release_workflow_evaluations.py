@@ -23,7 +23,19 @@ def release_manifest():
 
 @pytest.fixture(scope="module")
 def mcp_batch(tmp_path_factory):
-    directory = tmp_path_factory.mktemp("release-mcp")
+    return run_mcp_batch(
+        tmp_path_factory.mktemp("release-mcp"), ROOT / "evals/workflow_cases_v044.json"
+    )
+
+
+@pytest.fixture(scope="module")
+def trip_control_batch(tmp_path_factory):
+    return run_mcp_batch(
+        tmp_path_factory.mktemp("trip-control-mcp"), ROOT / "evals/workflow_cases_v050.json"
+    )
+
+
+def run_mcp_batch(directory, manifest):
     production = directory / "production"
     production.mkdir()
     marker = production / "do-not-change"
@@ -68,7 +80,7 @@ def mcp_batch(tmp_path_factory):
             str(ROOT / "evals/run_workflow_replay.py"),
             "run",
             "--manifest",
-            str(ROOT / "evals/workflow_cases_v044.json"),
+            str(manifest),
             "--mcp",
             "--output",
             str(output),
@@ -112,6 +124,29 @@ def test_release_matrix_preserves_original_cases_and_completes_over_mcp(
     revised = runs["WF-025"]["state"]
     assert {row["request"]["revision"] for row in revised} == {1, 2}
     assert all(row["snapshot"] and row["meta"]["briefing"] for row in revised)
+
+
+def test_trip_control_suite_over_mcp(trip_control_batch):
+    """INT-416/417 scenarios: cancel at approval/before/after the click, deadline, restart."""
+    manifest = load_manifest(ROOT / "evals/workflow_cases_v050.json")
+    assert trip_control_batch["case_ids"] == [c["id"] for c in manifest["cases"]]
+    runs = {row["case_id"]: row for row in trip_control_batch["results"]}
+    for row in runs.values():
+        assert row["passed"] and not row["invalid"], (row["case_id"], row["constraint_failures"])
+        assert row["metrics"]["transport"] == "mcp-http"
+        assert row["metrics"]["flightaware_requests"] == 0
+        assert row["metrics"]["browserbase_sessions"] == 0
+        assert row["cancelled"] is True
+    # Completed work survives cancellation; uncertain generation is reported, never repeated.
+    assert runs["WF-030"]["state"][0]["meta"]["briefing"].startswith("**SPAWN:**")
+    assert len(runs["WF-032"]["provider_attempts"]) == 1
+    assert runs["WF-031"]["clicks"] == [] and runs["WF-033"]["clicks"] == []
+
+
+def test_trip_control_cases_are_invalid_without_mcp():
+    manifest = load_manifest(ROOT / "evals/workflow_cases_v050.json")
+    run = run_case(manifest["cases"][0], manifest)
+    assert run["invalid"] and "requires --mcp" in run["invalid_reasons"][0]
 
 
 @pytest.mark.parametrize(

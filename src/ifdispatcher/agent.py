@@ -30,6 +30,7 @@ from ifdispatcher import flights, operations, thrust, workflow
 from ifdispatcher.config import data_dir, export_tracing_settings, setting
 from ifdispatcher.siwc import chatgpt_model
 from ifdispatcher.browser_middleware import BrowserBudgetMiddleware
+from ifdispatcher.progress import TurnControlMiddleware
 from ifdispatcher.browser_budget import BrowserLimit
 
 INSTRUCTIONS = (Path(__file__).resolve().parents[2] / "instructions.md").read_text()
@@ -578,7 +579,11 @@ def build_agent(model=None, checkpointer=None):
         tools=TOOLS,
         system_prompt=INSTRUCTIONS,
         interrupt_on=INTERRUPT_ON,
-        middleware=[DispatchApproval(interrupt_on=INTERRUPT_ON), BrowserBudgetMiddleware()],
+        middleware=[
+            TurnControlMiddleware(),
+            DispatchApproval(interrupt_on=INTERRUPT_ON),
+            BrowserBudgetMiddleware(),
+        ],
         checkpointer=checkpointer,
         name="infinite-flight-dispatcher",
     )

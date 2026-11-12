@@ -53,3 +53,5 @@ def no_internet(monkeypatch, tmp_path_factory):
     monkeypatch.setattr(httpx.HTTPTransport, "handle_request", handle)
     monkeypatch.setattr(httpx.AsyncHTTPTransport, "handle_async_request", handle_async)
     monkeypatch.setenv("IFD_AIRPORT_CACHE_DIR", str(tmp_path_factory.mktemp("airports")))
+    # Turn progress and other Store writes never land in the checkout's data directory.
+    monkeypatch.setenv("IFD_DATA_DIR", str(tmp_path_factory.mktemp("data")))
