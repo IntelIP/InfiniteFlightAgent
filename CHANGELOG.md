@@ -11,6 +11,24 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-11-11
+
+### Fixed
+
+- Require an exact modeled engine identity and recognized thrust mode; unresolved rating
+  suffixes no longer silently reuse another engine's estimate.
+- Reject missing/unknown bleed and anti-ice settings, boolean numerical inputs and
+  temperatures outside the model's computational bounds instead of assuming defaults or crashing.
+- Scope saved N1 readings by weight units, ignore invalid/stale/mismatched calibration
+  records, and keep the uncalibrated briefing available when a new reading is needed.
+- Retain thrust method, assumptions and source anchors in saved briefings.
+
+### Added
+
+- Frozen profile/condition contracts and independently executed pinned FlyByWire source
+  reference cases. These establish software behavior, not manufacturer accuracy or
+  Infinite Flight aircraft support; simulator and per-profile reference gaps remain open.
+
 ## [0.4.4] - 2026-11-10
 
 ### Fixed
@@ -241,7 +259,8 @@ First public release, and the first version live on the self-hosted Cloudflare d
 - A SimBrief generation that fails before the Generate click leaves the leg retryable instead
   of blocking it permanently ([#3](https://github.com/IntelIP/InfiniteFlightAgent/pull/3)).
 
-[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.4...HEAD
+[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.5...HEAD
+[0.4.5]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.1...v0.4.2

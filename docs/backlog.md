@@ -30,7 +30,7 @@ This proves the exercised dispatch integration, not simulator import or aircraft
 | --- | --- | --- |
 | v0.4.3 — shipped | INT-402–406; [release evidence](evidence/v043-release.md) | Recoverable revision validation and provider failure guidance, planning reconciliation and measured evaluation baseline |
 | v0.4.4 — shipped | INT-407–411; [release evidence](evidence/v044-release.md) | Predictable existing conversations/routing, current catalog assessment and broader end-to-end scenarios |
-| v0.4.5 | INT-412–415; [release task](https://linear.app/intelip/issue/INT-415) | Evidence-based compatibility corrections for existing estimate profiles on the v26 baseline |
+| v0.4.5 — in progress | INT-412–415; [release task](https://linear.app/intelip/issue/INT-415) | Evidence-based compatibility corrections for existing estimate profiles on the v26 baseline |
 | v0.5.0 | INT-416–428; [release task](https://linear.app/intelip/issue/INT-428) | Durable trip control, expanded dispatch inputs, private-flight configurations and measured aircraft expansion |
 
 The first implementation wave shipped through PR #21 and v0.4.3: INT-404 covers revision
@@ -44,6 +44,16 @@ freezes the official v26 matrix and expands matched MCP evaluations to 28 cases.
 and actual-model candidate replay each passed 28/28; bounded exact-image acceptance and
 authenticated production health passed. [Release evidence](evidence/v044-release.md) owns
 measurements and limitations. Verified aircraft support remains zero; v0.4.5/v0.5 work is open.
+
+v0.4.5 compatibility work is in progress on `codex/v045-compatibility`. The
+[candidate assessment](research/v045-thrust-compatibility.md) records reproduced engine,
+condition and calibration defects and their software corrections. Current simulator/profile
+accuracy remains unverified; reference/simulator access remains an open dependency. Model
+access is restored after the owner raised the Subscription Sharing cap, paired replay is
+recorded with its WF-025 limitations, and [PR live acceptance](evidence/pr23-live-acceptance.md)
+passed using two sessions and two FlightAware requests from the fresh allowance. The
+[resumed evaluation report](evidence/v045-evaluations.md) owns replay results. Production
+remains v0.4.4 pending exact release-image acceptance and approval.
 
 All mandatory deterministic workflow invariants must pass; model quality, stage latency,
 clarification and usage comparisons use the same versioned scenario baseline. Controlled

@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "evidence_class": "independently executed pinned simulation source, not manufacturer or Infinite Flight reference",
+  "source_commit": "66021c24448c44399a8ff569eb14715b6b26558e",
+  "source_url": "https://github.com/flybywiresim/aircraft/blob/66021c24448c44399a8ff569eb14715b6b26558e/fbw-a32nx/src/wasm/fadec_a32nx/src/Fadec/ThrustLimits_A32NX.hpp",
+  "source_sha256": "1d9871dd63e9b637eef18c6046dfe395b28a3e534a5e0ea3baa6ef8abe725bfd",
+  "compiler": "Apple clang++ -std=c++17",
+  "adaptation": "ThrustLimits header and Fadec.cpp numeric functions unchanged; EngineRatios FLOAT64 alias replaces MSFS type include; minimal Fadec class declaration drops host-only inheritance",
+  "raw_tolerance_n1_percentage_points": 1e-09,
+  "display_tolerance_n1_percentage_points": 0.050000001,
+  "cases": [
+    {
+      "id": "FBW-001",
+      "aircraft": "A20N",
+      "engine": "LEAP-1A26",
+      "pressure_altitude_ft": -1500,
+      "oat_c": -10,
+      "flex_c": null,
+      "packs": 0,
+      "nacelle_anti_ice": 0,
+      "wing_anti_ice": 0,
+      "source_n1_percent": 78.34110517409088
+    },
+    {
+      "id": "FBW-002",
+      "aircraft": "A20N",
+      "engine": "LEAP-1A26",
+      "pressure_altitude_ft": 0,
+      "oat_c": 15,
+      "flex_c": 50,
+      "packs": 1,
+      "nacelle_anti_ice": 0,
+      "wing_anti_ice": 0,
+      "source_n1_percent": 81.7650909090909
+    },
+    {
+      "id": "FBW-003",
+      "aircraft": "A20N",
+      "engine": "LEAP-1A26",
+      "pressure_altitude_ft": 1500,
+      "oat_c": 35,
+      "flex_c": 60,
+      "packs": 1,
+      "nacelle_anti_ice": 1,
+      "wing_anti_ice": 0,
+      "source_n1_percent": 80.00594221147746
+    },
+    {
+      "id": "FBW-004",
+      "aircraft": "A20N",
+      "engine": "LEAP-1A26",
+      "pressure_altitude_ft": 5456,
+      "oat_c": 11,
+      "flex_c": 47,
+      "packs": 1,
+      "nacelle_anti_ice": 0,
+      "wing_anti_ice": 0,
+      "source_n1_percent": 81.68623332585715
+    },
+    {
+      "id": "FBW-005",
+      "aircraft": "A20N",
+      "engine": "LEAP-1A26",
+      "pressure_altitude_ft": 8000,
+      "oat_c": 20,
+      "flex_c": 60,
+      "packs": 1,
+      "nacelle_anti_ice": 1,
+      "wing_anti_ice": 1,
+      "source_n1_percent": 76.21983535990111
+    },
+    {
+      "id": "FBW-006",
+      "aircraft": "A20N",
+      "engine": "LEAP-1A26",
+      "pressure_altitude_ft": 16600,
+      "oat_c": 10,
+      "flex_c": 70,
+      "packs": 0,
+      "nacelle_anti_ice": 0,
+      "wing_anti_ice": 1,
+      "source_n1_percent": 68.43015030326102
+    }
+  ],
+  "gaps": {
+    "A20N-PW": "No independent engine-specific N1 reference or current simulator observations",
+    "A21N-LEAP": "No independent engine/rating-specific N1 reference or current simulator observations",
+    "A21N-PW-United": "Real-aircraft identity does not establish Infinite Flight engine/rating or N1 behavior",
+    "B38M-LEAP-1B28": "No independent N1/derate schedule or current simulator observations"
+  }
+}

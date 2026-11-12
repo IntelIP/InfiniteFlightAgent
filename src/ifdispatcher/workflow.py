@@ -538,6 +538,10 @@ def _briefing(syn: dict, flight: dict | None, est: dict, takeoff: dict | None, m
             f"V1/VR/V2 {takeoff.get('speeds_v1')}/{takeoff.get('speeds_vr')}/"
             f"{takeoff.get('speeds_v2')} · bleeds {takeoff.get('bleed_setting')}"
         )
+    if est["status"] == "estimated":
+        lines.append(f"**Thrust method:** {est['method']}")
+        lines.append("**Thrust assumptions:** " + "; ".join(est["assumptions"]))
+        lines.append("**Thrust sources:** " + "; ".join(est["sources"]))
     for message in (meta.get("feasibility") or {}).get("provider_messages", []):
         lines.append(f"**SimBrief message:** {message}")
     if syn.get("arrival"):

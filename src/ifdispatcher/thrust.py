@@ -94,6 +94,8 @@ LABEL = "SIMULATION-GRADE ESTIMATE"
 
 
 def _number(value) -> float | None:
+    if isinstance(value, bool):
+        return None
     try:
         result = float(value)
         return result if math.isfinite(result) else None
@@ -109,11 +111,11 @@ def _interp(pa: float, column: int) -> float:
 
 
 def _engine(text: str | None):
-    key = (text or "").upper().replace(" ", "")
-    for prefix in sorted(ENGINES, key=len, reverse=True):
-        if key.startswith(prefix):
-            return ENGINES[prefix]
-    return None
+    if not isinstance(text, str):
+        return None
+    key = text.upper().replace(" ", "")
+    # Rating suffixes identify distinct engines; a prefix is not applicability evidence.
+    return next((profile for profile in ENGINES.values() if key == profile[0]), None)
 
 
 def _qnh_hpa(value: float) -> tuple[float, str]:
@@ -218,13 +220,14 @@ def _result(status: str, **fields) -> dict[str, Any]:
 def _thrust_mode(family: str, mode: str) -> tuple[float, bool] | None:
     """Return (fixed derate fraction, assumed temperature applies) or None if unmodeled."""
     if family == "airbus":
-        if mode.startswith("TOGA"):
+        if mode == "TOGA":
             return 0.0, False
-        if mode.startswith(("FLEX", "FLX")):
+        if mode in ("FLEX", "FLX"):
             return 0.0, True
         return None
     assumed = mode.startswith("D-")
-    base = mode.removeprefix("D-").replace("-", "")
+    base = mode.removeprefix("D-")
+    base = {"TO-1": "TO1", "TO-2": "TO2"}.get(base, base)
     return (BOEING_DERATES[base], assumed) if base in BOEING_DERATES else None
 
 
@@ -241,15 +244,13 @@ def estimate_takeoff_n1(
     Returns N1 as a ratio of full rated (TOGA/TO) N1 at the same conditions, plus an absolute
     target when `full_thrust_n1` (read in Infinite Flight at full throttle) is supplied.
     """
-    if full_thrust_n1 is not None and (
-        isinstance(full_thrust_n1, bool)
-        or not math.isfinite(full_thrust_n1)
-        or not 40 < full_thrust_n1 <= 120
-    ):
-        return _result(
-            "invalid_input",
-            reason="full_thrust_n1 must be an observed N1 percentage above 40 and at most 120",
-        )
+    if full_thrust_n1 is not None:
+        full_thrust_n1 = _number(full_thrust_n1)
+        if full_thrust_n1 is None or not 40 < full_thrust_n1 <= 120:
+            return _result(
+                "invalid_input",
+                reason="full_thrust_n1 must be an observed N1 percentage above 40 and at most 120",
+            )
     family = AIRCRAFT.get(aircraft_icao or "")
     if not family:
         return _result(
@@ -273,6 +274,8 @@ def estimate_takeoff_n1(
     altimeter = _number(conditions.get("altimeter"))
     elevation = _number(runway.get("elevation"))
     assumed_temp = _number(runway.get("flex_temperature"))
+    bleed = str(runway.get("bleed_setting") or "").strip().upper()
+    anti_ice = str(runway.get("anti_ice_setting") or "").strip().upper()
     missing = [
         name
         for name, value in (
@@ -280,6 +283,8 @@ def estimate_takeoff_n1(
             ("altimeter", altimeter),
             ("runway elevation", elevation),
             ("thrust_setting", mode or None),
+            ("bleed_setting", bleed or None),
+            ("anti_ice_setting", anti_ice or None),
         )
         if value is None
     ]
@@ -296,6 +301,20 @@ def estimate_takeoff_n1(
         )
     derate, uses_assumed = parsed
 
+    # This is a computational bound on the borrowed table, not an aircraft envelope.
+    if not -273.15 < oat <= 100 or (uses_assumed and not oat <= assumed_temp <= 100):
+        return _result(
+            "unsupported_conditions",
+            reason="OAT must be above absolute zero and at most the 100 C model endpoint; "
+            "assumed temperature must be between OAT and that endpoint. Aircraft limits "
+            "and simulator applicability remain unverified.",
+        )
+    if bleed not in {"ON", "OFF"} or anti_ice not in {"OFF", "ON", "ENG", "ALL", "WING"}:
+        return _result(
+            "unsupported_conditions",
+            reason="unrecognized bleed/anti-ice setting; cannot assume an OFF configuration",
+        )
+
     try:
         qnh, qnh_unit = _qnh_hpa(altimeter)
     except ValueError as exc:
@@ -307,8 +326,7 @@ def estimate_takeoff_n1(
             reason=f"pressure altitude {pa:.0f} ft outside the modeled {MIN_PA}..{MAX_PA} ft band",
         )
 
-    packs = int(str(runway.get("bleed_setting", "")).upper() == "ON")
-    anti_ice = str(runway.get("anti_ice_setting", "")).upper()
+    packs = int(bleed == "ON")
     nacelle = int(anti_ice in ("ON", "ENG", "ALL"))
     wing = int(anti_ice in ("ALL", "WING"))
     corner_shift = _interp(pa, 1) - FBW_TO[2][1]
