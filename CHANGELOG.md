@@ -11,6 +11,16 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+## [0.4.6] - 2026-11-12
+
+### Fixed
+
+- Complete explicitly numbered dispatch revisions in order, preserving each separately
+  approved OFP and briefing instead of treating the versions as alternatives.
+- Generate and finalize the exact revision returned by an approved `revise_dispatch` call;
+  preparing a revision alone no longer counts as completion. Defer optional calibration
+  questions until the requested sequence is complete.
+
 ## [0.4.5] - 2026-11-11
 
 ### Fixed
