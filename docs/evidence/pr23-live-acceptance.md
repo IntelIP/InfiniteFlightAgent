@@ -26,7 +26,7 @@ clarification, route correction, extra continuation request or Generate retry wa
 
 Each route matches the saved form readback. Both legs have takeoff performance, distinct
 immutable snapshots and saved briefings after the latest SimBrief plan changed. The
-[database-derived acceptance record](live-acceptance.json) passes all four BUILD-04 outcomes,
+[database-derived acceptance record](https://github.com/IntelIP/InfiniteFlightAgent/blob/57e3a3466adccf5d3918fcff007917c267e64c46/docs/evidence/live-acceptance.json) passes all four BUILD-04 outcomes,
 including approval wait/resume and signed-in generation. Navlog counts describe retained
 data, not navigation validity. Spawn remained an unverified FBO/GA-ramp recommendation.
 

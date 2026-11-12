@@ -18,7 +18,7 @@ and final product validation before the production environment was approved.
 
 The [release report](../evidence/v045-release.md) owns exact-image acceptance, source/image
 identity, usage, cleanup, replay limitations and rollback details. The
-[database-derived record](../evidence/live-acceptance.json) passes all four BUILD-04 outcomes.
+[database-derived record](https://github.com/IntelIP/InfiniteFlightAgent/blob/b2e4fbf9f815da1c716fd4d4618f69e6c7f58ed2/docs/evidence/live-acceptance.json) passes all four BUILD-04 outcomes.
 Final product validation passed: 458 tests, Ruff and dead-code checks; three Postgres-only
 tests were skipped. Controlled and actual-model evaluations remain distinct; the original
 WF-025 failures and the separate explicit sequence supplement are retained in the

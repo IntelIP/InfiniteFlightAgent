@@ -56,6 +56,14 @@ Independent profile references and simulator observations remain required under 
 An authenticated production-health rerun was unavailable because the Realm browser host
 was disconnected; deployment at 100% and public HTTP 401 were observed separately.
 
+Unreleased follow-up: the [WF-025 revision-sequence correction](evidence/wf025-revision-sequence.md)
+passes the original actual-model MCP scenario, a bounded live revision test and the
+two-distinct-leg test on the same immutable candidate image. All four BUILD-04 live outcomes
+pass using the existing database-derived checks; local regression checks pass. The frozen
+replay prompt/verifier are unchanged. The fix is committed as
+`c5deeee3aa8ba2582cf67926f91568cc4ca93510`; the canonical acceptance record binds the
+retained live results to that unchanged integration. It remains unreleased.
+
 All mandatory deterministic workflow invariants must pass; model quality, stage latency,
 clarification and usage comparisons use the same versioned scenario baseline. Controlled
 providers, real-model replay, live integration, numerical references and simulator
