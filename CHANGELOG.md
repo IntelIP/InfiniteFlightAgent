@@ -269,7 +269,8 @@ First public release, and the first version live on the self-hosted Cloudflare d
 - A SimBrief generation that fails before the Generate click leaves the leg retryable instead
   of blocking it permanently ([#3](https://github.com/IntelIP/InfiniteFlightAgent/pull/3)).
 
-[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.5...HEAD
+[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.6...HEAD
+[0.4.6]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.2...v0.4.3
