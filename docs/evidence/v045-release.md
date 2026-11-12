@@ -61,7 +61,7 @@ settled-input clarification, extra continuation request or Generate retry.
 
 Both routes match their saved form readback. Both OFPs have takeoff performance, distinct
 immutable snapshot hashes and saved briefings after the latest plan changed. The
-[database-derived record](live-acceptance.json) passes all four BUILD-04 outcomes, including
+[database-derived record](https://github.com/IntelIP/InfiniteFlightAgent/blob/b2e4fbf9f815da1c716fd4d4618f69e6c7f58ed2/docs/evidence/live-acceptance.json) passes all four BUILD-04 outcomes, including
 approval wait/resume and signed-in generation. Navlog counts are retained data, not proof
 of navigation validity. Spawn remained an unverified FBO/GA-ramp recommendation.
 
