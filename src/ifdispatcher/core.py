@@ -200,9 +200,7 @@ class Store:
             meta = json.loads(meta_row[0]) if meta_row else {}
             readback = ((meta.get("generation") or {}).get("values") or {}).get("route")
             route = (expected.get("route") or "").strip() or readback
-            if route and " ".join(route.upper().split()) != " ".join(
-                (normalized["flight_route"] or "").upper().split()
-            ):
+            if route and _route_tokens(route) != _route_tokens(normalized["flight_route"]):
                 raise ValueError(
                     "identity_mismatch: route differs from approved input or form readback"
                 )
@@ -420,6 +418,13 @@ def open_store() -> Store:
 
 
 FETCHER = "https://www.simbrief.com/api/xml.fetcher.php"
+
+
+def _route_tokens(route: str | None) -> list[str]:
+    """Route fixes/airways for comparison. SimBrief's OFP writes direct legs as explicit
+    `DCT` tokens (`DCT MERIT DCT HFD`) that its form shows without (`MERIT HFD`); a `DCT`
+    between two fixes means the same route either way."""
+    return [token for token in (route or "").upper().split() if token != "DCT"]
 
 
 def _fetch_params(alias: str | None, static_id: str | None, userid: str | None) -> dict:

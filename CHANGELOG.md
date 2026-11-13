@@ -11,6 +11,22 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+## [0.4.7] - 2026-11-12
+
+### Fixed
+
+- SimBrief generation no longer clicks Route Finder. When no route was agreed, the form is
+  filled and Generate Flight is clicked directly, keeping SimBrief's own route suggestion.
+  Route Finder had hung past its 30-second wait on KEWR–EIDW, so Generate was never reached
+  and the leg failed with `TimeoutError`. A local live check of KEWR–EIDW (B752, no route)
+  generated in 35 seconds with a NAT-track route ending in the OLAP4L arrival.
+- Removed the pre-Generate stop for an empty or direct-only automatic route; the generated
+  OFP's route is reported in the briefing. Explicit routes are still filled and must match.
+- Plan verification ignores the explicit `DCT` tokens SimBrief's OFP writes between fixes
+  (`DCT MERIT DCT HFD`) when comparing with the form's route (`MERIT HFD`). Without this the
+  SimBrief-chosen KEWR–EIDW route failed finalization as `plan_mismatch`. Any other fix or
+  airway difference still fails.
+
 ### Documentation
 
 - Refresh the README for v0.4.6: SimBrief sign-in is on demand (no daily keep-alive), approval
@@ -279,6 +295,7 @@ First public release, and the first version live on the self-hosted Cloudflare d
   of blocking it permanently ([#3](https://github.com/IntelIP/InfiniteFlightAgent/pull/3)).
 
 [Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.6...HEAD
+[0.4.7]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.6...v0.4.7
 [0.4.6]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.3...v0.4.4
