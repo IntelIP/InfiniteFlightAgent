@@ -11,16 +11,17 @@
 Tell it the flight you want to fly, like *"Dulles to Denver tomorrow evening in the A321neo"*.
 It finds a real airline flight, generates your SimBrief plan once you approve, and hands back a
 briefing that starts with where to spawn and the takeoff N1 to set. It runs on your own keys and
-your own ChatGPT plan, from the terminal or any MCP client.
+your own ChatGPT plan, from the terminal or an MCP client connected to your own server.
 
 [Get started](#get-started) · [Agent guide](docs/implementation/agent-usage.md) ·
 [Self-host on Cloudflare](docs/implementation/deployment.md) ·
 [Aircraft coverage](docs/aircraft-coverage.md) · [Changelog](CHANGELOG.md)
 
-> **Early release.** It works end to end locally and on the self-hosted Cloudflare
-> deployment. See the [changelog](CHANGELOG.md) for the current version. Thrust targets are simulation-grade estimates. For flight simulation only: never
-> use any output of this project for real-world flight planning or aircraft operation. See
-> [status and limits](#status-and-limits).
+> **Early release, self-hosted, single owner.** It works end to end locally and on the
+> self-hosted Cloudflare deployment; the current release is listed in the
+> [changelog](CHANGELOG.md). Thrust targets are simulation-grade estimates, and no aircraft is
+> verified yet. For flight simulation only: never use any output of this project for
+> real-world flight planning or aircraft operation. See [status and limits](#status-and-limits).
 
 ## From flight idea to briefing
 
@@ -32,17 +33,23 @@ where to spawn and what thrust to set.
   [FlightAware AeroAPI](https://www.flightaware.com/commercial/aeroapi/) and never invents a
   flight number. If today's gate isn't assigned yet, it gives the gate from the most recent
   operation and labels it historical.
-- **Approve before anything happens.** You see the exact flight, airports, departure time,
-  connection, aircraft and thrust status before anything is generated or spent.
+- **Approve before anything is generated.** You see the exact flight, airports, departure
+  time, connection, aircraft and thrust status before a SimBrief plan is generated or a cloud
+  browser is opened. Flight research happens before approval, so FlightAware AeroAPI requests
+  (billed to your key) can occur while it looks for options.
 - **Get your SimBrief plan generated.** After you approve, it fills SimBrief's dispatch form
-  in a cloud browser, reads every field back, and generates exactly one plan per leg.
+  in a cloud browser, reads every field back, and clicks Generate once for that approved
+  revision. It never repeats a Generate whose outcome is uncertain.
+- **Revise without losing earlier plans.** A change to a saved leg becomes a new numbered
+  revision with its own approval, generation and briefing; earlier revisions are kept. When
+  you ask for several numbered revisions, they are completed in order.
 - **Know your takeoff thrust.** N1 targets come from SimBrief's own takeoff solution and the
   lapse shape of FlyByWire's open A32NX thrust model, each with a range. Aircraft it can't
   model get a clear "unavailable" instead of a guess.
 - **Plan whole trips.** Each leg of a multi-leg trip is dispatched and kept separately, and
   must leave at least 45 minutes after the previous leg lands.
-- **Use it where you already chat.** Use the terminal chat, or connect ChatGPT, Claude or
-  Codex to the MCP server.
+- **Use it where you already chat.** Use the terminal chat, or connect an MCP client such as
+  ChatGPT, Claude or Codex to your self-hosted server (per-client acceptance is still pending).
 
 ## What you get
 
@@ -97,8 +104,14 @@ setting, resuming conversations, and MCP client setup.
 | Path | Best for | Start |
 |---|---|---|
 | Terminal chat | Trying it out on one machine | `uv run ifd-chat` |
-| Local MCP server | Claude Desktop, Codex or other MCP clients on your machine | [MCP setup](docs/implementation/simbrief-usage.md) |
-| Self-hosted remote MCP | ChatGPT or your phone, behind Cloudflare Access | [Cloudflare deployment](docs/implementation/deployment.md) |
+| Self-hosted remote MCP | The full agent from an MCP client, behind Cloudflare Access | [Cloudflare deployment](docs/implementation/deployment.md) |
+| Local SimBrief tools (stdio) | Retrieving, reading and estimating from existing SimBrief plans; no generation | [SimBrief tools](docs/implementation/simbrief-usage.md) |
+
+The remote MCP server exposes `plan_flight`, `approve_dispatch`, `turn_status`,
+`conversation_status`, `list_saved_trips` and `browser_status`
+([tool reference](docs/implementation/agent-usage.md#deployed-mode-self-hosted-single-user)).
+It is built for ChatGPT, Claude and Codex as MCP clients; each client's own end-to-end journey
+has not yet passed acceptance, so treat client compatibility as unverified until it does.
 
 | Component | Local | Self-hosted on Cloudflare |
 |---|---|---|
@@ -106,7 +119,7 @@ setting, resuming conversations, and MCP client setup.
 | Conversations and saved plans | SQLite in `data/` | Neon Postgres |
 | Plan screenshots | `data/screens/` | Cloudflare R2 |
 | Secrets | `.env` | Doppler, synced to Worker secrets on release |
-| SimBrief login | Saved Browserbase profile | The same, refreshed by a daily keep-alive |
+| SimBrief login | Saved Browserbase profile | The same; signs in again on demand when a session finds it signed out |
 
 The self-hosted deployment is built for one owner. It is not a shared or resold service.
 
@@ -131,19 +144,28 @@ lands. See the [agent guide](docs/implementation/agent-usage.md) and the
 
 ## Quality
 
-- **Evaluations.** The agent is checked against
-  [100 scripted first messages](evals/dispatch_prompts.jsonl) in 11 categories, including
-  vague requests, multi-leg trips, private flights and unsupported aircraft. On October 31,
-  2026, two consecutive full runs passed every safety check and fully passed 92 and 91 of 100
-  cases. The safety checks are: no invented flight numbers, no assumed dates, correct airports,
-  and unsupported thrust disclosed before approval
+- **Workflow evaluations.** 28 whole-conversation scenarios drive the production MCP tools
+  over local HTTP with controlled FlightAware, SimBrief and browser services: planning,
+  routing, provider failures, approved revisions and recovery after a restart. The original
+  eight regression cases stay unchanged alongside them. Controlled-service results, matched
+  replays on the configured model and live-provider runs are reported separately
+  ([evaluation guide](evals/README.md), [v0.4.6 release record](docs/evidence/v046-release.md)).
+- **Fixes come from traces.** For example, WF-025 found that numbered revisions were treated
+  as alternatives; v0.4.6 completes them in order, each separately approved
+  ([fix report](docs/evidence/wf025-revision-sequence.md)).
+- **First-message checks.** [100 scripted first messages](evals/dispatch_prompts.jsonl) in 11
+  categories cover vague requests, multi-leg trips, private flights and unsupported aircraft.
+  The last full runs (October 31, 2026) passed every safety check
   ([results](docs/implementation/agent-usage.md#full-100-case-runs--october-31-2026)).
 - **No FlightAware fees for routine runs.** Evaluations replay synthetic or recorded FlightAware
   responses. Live provider checks are opt-in and capped at $1 per batch by default
   ([how to run them](evals/README.md)).
-- **Live acceptance.** The Product validation check passes only while a recorded live run on
-  the deployed code shows generation through MCP, a real neo plan, two legs kept separately,
-  and an approval wait and resume ([evidence](docs/evidence/live-acceptance.json)).
+- **Live acceptance per release.** Each release candidate's exact image runs a two-leg trip
+  (KIAD→KEWR, then KEWR→KIAD) on a temporary staging Worker, with a separate approval per leg,
+  before production approval. For v0.4.6 each leg generated once, the two browser sessions
+  used 151 seconds in total, and no browser was left running
+  ([release record](docs/evidence/v046-release.md), [acceptance data](docs/evidence/live-acceptance.json)).
+  These are single runs, not performance statistics.
 
 ## Releases
 
@@ -155,9 +177,15 @@ Worker version with the same name. A running server reports its version at `/hea
 ## Status and limits
 
 - **Early, personal-use software.** It works end to end locally and on the self-hosted
-  Cloudflare deployment, which planned its first live flights on November 1, 2026.
+  Cloudflare deployment, which planned its first live flights on November 1, 2026. Each
+  deployment is built for one owner and is not a shared service.
+- **One cloud browser at a time.** A deployment runs one browser workflow at a time, with up to
+  two waiting for 30 seconds, and each browser session ends within 180 seconds.
+- **Costs are yours.** FlightAware AeroAPI, Browserbase and ChatGPT plan usage are billed to
+  your own accounts. FlightAware research can happen before you approve a dispatch.
 - **Thrust targets are simulation-grade estimates**, shown with a range. No aircraft is yet
-  verified against reference data ([aircraft coverage](docs/aircraft-coverage.md)). The model
+  verified against reference data: 0 of the 51 current Infinite Flight aircraft meet the
+  verified-support criteria ([aircraft coverage](docs/aircraft-coverage.md)). The model
   covers pressure altitudes from -2,000 to 16,600 ft, FlyByWire's full takeoff table. Above
   2,000 ft, such as at Denver, the engine's behavior is extrapolated, so the range is wider and
   large FLEX reductions there may be flagged as suspect.
@@ -177,8 +205,13 @@ uv run ruff check src tests
 uv run pytest -q
 ```
 
-Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md). The
-[roadmap](docs/roadmap.md) and [backlog](docs/backlog.md) show what's next.
+Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+
+## What's next
+
+v0.5.0 adds durable trip progress and safe cancellation, more dispatch inputs such as cruise
+altitude and alternates, sourced private-flight configurations, and measured aircraft expansion.
+The [roadmap](docs/roadmap.md) and [backlog](docs/backlog.md) track it.
 
 ## License
 

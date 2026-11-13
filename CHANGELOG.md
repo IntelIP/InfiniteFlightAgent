@@ -27,6 +27,15 @@ A running server reports its version at `/health`.
   SimBrief-chosen KEWR–EIDW route failed finalization as `plan_mismatch`. Any other fix or
   airway difference still fails.
 
+### Documentation
+
+- Refresh the README for v0.4.6: SimBrief sign-in is on demand (no daily keep-alive), approval
+  gates generation while FlightAware research can be billed before approval, numbered
+  revisions are separately approved and retained, client journeys remain unverified, and
+  quality evidence reflects the current workflow suite and release acceptance.
+- Update the agent, SimBrief-tools and deployment guides to describe the deployed remote MCP
+  server, the generation-free stdio tool server and the legacy cron's current behavior.
+
 ## [0.4.6] - 2026-11-12
 
 ### Fixed

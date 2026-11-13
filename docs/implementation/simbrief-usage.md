@@ -1,6 +1,6 @@
 # Local SimBrief MCP usage
 
-Status: preparation, explicit retrieval, and immutable local snapshots implemented. Generation and the complete BUILD-04 acceptance remain blocked on developer access and live evidence. No Deep Agents coordinator, remote hosting, or automatic Infinite Flight import is implemented.
+Scope (updated November 12, 2026): this page covers the **local stdio tool server** (`ifdispatcher`), which prepares SimBrief requests, retrieves existing plans into immutable local snapshots and estimates takeoff N1. It does not generate plans. Plan generation, the dispatcher agent and the remote MCP server are documented in the [agent guide](agent-usage.md) and [deployment guide](deployment.md); BUILD-04 live acceptance passes on the current release ([evidence](../evidence/live-acceptance.json)). Automatic import into Infinite Flight is not implemented.
 
 ## Install and start
 
@@ -66,7 +66,7 @@ This saves the agreed request locally; it does not generate a flight.
 - Changed request or OFP bytes require a new revision. Existing snapshots are never overwritten. Even an identical plan fetched again may have different provider metadata and require a new revision.
 - A missing-input result creates no complete request. Prepare again with the missing fields.
 - Network/provider errors leave saved snapshots intact. Explicitly retry retrieval only when requested; there is no polling loop.
-- Authentication/generation waiting and timeout reconciliation are not implemented because the provider contract is unavailable. No submission tool is exposed, and there is no fake success path.
+- This stdio server exposes no generation tool. Browser generation, its waiting and uncertain-outcome handling belong to the dispatcher agent ([agent guide](agent-usage.md#bounded-browser-management)).
 - Thrust output is an estimate only: displayed N1, not proof of equal real or simulator thrust. A provider-reported target would remain unverified.
 
 ## Verification
@@ -77,6 +77,4 @@ bash scripts/check-dead-code.sh
 uv run --locked python scripts/validate.py
 ```
 
-The validator executes local tests, lint, and pinned Vulture. It writes a timestamped source digest, check output, and result under `artifacts/validation/` on every run. Its current overall outcome is intentionally blocked: live generation/neo/two-leg/authentication acceptance and exact-commit evidence are missing. The live validator must be completed alongside generation; this scaffold is not a finished release gate.
-
-The product CI workflow checks out the actual PR head and uploads evidence even on failure. It has not run on GitHub. Commits/pushes are not authorized; candidate evidence therefore identifies the local working tree. MCP SDK 1.27.0 is pinned to the inspected v1 interface matching the upstream reuse candidate; SDK 2.3.0 exists but has a changed API. All resolved runtime/development dependencies are locked in uv.lock.
+The validator executes local tests, lint and pinned Vulture, and writes a timestamped source digest, check output and result under `artifacts/validation/`. Its overall outcome also requires the database-derived live acceptance record ([`live-acceptance.json`](../evidence/live-acceptance.json)) to match the source being validated. The Product validation workflow runs it in CI on every pull request; see [CONTRIBUTING.md](../../CONTRIBUTING.md). MCP SDK 1.27.0 is pinned; all resolved runtime and development dependencies are locked in `uv.lock`.
