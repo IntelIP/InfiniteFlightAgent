@@ -90,16 +90,22 @@ def test_keepalive_route_respects_the_kill_switch(monkeypatch):
 @pytest.mark.parametrize(
     "route,found,prompts,timeout,status,finder_clicks",
     [
-        (None, "DOTSS2 CLEEE BLH J169 KOFFA SNDBR3", [], False, "generated", 1),
-        ("  ", "JCOBY4 SWANN PHLBO4", [], False, "generated", 1),
+        # No agreed route: SimBrief's own route suggestion stays and Generate is clicked
+        # directly. Route Finder is never clicked (it hung past its wait on KEWR-EIDW).
+        (
+            None,
+            "MERIT HFD PUT BOS TUSKY FORTE NICSO NATS BEXET OLAPO OLAP4L",
+            [],
+            False,
+            "generated",
+            0,
+        ),
+        ("  ", "JCOBY4 SWANN PHLBO4", [], False, "generated", 0),
+        (None, "", [], False, "generated", 0),
         ("DCT", "unused", [], False, "generated", 0),
         ("JCOBY4 SWANN PHLBO4", "unused", [], False, "generated", 0),
-        (None, "", [], False, "needs_review", 1),
-        (None, "DCT", [], False, "needs_review", 1),
-        (None, "", ["No route found"], False, "needs_review", 1),
-        (None, "EARLY SUGGESTION", ["Native: Route failed"], False, "needs_review", 1),
         (None, "", ["No Alternates Found"], False, "needs_review", 0),
-        (None, "", [], True, "timeout", 1),
+        (None, "", [], True, "timeout", 0),
     ],
 )
 def test_generation_waits_for_routing_before_claiming_generate(
@@ -149,21 +155,18 @@ def test_generation_waits_for_routing_before_claiming_generate(
             pass
 
         def wait_for_function(self, script, **kwargs):
-            if self.pending_route:
+            if "jQuery.active" in script:
                 if timeout:
-                    raise TimeoutError("Route Finder did not finish")
-                self.values["route"] = found
-                self.pending_route = False
+                    raise TimeoutError("Airport lookups did not finish")
+                if not self.values["route"]:
+                    # SimBrief's own suggestion after the airport/date lookups finish.
+                    self.values["route"] = found
 
         def evaluate(self, script, arg=None):
             if script == simbrief_browser.SET_DATE_JS:
                 self.values["date"] = "09 Nov 2026 - 15:00"
             elif script == simbrief_browser.VISIBLE_MODALS_JS:
-                return (
-                    [p for p in prompts if not p.startswith("Native:")]
-                    if self.finder_clicks or "Alternates" in " ".join(prompts)
-                    else []
-                )
+                return list(prompts)
             elif script == simbrief_browser.SET_CHECKBOX_JS:
                 self.values["tlr"] = arg[1]
             else:
@@ -245,8 +248,6 @@ def test_generation_waits_for_routing_before_claiming_generate(
             assert result["values"]["route"] == (
                 route.strip() if route and route.strip() else found
             )
-        elif not prompts:
-            assert "explicitly approve DCT" in result["reason"]
     assert page.finder_clicks == finder_clicks
     assert page.generate_clicks == len(claims) == int(status == "generated")
     assert page.dialog_callback is None

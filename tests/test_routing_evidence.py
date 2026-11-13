@@ -125,3 +125,33 @@ def test_missing_route_and_navlog_remain_unavailable(tmp_path, monkeypatch):
     assert result["synopsis"]["navlog_fix_count"] is None
     assert result["synopsis"]["navlog_idents"] is None
     assert "Route:** unavailable" in result["briefing_markdown"]
+
+
+READBACK = "MERIT HFD PUT BOS TUSKY FORTE NICSO NATS BEXET OLAPO OLAP4L"
+
+
+@pytest.mark.parametrize(
+    "returned,matches",
+    [
+        (
+            "DCT MERIT DCT HFD DCT PUT DCT BOS DCT TUSKY DCT FORTE DCT NICSO NATS BEXET "
+            "DCT OLAPO OLAP4L",
+            True,
+        ),
+        ("DCT MERIT DCT HFD DCT PUT DCT BOS DCT TUSKY DCT FORTE DCT NICSO NATS BEXET", False),
+        ("DCT", False),
+    ],
+)
+def test_automatic_route_ignores_only_explicit_dct_tokens(tmp_path, returned, matches):
+    """Observed live (KEWR-EIDW, v0.4.7 check): the form shows SimBrief's route without
+    DCT tokens, and the OFP writes the same route with explicit DCT between fixes."""
+    store = Store(tmp_path)
+    prepared(store)
+    meta = store.read_meta("routing", "1", 1)
+    meta["generation"] = {"status": "generated", "values": {"route": READBACK}}
+    store.save_meta("routing", "1", 1, meta)
+    if matches:
+        assert store.save("routing", "1", 1, ofp(returned), None)["data"]["flight_route"]
+    else:
+        with pytest.raises(ValueError, match="identity_mismatch: route"):
+            store.save("routing", "1", 1, ofp(returned), None)

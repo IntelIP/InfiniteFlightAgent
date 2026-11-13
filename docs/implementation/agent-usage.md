@@ -143,7 +143,7 @@ in force: never regenerate merely because waiting timed out.
 | Idle between browser operations | 30 seconds, checked at one-second intervals |
 | Browserbase HTTP request | 8 seconds; no automatic SDK retries |
 | Playwright navigation / ordinary action | 20 / 10 seconds |
-| Route Finder wait | 30 seconds |
+| Airport/date lookup wait before Generate | 30 seconds |
 | Generate completion polling | At most 60 iterations, with the session deadline still enforced |
 | Owner-thread cleanup wait | 12 seconds, then remote release |
 
