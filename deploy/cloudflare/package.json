@@ -13,10 +13,10 @@
     "dry-run": "wrangler deploy --dry-run --outdir=dist"
   },
   "dependencies": {
-    "jose": "6.2.12"
+    "jose": "6.2.17"
   },
   "devDependencies": {
     "typescript": "7.0.2",
-    "wrangler": "4.151.1"
+    "wrangler": "4.159.0"
   }
 }
