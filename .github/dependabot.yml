@@ -1,19 +1,33 @@
+# Dependabot proposes dependency updates as PRs; it never merges. Hudson merges after CI
+# (including the `image` check that starts Playwright inside the real container) passes.
+# Schedule: twice a month (1st and 15th, 09:00 New York), one grouped PR per ecosystem.
 version: 2
 updates:
   - package-ecosystem: "uv"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "cron"
+      cronjob: "0 9 1,15 * *"
+      timezone: "America/New_York"
     groups:
       uv-minor-and-patch:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # 1.65.x's driver needs libatomic.so.1, absent from python:3.12-slim (v0.5.0 incident).
+      - dependency-name: "playwright"
+        versions: [">=1.65,<1.66"]
+      # ruff 0.17 adds ~200 lint findings; upgrade it in its own cleanup change.
+      - dependency-name: "ruff"
+        versions: [">=0.15"]
 
   - package-ecosystem: "npm"
     directory: "/deploy/cloudflare"
     schedule:
-      interval: "weekly"
+      interval: "cron"
+      cronjob: "0 9 1,15 * *"
+      timezone: "America/New_York"
     groups:
       npm-minor-and-patch:
         update-types:
@@ -23,7 +37,9 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "cron"
+      cronjob: "0 9 1,15 * *"
+      timezone: "America/New_York"
     groups:
       github-actions-minor-and-patch:
         update-types:
