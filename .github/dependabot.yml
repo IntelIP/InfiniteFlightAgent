@@ -21,6 +21,9 @@ updates:
       # ruff 0.17 adds ~200 lint findings; upgrade it in its own cleanup change.
       - dependency-name: "ruff"
         versions: [">=0.15"]
+      # mcp 2.x renames FastMCP and changes APIs; migrate deliberately, with a live test.
+      - dependency-name: "mcp"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "npm"
     directory: "/deploy/cloudflare"
