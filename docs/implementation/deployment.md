@@ -1,8 +1,29 @@
 # Cloudflare deployment
 
+<a id="current-release-v047"></a>
+
+## Current release: v0.4.7
+
+Observed November 13, 2026 UTC: [PR #27](https://github.com/IntelIP/InfiniteFlightAgent/pull/27)
+is merged and [v0.4.7](https://github.com/IntelIP/InfiniteFlightAgent/releases/tag/v0.4.7)
+is deployed at 100%. The [Release workflow](https://github.com/IntelIP/InfiniteFlightAgent/actions/runs/43365552719)
+passed exact-source CI, upload, owner-authorized production approval, promotion, trigger
+deployment and release publication. The two-leg acceptance ran on the promoted production
+Worker.
+
+- Release source and PR merge: `553a41ff8ceee658779196f2856b4cebc3ae241f`.
+- Production Worker: `42d1aede-d6f5-4e0b-a226-32617cab2c9e`.
+- Immutable image: `sha256:0ec30d9ff5256ea8a3dc737ac3d9e86c0b4ce2853f7593f1cf5d83972cef2389`.
+- Rollback Worker: `2226a90f-baba-4123-9022-d1ac8e137890` (v0.4.6).
+
+The [release report](../evidence/v047-release.md) owns the incident, identities, local and
+production evidence, and limitations. All four
+[database-derived BUILD-04 outcomes](../evidence/live-acceptance.json) pass for this release
+integration. Two sequential browser sessions used 95.5 seconds; zero active browsers remained.
+
 <a id="current-release-v046"></a>
 
-## Current release: v0.4.6
+## Previous release: v0.4.6
 
 Observed November 12, 2026 UTC: [PR #24](https://github.com/IntelIP/InfiniteFlightAgent/pull/24)
 is merged and [v0.4.6](https://github.com/IntelIP/InfiniteFlightAgent/releases/tag/v0.4.6)
@@ -223,7 +244,7 @@ Cloudflare Access does the OAuth for MCP clients; the Worker does not implement 
 ## Workflows
 
 - `ci.yml`: pull requests, pushes to `main`, and release checks. Python: `uv sync --locked`, pytest, ruff, dead-code check. Worker: `npm ci`, `wrangler types --check`, `tsc --noEmit`, auth-gate unit tests (`node --test`).
-- `release.yml` (manual): refuses anything but the current `main` commit, runs CI on it, syncs secrets from Doppler into a temporary file, then `wrangler versions upload --secrets-file …` builds the image with Docker and uploads a version with no traffic. The version id is in the job summary, and each job uploads a `release-*` evidence artifact (Wrangler output, `wrangler versions view` of the candidate, deployment status before and after, commit and version id). With `promote=true`, the `production` environment approval gates `wrangler versions deploy <id>@100% -y`, followed by `wrangler triggers deploy` to apply the daily SimBrief keep-alive cron (version uploads do not change triggers). The release takes its name from the version in `pyproject.toml`: the guard job requires a matching `CHANGELOG.md` section and refuses a version already tagged on another commit. The uploaded Worker version is tagged `vX.Y.Z`, and promotion publishes the `vX.Y.Z` Git tag and GitHub Release with that changelog section as its notes.
+- `release.yml` (manual): refuses anything but the current `main` commit, runs CI on it, syncs secrets from Doppler into a temporary file, then `wrangler versions upload --secrets-file …` builds the image with Docker and uploads a version with no traffic. The version id is in the job summary, and each job uploads a `release-*` evidence artifact (Wrangler output, `wrangler versions view` of the candidate, deployment status before and after, commit and version id). With `promote=true`, the `production` environment approval gates `wrangler versions deploy <id>@100% -y`, followed by `wrangler triggers deploy` to apply the daily cron (version uploads do not change triggers). The cron still calls the container's legacy keep-alive route, which now returns `skipped` and opens no browser; SimBrief sign-in happens on demand during browser work. The release takes its name from the version in `pyproject.toml`: the guard job requires a matching `CHANGELOG.md` section and refuses a version already tagged on another commit. The uploaded Worker version is tagged `vX.Y.Z`, and promotion publishes the `vX.Y.Z` Git tag and GitHub Release with that changelog section as its notes.
 - `emergency-stop.yml` (manual, type `STOP`): sets `IFD_PAID_OPERATIONS_ENABLED=false` with `wrangler secret put`.
 
 `scripts/sync-secrets.sh` can also be run locally (`DOPPLER_PROJECT=… DOPPLER_CONFIG=… scripts/sync-secrets.sh`). Without arguments it is a dry run that checks the required keys and lists the names it would sync; `--apply` pushes them with `wrangler secret bulk`, which deploys a new version of the current code immediately. It prints key names only.

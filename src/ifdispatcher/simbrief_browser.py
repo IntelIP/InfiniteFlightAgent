@@ -653,7 +653,7 @@ def form_values(fields: dict[str, Any]) -> dict[str, str]:
 
 
 def form_mismatches(fields: dict, want: dict, got: dict) -> dict:
-    """Unspecified routes use Route Finder; explicitly agreed fields must match."""
+    """Unspecified routes are left to SimBrief; explicitly agreed fields must match."""
     expected = dict(want)
     if not (fields.get("route") or "").strip():
         expected.pop("route", None)
@@ -728,15 +728,13 @@ def generate(
             page.select_option("#origrwy", fields["runway"])
         if not open_prompts:
             # Airport/date/runway lookups can replace the route asynchronously.
-            # Finish those first, then apply the approved route or run Route Finder.
+            # Finish those first, then apply the approved route. Without an agreed route
+            # the form goes straight to Generate Flight: SimBrief chooses the route itself.
+            # Route Finder is never clicked; it hung past its wait on oceanic legs.
             page.wait_for_function("() => jQuery.active === 0", timeout=30_000)
             open_prompts = page.evaluate(VISIBLE_MODALS_JS)
-            if not open_prompts:
-                if want["route"]:
-                    page.fill("#route", want["route"])
-                else:
-                    page.get_by_text("Find Route", exact=True).click()
-                    page.wait_for_function("() => jQuery.active === 0", timeout=30_000)
+            if not open_prompts and want["route"]:
+                page.fill("#route", want["route"])
                 open_prompts = page.evaluate(VISIBLE_MODALS_JS)
         got = {k: page.input_value(f"#{k}") for k in want}
         got["tlr"] = page.evaluate("() => document.getElementById('tlr').checked")
@@ -756,13 +754,6 @@ def generate(
             return {**result, "status": "needs_review", "prompts": open_prompts + dialogs}
         if mismatched:
             return {**result, "status": "fill_mismatch", "mismatched": mismatched}
-        if not want["route"] and got["route"].strip().upper() in ("", "DCT", "DIRECT"):
-            return {
-                **result,
-                "status": "needs_review",
-                "reason": "Route Finder returned no waypoint routing. Supply a route or "
-                "explicitly approve DCT before generating.",
-            }
         if not click:
             return {**result, "status": "filled"}
         if before_click:
