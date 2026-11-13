@@ -280,6 +280,26 @@ def test_cancel_pending_approval_keeps_completed_legs_and_refuses_approval(store
     assert store.read_meta("T1", "1", 1)["briefing"] == "**SPAWN:** gate"
 
 
+def test_turn_status_reports_cancel_instead_of_stale_approval(store, monkeypatch):
+    """Observed live on v0.5.0: turn_status kept returning the finished approval_required
+    result after cancel_trip withdrew that approval."""
+    from concurrent.futures import Future
+
+    prepare(store, leg="1")
+    state = pending_state(store)
+    monkeypatch.setattr(remote, "_get_agent", lambda: NoModel(state))
+    done = Future()
+    done.set_result({"status": "approval_required", "thread_id": "thread-s"})
+    monkeypatch.setattr(remote, "_turns", {"thread-s": done})
+
+    assert asyncio.run(remote.turn_status("thread-s"))["status"] == "approval_required"
+    assert asyncio.run(remote.cancel_trip("thread-s"))["status"] == "cancelled"
+    status = asyncio.run(remote.turn_status("thread-s"))
+    assert status["status"] == "cancelled"
+    assert "cannot be approved" in status["next"]
+    assert status["turn"]["status"] == "cancelled"
+
+
 def test_trip_progress_not_found_and_records_approval_history(store, monkeypatch):
     monkeypatch.setattr(remote, "_get_agent", lambda: NoModel(empty_state()))
     assert remote.trip_progress("missing")["status"] == "not_found"

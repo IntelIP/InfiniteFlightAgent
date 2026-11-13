@@ -254,8 +254,20 @@ async def turn_status(thread_id: str) -> dict[str, Any]:
     """Result of the latest plan_flight or approve_dispatch call on thread_id after it returned
     status running. Returns running again (call later), or the reply / approval request.
     """
+    finished = thread_id in _turns and _turns[thread_id].done()
+    record = progress.read(thread_id) if finished or thread_id not in _turns else None
+    if finished and record and record.get("status") == "cancelled":
+        # The cached result predates cancel_trip (e.g. a withdrawn approval_required);
+        # report the cancellation instead of asking for an approval that is refused.
+        return {
+            "status": "cancelled",
+            "thread_id": thread_id,
+            "turn": progress.turn_view(record, live=False),
+            "next": "This turn was cancelled; any pending approval was withdrawn and cannot be "
+            "approved. Call trip_progress for kept legs, or send plan_flight to start again.",
+        }
     if thread_id not in _turns:
-        turn = progress.turn_view(progress.read(thread_id), live=False)
+        turn = progress.turn_view(record, live=False)
         if turn:
             return {
                 "status": turn["status"],
