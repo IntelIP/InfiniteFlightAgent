@@ -89,7 +89,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
-      - uses: dopplerhq/cli-action@12f29f902bf9279a3888501b9d27ba9f968a07c2 # v4.0.1
+      - uses: dopplerhq/cli-action@4819d808ab99e5cde19a0637a16536a4038fad73 # v4.0.1
       - run: npm ci
       - name: Record traffic before upload
         run: |
@@ -200,7 +200,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
-      - uses: dopplerhq/cli-action@12f29f902bf9279a3888501b9d27ba9f968a07c2 # v4.0.1
+      - uses: dopplerhq/cli-action@4819d808ab99e5cde19a0637a16536a4038fad73 # v4.0.1
       - run: npm ci
       - run: bash ../../scripts/sync-secrets.sh --to-file "$RUNNER_TEMP/worker-secrets.json"
       - name: First deploy (creates Worker, Durable Object class, container app)
