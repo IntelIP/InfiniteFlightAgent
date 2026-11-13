@@ -1,34 +1,34 @@
 {
   "schemaVersion": "ifd-live-acceptance/v1",
   "acceptance": "BUILD-04",
-  "recorded_at": "2026-11-12T16:41:09.549681+00:00",
+  "recorded_at": "2026-11-13T04:34:45.969186+00:00",
   "deployment": {
-    "commit": "3c257da34faf637a4c8c70cb2e3799cb54e11347",
-    "worker_version": "3264d4eb-3eea-4260-adc2-1ec99fa97fc5"
+    "commit": "553a41ff8ceee658779196f2856b4cebc3ae241f",
+    "worker_version": "42d1aede-d6f5-4e0b-a226-32617cab2c9e"
   },
-  "integration_digest": "fb79ea2cd3da575fb310ca6ee8c5964dcd5d119addde6106fefd23cb4162bc6a",
+  "integration_digest": "3f5c27cd714b6f1ba0c85c7056419c4e6b62ee8481cc12be0b17cd8441e33845",
   "outcomes": {
     "generation_through_mcp": {
       "passed": true,
-      "detail": "v046-acceptance-20261112T163555Z leg 1, v046-acceptance-20261112T163555Z leg 2"
+      "detail": "v047-acceptance-20261113T0435Z leg 1, v047-acceptance-20261113T0435Z leg 2"
     },
     "neo_response": {
       "passed": true,
-      "detail": "v046-acceptance-20261112T163555Z leg 1 (A20N), v046-acceptance-20261112T163555Z leg 2 (A20N)"
+      "detail": "v047-acceptance-20261113T0435Z leg 1 (A21N), v047-acceptance-20261113T0435Z leg 2 (A21N)"
     },
     "two_legs_retained": {
       "passed": true,
-      "detail": "v046-acceptance-20261112T163555Z legs 1 and 2"
+      "detail": "v047-acceptance-20261113T0435Z legs 1 and 2"
     },
     "authentication_and_resumption": {
       "passed": true,
-      "detail": "approval wait, resume and signed-in generation: v046-acceptance-20261112T163555Z"
+      "detail": "approval wait, resume and signed-in generation: v047-acceptance-20261113T0435Z"
     }
   },
   "cases": [
     {
-      "thread": "v046-acceptance-20261112T163555Z",
-      "trip": "v046-acceptance-20261112T163555Z",
+      "thread": "trip-a674affc1b",
+      "trip": "v047-acceptance-20261113T0435Z",
       "interrupts": 2,
       "resumes": 4,
       "legs": [
@@ -38,21 +38,21 @@
           "requested": {
             "origin": "KIAD",
             "destination": "KEWR",
-            "aircraft": "A20N",
+            "aircraft": "A21N",
             "departure": "2026-11-13T14:00:00Z"
           },
           "generation": {
             "status": "generated",
-            "clicked_at": "2026-11-12T16:37:56.277914+00:00",
+            "clicked_at": "2026-11-13T04:33:08.752596+00:00",
             "browser_session": true
           },
           "snapshot": {
-            "sha256": "0f5ba22385abb04bb1c4a677946648ebaf98165a70b3fc5395b9e2237439f0bb",
-            "retrieved_at": "2026-11-12T16:38:18.968770+00:00",
-            "generated_at": "2026-11-12T16:37:58Z",
+            "sha256": "a63e3d4603943fc117c08da55c0dc8a6c86472eead1a71866862cf0fc89a169d",
+            "retrieved_at": "2026-11-13T04:33:21.323954+00:00",
+            "generated_at": "2026-11-13T04:33:09Z",
             "origin": "KIAD",
             "destination": "KEWR",
-            "aircraft": "A20N",
+            "aircraft": "A21N",
             "takeoff_status": "available"
           }
         },
@@ -61,22 +61,22 @@
           "revision": 1,
           "requested": {
             "origin": "KEWR",
-            "destination": "KIAD",
-            "aircraft": "A20N",
-            "departure": "2026-11-13T18:00:00Z"
+            "destination": "EIDW",
+            "aircraft": "A21N",
+            "departure": "2026-11-13T23:15:00Z"
           },
           "generation": {
             "status": "generated",
-            "clicked_at": "2026-11-12T16:39:47.012214+00:00",
+            "clicked_at": "2026-11-13T04:33:55.305297+00:00",
             "browser_session": true
           },
           "snapshot": {
-            "sha256": "93e37e0765072a8cb8c9b2b8592a56bd745a2b30592255f2b625c64661432366",
-            "retrieved_at": "2026-11-12T16:40:09.454528+00:00",
-            "generated_at": "2026-11-12T16:39:48Z",
+            "sha256": "3ca1d8c02210ae5e03228c3080237c58544031f86f5c5270b3be4247bc2a391c",
+            "retrieved_at": "2026-11-13T04:34:10.114476+00:00",
+            "generated_at": "2026-11-13T04:33:56Z",
             "origin": "KEWR",
-            "destination": "KIAD",
-            "aircraft": "A20N",
+            "destination": "EIDW",
+            "aircraft": "A21N",
             "takeoff_status": "available"
           }
         }
