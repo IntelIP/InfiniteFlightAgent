@@ -11,6 +11,22 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-13
+
+### Fixed
+
+- SimBrief generation works again. v0.5.0 shipped playwright 1.65.0, whose driver needs
+  `libatomic.so.1`, which the `python:3.12-slim` image lacks, so every Generate failed within
+  seconds before the click. Playwright is pinned to 1.64.1, and production ran v0.4.7 again
+  until this release.
+- `turn_status` reports `cancelled` after `cancel_trip` instead of repeating the withdrawn
+  `approval_required` result and its approve instruction.
+
+### Changed
+
+- CI builds the container image and starts the Playwright driver inside it, so a dependency
+  that cannot run in the deployed image fails before release.
+
 ## [0.5.0] - 2026-11-13
 
 ### Added
@@ -326,6 +342,7 @@ First public release, and the first version live on the self-hosted Cloudflare d
   of blocking it permanently ([#3](https://github.com/IntelIP/InfiniteFlightAgent/pull/3)).
 
 [Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.6...HEAD
+[0.5.1]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.7...v0.5.0
 [0.4.7]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.6...v0.4.7
 [0.4.6]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.5...v0.4.6
