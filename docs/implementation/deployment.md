@@ -1,8 +1,28 @@
 # Cloudflare deployment
 
+<a id="current-release-v051"></a>
+
+## Current release: v0.5.1
+
+Observed November 13, 2026 UTC: [PR #37](https://github.com/IntelIP/InfiniteFlightAgent/pull/37)
+is merged and [v0.5.1](https://github.com/IntelIP/InfiniteFlightAgent/releases/tag/v0.5.1)
+is deployed at 100%, adding trip progress and safe cancellation (v0.5.0) with the
+generation fix. v0.5.0 (Worker `bcca9620-3e4d-42be-bb1e-44acf95cce3a`) failed every
+generation and was rolled back to v0.4.7 before v0.5.1; do not redeploy it.
+
+- Release source and PR merge: `238f05ceee4984261cffcbe9d48e92088c19fca6`.
+- Production Worker: `62bc3afe-fb1f-474f-b2de-765ac1fdfeb5`.
+- Immutable image: `sha256:50cb0c37d75184b4576e091d8aed362d03543c672f47ce4074edd9350ad656e2`.
+- Rollback Worker: `42d1aede-d6f5-4e0b-a226-32617cab2c9e` (v0.4.7).
+
+The [release report](../evidence/v051-release.md) owns the v0.5.0 incident, rollback,
+identities, cancellation acceptance and limitations. All four
+[database-derived BUILD-04 outcomes](../evidence/live-acceptance.json) pass for this release
+integration. Two sequential browser sessions used 77.1 seconds; zero active browsers remained.
+
 <a id="current-release-v047"></a>
 
-## Current release: v0.4.7
+## Previous release: v0.4.7
 
 Observed November 13, 2026 UTC: [PR #27](https://github.com/IntelIP/InfiniteFlightAgent/pull/27)
 is merged and [v0.4.7](https://github.com/IntelIP/InfiniteFlightAgent/releases/tag/v0.4.7)
