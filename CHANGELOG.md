@@ -11,6 +11,8 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-13
+
 ### Added
 
 - Durable trip progress (INT-416): each conversation's turn (identity, action, status,
@@ -36,6 +38,9 @@ A running server reports its version at `/health`.
   `approve_dispatch` refuses to approve a cancelled approval. Existing statuses are unchanged.
 - Workflow verifier `ifd-workflow-oracles-v4` adds MCP-output assertions and the cancelled
   outcome; v1–v3 manifests remain accepted.
+- Dependency updates: pydantic 2.14.3, langsmith 0.14.17, langchain-openai 1.7.4,
+  browserbase 1.24.0, playwright 1.65.0, boto3 1.43.127, hatchling 1.33.0 (#33); wrangler
+  4.159.0 and jose 6.2.17 for the Worker (#32). Dependabot now proposes weekly updates (#16).
 
 ## [0.4.7] - 2026-11-12
 
@@ -321,6 +326,7 @@ First public release, and the first version live on the self-hosted Cloudflare d
   of blocking it permanently ([#3](https://github.com/IntelIP/InfiniteFlightAgent/pull/3)).
 
 [Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.6...HEAD
+[0.5.0]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.7...v0.5.0
 [0.4.7]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.6...v0.4.7
 [0.4.6]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.4...v0.4.5
