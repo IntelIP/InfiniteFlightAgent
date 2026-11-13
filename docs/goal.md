@@ -1,6 +1,6 @@
 # Goal
 
-Status: accepted product direction from Hudson's planning conversation, October 30, 2026. Implementation and verification have not begun.
+Status: accepted product direction from Hudson's planning conversation, October 30, 2026, amended November 13, 2026. Implementation began November 1; production is v0.5.1, and the [roadmap](roadmap.md) records what has shipped against these criteria.
 
 ## User and problem
 
@@ -54,5 +54,7 @@ After launch, add aircraft in batches toward coverage of the majority of Infinit
 Prioritize free/open-source technologies, openly licensed data, existing access, and low-maintenance integrations. Evaluate free public sources and applicable open-source methods before paid providers. Free access, open-source code, and open-data licensing are different properties; record each accurately. Consider setup, maintenance, reliability, and model/search cost as well as subscription price. Paid sources remain exceptions requiring a concrete coverage/access gap and separate approval. This preference does not lower the required standard for aircraft-specific thrust translation or silently remove historical/future flight and gate requirements. See [source strategy](research/free-first-strategy.md) for the proposed evaluation order.
 
 The user operates Infinite Flight, selects spawn, imports the plan, and manually sets thrust. Automatic spawning, thrust control, climb management, LNAV/VNAV assistance, and telemetry-driven control are later possibilities, not launch requirements.
+
+**Amended November 13, 2026 (Hudson):** the product grows into three roles: a crew scheduler that chooses what to fly and why, the existing dispatcher, and a local flight engineer that uses Infinite Flight Connect API v2. Read-only telemetry, then opt-in assisted autothrust, predictive power and arrival ops are now planned work. The LLM never sits in the real-time control loop, and any manual throttle movement hands control back. The [roadmap](roadmap.md) owns the sequence.
 
 No public-product launch, paid provider, hosting platform, model provider, spending limit, or deployment is selected. Research can identify options; consequential choices remain with Hudson. See the [open decisions](backlog.md#open-decisions).

@@ -1,6 +1,6 @@
 # Technical design
 
-Status: proposed design, October 30, 2026. [Goal](goal.md) owns accepted product intent. [Backlog](backlog.md) owns unresolved decisions and work. No architecture described here has been implemented or live-validated.
+Status: design proposed October 30, 2026; much of it is now implemented and in production (v0.5.1). Sections headed "Implemented" describe shipped behavior; the rest record the original proposal and its reasoning. The [agent guide](implementation/agent-usage.md) and [deployment record](implementation/deployment.md) describe the running system. [Goal](goal.md) owns accepted product intent; the [roadmap](roadmap.md) and [backlog](backlog.md) own planned work.
 
 Dependency findings: [SimBrief extension](research/simbrief-extension.md), [flight/gate sources](research/flight-data-sources.md), and [professional thrust sources](research/professional-thrust-sources.md). These reports own the source evidence and open access questions; the design below incorporates their implications.
 

@@ -1,6 +1,6 @@
 # Aircraft coverage
 
-Status: planning; **zero aircraft have verified thrust-translation support in this project**. This describes available evidence, not a change to launch scope. The support definition is owned by [goal.md](goal.md#what-counts-as-aircraft-support).
+Status November 13, 2026 (v0.5.1): labeled simulation-grade estimates ship for the A320neo, A321neo and 737 MAX 8; **zero aircraft have verified thrust-translation support in this project**. The [roadmap](roadmap.md) plans simulator evidence from a read-only Connect API bridge (v0.7) and the first verified aircraft with the performance card (v0.8). This describes available evidence, not a change to launch scope. The support definition is owned by [goal.md](goal.md#what-counts-as-aircraft-support).
 
 ## Current fleet baseline
 

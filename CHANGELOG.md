@@ -11,6 +11,16 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+### Documentation
+
+- New roadmap: the agent grows from a dispatcher into a crew scheduler, the dispatcher and a
+  local flight engineer that reads Infinite Flight's Connect API v2. Release order v0.5.2
+  through v0.11.0, with no language model in the real-time control loop. The product goal
+  records the November 13 amendment.
+- Align the README, backlog, agent guide, technical design and aircraft coverage with
+  production v0.5.1: `trip_progress` and `cancel_trip` are documented as shipped, the v0.5.1
+  live acceptance replaces the v0.4.6 figures, and stale status lines and links are corrected.
+
 ## [0.5.1] - 2026-11-13
 
 ### Fixed
