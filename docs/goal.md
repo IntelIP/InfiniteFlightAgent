@@ -55,4 +55,6 @@ Prioritize free/open-source technologies, openly licensed data, existing access,
 
 The user operates Infinite Flight, selects spawn, imports the plan, and manually sets thrust. Automatic spawning, thrust control, climb management, LNAV/VNAV assistance, and telemetry-driven control are later possibilities, not launch requirements.
 
+**Amended November 13, 2026 (Hudson):** the product grows into three roles: a crew scheduler that chooses what to fly and why, the existing dispatcher, and a local flight engineer that uses Infinite Flight Connect API v2. Read-only telemetry, then opt-in assisted autothrust, predictive power and arrival ops are now planned work. The LLM never sits in the real-time control loop, and any manual throttle movement hands control back. The [roadmap](roadmap.md) owns the sequence.
+
 No public-product launch, paid provider, hosting platform, model provider, spending limit, or deployment is selected. Research can identify options; consequential choices remain with Hudson. See the [open decisions](backlog.md#open-decisions).
