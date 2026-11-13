@@ -253,10 +253,15 @@ class Store:
             ).fetchone()
             meta = json.loads(row[0]) if row else {}
             previous = meta.get("generation") or {}
-            if previous.get("at") or previous.get("status") in (
-                "generated",
-                "uncertain",
-                "clicking",
+            if (
+                meta.get("cancelled")
+                or previous.get("at")
+                or previous.get("status")
+                in (
+                    "generated",
+                    "uncertain",
+                    "clicking",
+                )
             ):
                 return None
             meta["generation"] = {

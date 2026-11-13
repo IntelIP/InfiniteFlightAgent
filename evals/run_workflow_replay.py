@@ -8,6 +8,7 @@ import argparse
 import json
 import os
 import tempfile
+import threading
 import time
 import sqlite3
 from collections import Counter
@@ -32,6 +33,7 @@ from ifdispatcher import (
     flights,
     observability,
     operations,
+    progress,
     remote,
     workflow,
 )
@@ -244,6 +246,30 @@ def run_case(case, manifest, model=None, max_turns=5, mcp_url=None):
     continuation_turns = 0
     turns = []
     source = (ROOT / manifest["fixture"]["path"]).read_bytes()
+    control = case.get("control") or {}
+    concurrent = []  # cancel_trip calls made by a concurrent client while a turn runs
+    driver = None
+
+    def mcp_call(name, args):
+        output = driver.call(name, args)
+        run.setdefault("mcp_outputs", []).append({"tool": name, "output": output})
+        return output
+
+    def cancel_during_turn():
+        """Cancel from a second client mid-turn, then continue once the turn sees it."""
+        if control.get("cancel_at") not in {"pre_click", "post_click"}:
+            return
+        caller = threading.Thread(
+            target=mcp_call,
+            args=("cancel_trip", {"thread_id": case["id"], "reason": "owner cancelled"}),
+        )
+        caller.start()
+        concurrent.append(caller)
+        deadline = time.monotonic() + 10
+        while not (case["id"] in remote._controls and remote._controls[case["id"]].event.is_set()):
+            if time.monotonic() > deadline:
+                raise RuntimeError("controlled cancellation was not received")
+            time.sleep(0.01)
 
     def blocked(*args, **kwargs):
         run["invalid"] = True
@@ -290,6 +316,11 @@ def run_case(case, manifest, model=None, max_turns=5, mcp_url=None):
             )
         if failure == "timeout_before_click":
             raise TimeoutError("controlled pre-click timeout")
+        if control.get("cancel_at") == "pre_click":
+            cancel_during_turn()
+        if control.get("cancel_at") == "deadline_pre_click":
+            # Real elapsed time past the configured turn deadline; no clock patching.
+            time.sleep(float(control["deadline_seconds"]) + 0.5)
         if case["scenario"] == "retry_duplicate" and len(run["provider_attempts"]) == 1:
             return {
                 "status": "fill_mismatch",
@@ -313,6 +344,8 @@ def run_case(case, manifest, model=None, max_turns=5, mcp_url=None):
             raw["navlog"] = {"fix": [{"ident": s} for s in case["route_evidence"]]}
         body = json.dumps(raw).encode()
         run["provider_plans"].append({"key": ident, "sha256": sha256(body), "fields": fields})
+        if control.get("cancel_at") == "post_click":
+            cancel_during_turn()
         if failure == "timeout_after_click":
             raise TimeoutError("controlled post-click timeout")
         return {
@@ -383,6 +416,11 @@ def run_case(case, manifest, model=None, max_turns=5, mcp_url=None):
                     "IFD_AIRPORT_CACHE_DIR": "disabled",
                     "IFD_INTERNAL_TOKEN": "controlled-workflow-replay-token",
                     "LANGSMITH_TRACING": "false",
+                    **(
+                        {"IFD_TURN_DEADLINE_SECONDS": str(control["deadline_seconds"])}
+                        if "deadline_seconds" in control
+                        else {}
+                    ),
                 },
             )
         )
@@ -410,12 +448,18 @@ def run_case(case, manifest, model=None, max_turns=5, mcp_url=None):
             (flights, "datetime", Clock),
             (agent, "datetime", Clock),
             (operations, "datetime", Clock),
+            (progress, "datetime", Clock),
             (remote, "paid_operations_enabled", lambda: True),
         ):
             stack.enter_context(patch.object(module, name, replacement))
         # Do not export .env tracing settings or send ambient traces; explicit upload is separate.
         stack.enter_context(tracing_context(enabled=False))
         try:
+            if control and not mcp_url:
+                run["invalid"] = True
+                run["invalid_reasons"].append("trip-control case requires --mcp transport")
+                run.update(verify(case, run))
+                return run
             if case.get("airline_flight"):
                 flight = case["airline_flight"]
                 required = {
@@ -528,6 +572,20 @@ def run_case(case, manifest, model=None, max_turns=5, mcp_url=None):
                 messages = result.value["messages"]
                 harvest(messages)
                 observe()
+                if (
+                    result.interrupts
+                    and control.get("cancel_at") == "approval"
+                    and len(run["approvals"]) == control.get("approval_index", 0)
+                ):
+                    # The owner stops at this approval instead of answering it.
+                    pending = result.interrupts[0].value["action_requests"][0]
+                    run["cancelled_approvals"] = [pending]
+                    cancelled = mcp_call(
+                        "cancel_trip", {"thread_id": case["id"], "reason": "owner cancelled"}
+                    )
+                    run["cancelled"] = cancelled["status"] == "cancelled"
+                    mcp_call("approve_dispatch", {"thread_id": case["id"], "approve": True})
+                    break
                 if result.interrupts:
                     decisions = []
                     for interrupt in result.interrupts:
@@ -600,6 +658,11 @@ def run_case(case, manifest, model=None, max_turns=5, mcp_url=None):
                     graph = agent.build_agent(model=selected_model, checkpointer=replacement)
                     driver.graph = graph
                     run["recovered"] = driver.call("conversation_status", {"thread_id": case["id"]})
+                if control:
+                    for caller in concurrent:
+                        caller.join(timeout=remote.WAIT_SECONDS + 15)
+                    mcp_call("turn_status", {"thread_id": case["id"]})
+                    mcp_call("trip_progress", {"thread_id": case["id"]})
             observe()
         except Exception as exc:
 

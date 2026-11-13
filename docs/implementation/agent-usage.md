@@ -116,6 +116,24 @@ The review queue scores whole conversations. Automatic workflow feedback is sepa
 owner acceptance. Provider usage reports FlightAware list-price estimates and Browserbase
 elapsed time; unknown invoice costs stay unknown.
 
+## v0.5.0 trip control (unreleased)
+
+Remote MCP tools added for INT-416/417. Neither invokes the model or a provider.
+
+| Tool | Use |
+| --- | --- |
+| `trip_progress(thread_id)` | Durable progress: the current/last turn (`queued`, `running`, `approval_required`, `reply`, `cancelled`, `deadline_exceeded`, `failed`, or `interrupted` after a restart), pending/cancelled approval and history, and each leg revision's stage (`awaiting_generation`, `generating`, `generated_awaiting_finalize`, `generation_uncertain`, `generation_failed`, `cancelled`, `plan_retained`, `briefing_ready`, `infeasible`), with `completed_legs`, `uncertain_generations` and a `next` instruction |
+| `cancel_trip(thread_id, reason?)` | Only when the user asks to stop. Records the request, signals a running turn and waits up to 25 seconds for it to reach a safe point. Returns `cancelled` (with `outcome` `stopped` or `completed` when the turn finished first) or `cancelling` while a Generate click is finishing |
+
+Cancellation withdraws the pending approval (`approve_dispatch` then returns `cancelled`) and
+every approved revision whose Generate was never clicked; continuing needs a new approved
+revision. Completed plans and briefings are kept. A clicked or uncertain generation is never
+withdrawn, cleared or repeated: check SimBrief, then finalize or request a new revision.
+`IFD_TURN_DEADLINE_SECONDS` (default 600) stops a turn at its next safe point and, like a
+cancel, withdraws unclicked approved revisions; worker threads
+are not killed, so a stalled model or provider call ends when it returns. Browser limits are
+unchanged: one active workflow, two waiters, 30-second queue wait, 180-second session.
+
 ## Bounded browser management
 
 Deployed in [v0.4.2](deployment.md#current-release-v042) after exact-image staging acceptance

@@ -107,6 +107,11 @@ class MCPDriver:
                     }
                 )
             ]
+        elif result["status"] == "cancelled":
+            # A cancelled or expired turn ends without a model reply; the harness inspects
+            # durable progress next instead of treating it as a transport failure.
+            self.run["cancelled"] = True
+            self.run.setdefault("mcp_outputs", []).append({"tool": name, "output": result})
         elif result["status"] != "reply":
             raise RuntimeError(f"unexpected MCP outcome: {result['status']}")
         return SimpleNamespace(value=state, interrupts=interrupts)

@@ -4,7 +4,7 @@ import hashlib
 import json
 from datetime import datetime, timedelta, timezone
 
-from ifdispatcher import planning, thrust
+from ifdispatcher import planning, progress, thrust
 from ifdispatcher.core import open_store
 
 
@@ -96,6 +96,8 @@ def saved_trips(trip: str | None = None) -> dict:
                 else "plan_retained"
                 if snap
                 else (meta.get("generation") or {}).get("status", "prepared"),
+                "stage": progress.leg_stage(meta, bool(snap)),
+                "cancelled": meta.get("cancelled"),
                 "briefing_markdown": meta.get("briefing"),
                 "task_outcome": meta.get("task_outcome"),
                 "snapshot_sha256": snap["raw_sha256"] if snap else None,

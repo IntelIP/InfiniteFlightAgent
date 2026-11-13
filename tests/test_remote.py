@@ -56,9 +56,11 @@ def test_mcp_client_lists_dispatcher_tools(server):
     assert asyncio.run(list_tools()) == [
         "approve_dispatch",
         "browser_status",
+        "cancel_trip",
         "conversation_status",
         "list_saved_trips",
         "plan_flight",
+        "trip_progress",
         "turn_status",
     ]
 
@@ -66,7 +68,7 @@ def test_mcp_client_lists_dispatcher_tools(server):
 def test_long_turn_returns_running_then_result(monkeypatch):
     release = threading.Event()
 
-    def slow_run(payload, thread_id):
+    def slow_run(payload, thread_id, control=None):
         release.wait(5)
         return {"status": "reply", "thread_id": thread_id, "reply": payload}
 

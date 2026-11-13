@@ -10,7 +10,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from ifdispatcher import artifacts, flights, planning, simbrief_browser, thrust
+from ifdispatcher import artifacts, flights, planning, progress, simbrief_browser, thrust
 from ifdispatcher.config import data_dir, setting
 from ifdispatcher.core import Dispatch, Store, fetch_sync, normalize, open_store
 
@@ -319,6 +319,19 @@ class GenerationClaimed(ValueError):
     """Another execution already owns this leg revision's Generate click."""
 
 
+def _cancelled_result(meta: dict) -> dict[str, Any]:
+    return {
+        "status": "cancelled",
+        "reason": "This approved revision was cancelled before its Generate click; its approval "
+        "no longer authorizes generation.",
+        "next": "Ask the user, then request a new approved revision with revise_dispatch to continue.",
+        "cancelled": meta.get("cancelled"),
+        "clicked": False,
+        "retryable": False,
+        "automatic_retry_allowed": False,
+    }
+
+
 def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) -> dict[str, Any]:
     """Fill SimBrief's dispatch form in the logged-in cloud browser and (if click) Generate once."""
     store = _store()
@@ -327,6 +340,8 @@ def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) ->
         return {"status": "missing_dispatch", "reason": "call dispatch_flight for this leg first"}
     meta = store.read_meta(trip, leg, revision)
     previous = (meta.get("generation") or {}).get("status")
+    if click and meta.get("cancelled"):
+        return _cancelled_result(meta)
     if (
         click
         and previous in ("clicking", "generated", "uncertain", "error", "fill_mismatch")
@@ -362,8 +377,11 @@ def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) ->
 
     def mark_clicking() -> None:  # just before the click: earlier failures leave the leg retryable
         nonlocal meta
+        progress.check()  # the last safe point to honor cancellation or the turn deadline
         claimed = store.claim_generation(trip, leg, revision)
         if claimed is None:
+            if store.read_meta(trip, leg, revision).get("cancelled"):
+                raise progress.TurnCancelled("cancelled")
             raise GenerationClaimed("Generation already claimed for this revision")
         meta = claimed
 
@@ -378,6 +396,27 @@ def generate_plan(trip: str, leg: str, revision: int = 1, click: bool = True) ->
             "retryable": False,
             "reason": "Another execution already claimed Generate for this revision",
         }
+    except progress.TurnCancelled as exc:
+        # Raised only before the click (browser admission or the pre-click check).
+        meta = store.read_meta(trip, leg, revision)
+        meta["generation"] = {
+            **meta.get("generation", {}),
+            "status": "cancelled",
+            "clicked": False,
+            "retryable": False,
+            "automatic_retry_allowed": False,
+            "reason_code": exc.reason,
+        }
+        meta.setdefault(
+            "cancelled",
+            {
+                "at": datetime.now(timezone.utc).isoformat(),
+                "reason": exc.reason,
+                "before_click": True,
+            },
+        )
+        store.save_meta(trip, leg, revision, meta)
+        raise
     except Exception as exc:
         clicked = (meta.get("generation") or {}).get("status") == "clicking"
         result = {

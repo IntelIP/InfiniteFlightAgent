@@ -132,6 +132,37 @@ Use separate component statuses for research/parking, plan generation, thrust, a
 
 Before retrying generation after a timeout, reconcile using any supported external identity/receipt; never blindly generate again. If outcome cannot be reconciled, report it as unknown and request the necessary action. Retry limits, timeouts, and research bounds should be explicit operational settings selected from measured behavior.
 
+### Implemented trip progress and cancellation (v0.5.0, INT-416/417)
+
+State lives in the existing store without a schema change. Each conversation thread has one
+`turn_progress:<thread_id>` JSON record in `settings` (SQLite and Postgres): `turn_id`,
+`action`, `status`, `boot_id`, `started_at`/`finished_at`/`deadline_at`, `active_seconds` and
+`active_seconds_total`, `cancel` (`requested_at`, `reason`, `while`, `outcome`,
+`confirmed_at`), `cancelled_interrupt` and the approval decision history. Leg stages are
+derived from the saved request, `leg_meta` and snapshot of each revision; a cancelled
+revision carries `cancelled` in its metadata, which also fences `claim_generation`. The pending
+approval comes from the LangGraph checkpoint.
+
+Turn states: `queued → running → approval_required | reply | cancelled | deadline_exceeded |
+failed`. A record left `queued`/`running` by another server process (`boot_id` differs) or
+with no in-process turn is reported as `interrupted`. Cancel requests move
+`requested → stopped` (the turn reached a safe point) or `requested → completed` (it
+finished first); while a Generate click is in flight `cancel_trip` reports `cancelling`.
+
+Leg stages: `awaiting_generation → generating → generated_awaiting_finalize → plan_retained →
+briefing_ready | infeasible`, with `generation_failed`, `cancelled` (approval withdrawn before
+any click) and `generation_uncertain` (clicked without an observed result, or a `clicking`
+claim older than one bounded browser workflow or left by an inactive turn).
+
+Cancellation is cooperative: checks run before each model call and tool call, while waiting for
+browser admission and immediately before the Generate claim. Python threads are never killed
+and a click is never interrupted, cleared or retried. A cancel that lands while the model is
+proposing a dispatch withdraws that new approval instead of offering it. The turn deadline
+(`IFD_TURN_DEADLINE_SECONDS`, default 600 seconds) covers active execution only; the human
+approval wait falls between turns. The default exceeds one 180-second browser session plus the
+30-second queue and model steps; recorded live sessions took 50–80 seconds. Per-turn
+`active_seconds` is now recorded so the limit can be recalibrated from observed turns.
+
 ## MCP and presentation contract
 
 Proposed task-level interface:

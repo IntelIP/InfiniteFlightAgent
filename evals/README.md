@@ -245,6 +245,28 @@ A product exception is a valid observed failure; an invalid run means the harnes
 cannot support a comparison. Manifest/fixture drift aborts before execution. Reports should
 remain under ignored `artifacts/evals/` because they retain complete observations.
 
+### v0.5.0 trip-control suite (INT-416/417)
+
+`workflow_cases_v050.json` is the separate `ifd-workflow-v050-trip-control` manifest
+(verifier `ifd-workflow-oracles-v4`, base commit v0.4.6). Its cases require `--mcp`; without
+it a run is marked invalid. Cancellation comes from a concurrent MCP `cancel_trip` call and
+the deadline from real elapsed time against `IFD_TURN_DEADLINE_SECONDS`; no clock patching or
+live session is involved. `mcp_assertions` check `cancel_trip`, `approve_dispatch` and
+`trip_progress` outputs.
+
+| Case | Scenario |
+| --- | --- |
+| WF-029 | Cancel at the first approval; the approval cannot then be approved |
+| WF-030 | Cancel at leg 2's approval after leg 1's briefing; leg 1 kept across a restart |
+| WF-031 | Cancel before the Generate click; no click, revision withdrawn |
+| WF-032 | Cancel after a click whose outcome times out; reported uncertain, one attempt only |
+| WF-033 | Turn deadline passes before the click; no click, revision withdrawn |
+
+```sh
+uv run python evals/run_workflow_replay.py run \
+  --manifest evals/workflow_cases_v050.json --mcp --output artifacts/evals/v050-trip-control.json
+```
+
 ### Optional LangSmith experiment upload
 
 The installed `langsmith==0.14.16` supports [`Client.evaluate`](https://docs.langchain.com/langsmith/evaluate-llm-application).

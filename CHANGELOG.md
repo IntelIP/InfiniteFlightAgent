@@ -11,6 +11,32 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+### Added
+
+- Durable trip progress (INT-416): each conversation's turn (identity, action, status,
+  timestamps, deadline, active seconds, cancel request/outcome) and approval history are
+  persisted in the existing store, and the new `trip_progress` MCP tool reports every leg
+  revision's stage, the pending or cancelled approval, completed legs and uncertain
+  generations without invoking the model or a provider. After a restart, unfinished work is
+  reported as `interrupted` instead of `running`.
+- Cooperative cancellation and turn deadlines (INT-417): the new `cancel_trip` MCP tool stops
+  queued or running work at the next safe point (model/tool boundary, browser queue wait or
+  immediately before Generate), withdraws a pending approval and approved revisions that were
+  never clicked, and keeps completed plans and briefings. A Generate click already made is
+  never interrupted or repeated; it is reported as generated or uncertain.
+  `IFD_TURN_DEADLINE_SECONDS` (default 600) bounds each turn's active execution; waiting for
+  a human approval happens between turns and is not counted.
+- Separate `ifd-workflow-v050-trip-control` evaluation suite (WF-029–033) over the production
+  MCP tools with controlled providers.
+
+### Changed
+
+- `turn_status` falls back to the persisted turn record when no in-process turn exists, and
+  `conversation_status` reports `approval_cancelled` for a withdrawn approval;
+  `approve_dispatch` refuses to approve a cancelled approval. Existing statuses are unchanged.
+- Workflow verifier `ifd-workflow-oracles-v4` adds MCP-output assertions and the cancelled
+  outcome; v1–v3 manifests remain accepted.
+
 ## [0.4.7] - 2026-11-12
 
 ### Fixed

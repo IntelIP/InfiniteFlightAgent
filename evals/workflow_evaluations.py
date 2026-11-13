@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "evals/workflow_cases.json"
-VERIFIER_VERSION = "ifd-workflow-oracles-v3"
+VERIFIER_VERSION = "ifd-workflow-oracles-v4"
 EVIDENCE_MODES = {
     "scripted-controlled",
     "real-model-replay",
@@ -34,6 +34,7 @@ def load_manifest(path=MANIFEST) -> dict:
     if manifest.get("schema_version") != 1 or manifest.get("verifier_version") not in {
         "ifd-workflow-oracles-v1",
         "ifd-workflow-oracles-v2",
+        "ifd-workflow-oracles-v3",
         VERIFIER_VERSION,
     }:
         raise ValueError("unsupported workflow manifest/verifier version")
@@ -124,6 +125,21 @@ def same_input(field, left, right, aircraft):
     ):
         return True
     return same_value(field, left, right)
+
+
+_MISSING = object()
+
+
+def at_path(value, path):
+    """Follow dict keys and list indices; a missing step yields a sentinel, never a match."""
+    for part in path:
+        if isinstance(value, dict) and part in value:
+            value = value[part]
+        elif isinstance(value, list) and isinstance(part, int) and -len(value) <= part < len(value):
+            value = value[part]
+        else:
+            return _MISSING
+    return value
 
 
 def verify(case: dict, run: dict) -> dict:
@@ -239,7 +255,10 @@ def verify(case: dict, run: dict) -> dict:
     if case["scenario"] == "revision_recovery":
         # A recovered refusal is a blocked latest tool step while the saved plan stays usable.
         checks["completion"] = bool(snapshots) and bool(run.get("final_reply"))
-    if declined:
+    if case["expected_outcome"] == "cancelled":
+        # Cancellation ends a turn at a safe point without a model reply.
+        checks["completion"] = bool(run.get("cancelled")) and not run.get("error")
+    elif declined:
         checks["completion"] = not actual and not clicks and bool(run.get("final_reply"))
     elif blocked or case.get("no_dispatch"):
         checks["completion"] = bool(run.get("final_reply")) and not snapshots
@@ -333,6 +352,14 @@ def verify(case: dict, run: dict) -> dict:
             return output == assertion["equals"]
 
         checks[assertion["id"]] = any(matches(o) for o in outputs)
+    for assertion in case.get("mcp_assertions", []):
+        # Production MCP control/progress outputs (cancel_trip, approve_dispatch, trip_progress).
+        outputs = [
+            o["output"] for o in run.get("mcp_outputs", []) if o["tool"] == assertion["tool"]
+        ]
+        checks[assertion["id"]] = any(
+            at_path(o, assertion["path"]) == assertion["equals"] for o in outputs
+        )
     if case.get("unknown_connection"):
         unknown_results = [
             t["output"]
@@ -426,7 +453,12 @@ def verify(case: dict, run: dict) -> dict:
             )
             and len(run.get("provider_attempts", [])) == 1
         )
-    if case.get("restart"):
+    if case.get("restart") and case.get("recovered_status"):
+        # A cancelled approval must not come back as approvable after reconstruction.
+        checks["restart_recovery"] = (
+            run.get("recovered", {}).get("status") == case["recovered_status"]
+        )
+    elif case.get("restart"):
         checks["restart_recovery"] = run.get("recovered", {}).get("status") == "saved" and run.get(
             "recovered", {}
         ).get("reply") == run.get("final_reply")

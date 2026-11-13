@@ -9,7 +9,7 @@ import json
 import time
 import uuid
 
-from ifdispatcher import observability
+from ifdispatcher import observability, progress
 from ifdispatcher.core import open_store
 
 SESSION_SECONDS = 180
@@ -82,6 +82,7 @@ class Lease:
                         "browserbase_admission", queue_wait_s=round(time.monotonic() - started, 3)
                     )
                     return
+                progress.check()  # a cancelled or expired turn leaves the queue unopened
                 if time.monotonic() - started >= QUEUE_SECONDS:
                     raise BrowserLimit("browser_queue_timeout: no browser opened; try later")
                 time.sleep(0.1)
