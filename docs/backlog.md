@@ -1,7 +1,8 @@
 # Backlog
 
-Status updated November 12, 2026 UTC. Current release work is tracked in the
-[Infinite Flight Agent Linear project](https://linear.app/intelip/project/infinite-flight-agent-a2f7101e32e9).
+Status updated November 13, 2026 UTC. Current release work is tracked in Linear as the
+`IFA ·` projects under the "Infinite Flight Agent" project label
+([roadmap document](https://linear.app/intelip/document/infinite-flight-agent-roadmap-0dcea64227b8)).
 This file indexes that work and preserves earlier research. [goal.md](goal.md) owns the
 accepted product requirements and aircraft-support definition; the
 [roadmap](roadmap.md) maps release outcomes. Linear owns current task acceptance,
@@ -10,21 +11,23 @@ the current implementation and evidence summarized here supersede those dated bl
 
 ## Current delivery baseline
 
-Production is [v0.4.6](implementation/deployment.md#current-release-v046). The exact release
-image passed a deployed two-leg staging trip before promotion. The production rollout,
-transport limitations, provider usage and cleanup are recorded in the deployment runbook.
+Production is [v0.5.1](implementation/deployment.md#current-release-v051). It passed live
+acceptance on the promoted production Worker: two generated legs, a cancelled third-leg
+approval and a separate cancel-before-approval trip. v0.5.0 was rolled back after a browser
+driver failure; the [release report](evidence/v051-release.md) records the incident, fix,
+identities and usage.
 This proves the exercised dispatch integration, not simulator import or aircraft accuracy.
 
 | Surface | Current capability | Remaining work |
 | --- | --- | --- |
-| Foundation — SETUP-01, BUILD-01/02 | Locked Python application, Deep Agent, MCP, transactional storage/checkpoints, CI and product-validation manifest are installed; deployed generation is observed | Whole-operation progress, cancellation/deadlines and intended-client acceptance remain separate tasks |
+| Foundation — SETUP-01, BUILD-01/02 | Locked Python application, Deep Agent, MCP, transactional storage/checkpoints, CI (including a release-image browser-driver check) and product-validation manifest are installed; deployed generation is observed | Intended-client acceptance (INT-426) |
 | SimBrief — DISC-03/06, BUILD-04 | Browser generation (SimBrief-chosen route when none is agreed), exact-input approval/readback, retained route/navlog correlation and two retained legs are observed | More dispatch inputs and broader live-provider coverage; controlled recovery scenarios do not prove every provider option |
 | Flight research — BUILD-03 | Dated FlightAware research, connection checks, reported gates and explicitly unverified spawn suggestions are implemented | Verified simulator stand mapping, private configuration evidence and import behavior |
 | Thrust — BUILD-05, VERIFY-01 | Labeled A20N/A21N/B38M estimates and condition-specific observed N1 calibration are implemented | Zero aircraft have verified support under the accepted definition; engine/build applicability and simulator evidence remain open |
-| Trip management and evaluation | Saved legs/briefings, approved revisions, recoverable validation/provider guidance and a matched 28-case whole-conversation MCP/recovery suite are shipped | Durable progress/cancellation and more dispatch/configuration inputs remain planned |
+| Trip management and evaluation | Saved legs/briefings, approved revisions, recoverable validation/provider guidance, durable `trip_progress`, `cancel_trip` with turn deadlines, the 28-case whole-conversation suite and the WF-029–033 trip-control suite are shipped | Live evidence for cancelling during an open browser session and for the turn deadline; cruise level and alternate inputs (INT-418) |
 | Expansion — EXPAND-01 | Official v26 matrix is frozen: 51 current aircraft, 11 legacy records and explicit engine/native-system/profile gaps | Establish references, resolve applicability and verify simulator profiles before counting support |
 
-## Active release work
+## Release work
 
 | Version | Linear work | Outcome |
 | --- | --- | --- |
@@ -32,7 +35,14 @@ This proves the exercised dispatch integration, not simulator import or aircraft
 | v0.4.4 — shipped | INT-407–411; [release evidence](evidence/v044-release.md) | Predictable existing conversations/routing, current catalog assessment and broader end-to-end scenarios |
 | v0.4.5 — shipped | [INT-415](https://linear.app/intelip/issue/INT-415); INT-412–414 verification remains open | Existing-profile software corrections shipped; independent reference/simulator applicability remains unverified |
 | v0.4.6 — shipped | [PR #24](https://github.com/IntelIP/InfiniteFlightAgent/pull/24); [release evidence](evidence/v046-release.md) | Ordered revisions complete generation/finalization with retained earlier results and exact approvals |
-| v0.5.0 | INT-416–428; [release task](https://linear.app/intelip/issue/INT-428) | Durable trip control, expanded dispatch inputs, private-flight configurations and measured aircraft expansion |
+| v0.4.7 — shipped | [Changelog](../CHANGELOG.md#047---2026-11-12) | Generate is clicked directly after the form is filled; Route Finder no longer hangs generation |
+| v0.5.0/v0.5.1 — shipped | INT-416/417; [release report](evidence/v051-release.md) | Durable trip progress, cancellation and turn deadlines; v0.5.1 restored generation after the v0.5.0 rollback |
+| v0.5.2 onward — planned | `IFA ·` projects in Linear | Departure search fix, crew scheduler, Connect API bridge, performance card, arrival ops and assisted power; see the [roadmap](roadmap.md) |
+
+The unshipped remainder of the original v0.5.0 scope (INT-418–427) was re-sequenced on
+November 13, 2026: cruise level, alternates and thrust verification moved to the v0.8.0
+performance card, client and import verification to the v0.7.0 bridge, and private-flight and
+broad fleet work to the unscheduled Fleet Expansion project. INT-428 was cancelled as superseded.
 
 The first implementation wave shipped through PR #21 and v0.4.3: INT-404 covers revision
 validation, INT-405 provider failure handling, INT-403 workflow evaluations, INT-402 planning
@@ -97,7 +107,7 @@ admission, server lifetime and idle cleanup, no replacement after timeout, no sc
 usage, and honest release/billing telemetry. Check queuing and cleanup with controlled provider
 responses. Live generation acceptance passed on isolated Cloudflare staging for candidate
 `9363cd1`; [the acceptance report](evidence/pr20-live-acceptance.md) records results and limits.
-Merged in PR #20 and deployed in [v0.4.2](implementation/deployment.md#current-release-v042),
+Merged in PR #20 and deployed in [v0.4.2](implementation/deployment.md#previous-release-v042),
 with fresh acceptance of the exact release image before promotion.
 
 ## Research and decisions

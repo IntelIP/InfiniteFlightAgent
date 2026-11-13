@@ -1,6 +1,6 @@
 # Goal
 
-Status: accepted product direction from Hudson's planning conversation, October 30, 2026. Implementation and verification have not begun.
+Status: accepted product direction from Hudson's planning conversation, October 30, 2026, amended November 13, 2026. Implementation began November 1; production is v0.5.1, and the [roadmap](roadmap.md) records what has shipped against these criteria.
 
 ## User and problem
 

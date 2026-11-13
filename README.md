@@ -46,6 +46,10 @@ where to spawn and what thrust to set.
 - **Know your takeoff thrust.** N1 targets come from SimBrief's own takeoff solution and the
   lapse shape of FlyByWire's open A32NX thrust model, each with a range. Aircraft it can't
   model get a clear "unavailable" instead of a guess.
+- **Track or stop a trip.** Ask where a trip stands at any time, even after a server restart:
+  every leg's stage, the pending approval and anything uncertain. Cancel stops the work at the
+  next safe point and withdraws approvals not yet generated, while keeping finished plans; a
+  Generate click already made is never undone or repeated.
 - **Plan whole trips.** Each leg of a multi-leg trip is dispatched and kept separately, and
   must leave at least 45 minutes after the previous leg lands.
 - **Use it where you already chat.** Use the terminal chat, or connect an MCP client such as
@@ -108,7 +112,7 @@ setting, resuming conversations, and MCP client setup.
 | Local SimBrief tools (stdio) | Retrieving, reading and estimating from existing SimBrief plans; no generation | [SimBrief tools](docs/implementation/simbrief-usage.md) |
 
 The remote MCP server exposes `plan_flight`, `approve_dispatch`, `turn_status`,
-`conversation_status`, `list_saved_trips` and `browser_status`
+`conversation_status`, `trip_progress`, `cancel_trip`, `list_saved_trips` and `browser_status`
 ([tool reference](docs/implementation/agent-usage.md#deployed-mode-self-hosted-single-user)).
 It is built for ChatGPT, Claude and Codex as MCP clients; each client's own end-to-end journey
 has not yet passed acceptance, so treat client compatibility as unverified until it does.
@@ -146,10 +150,15 @@ lands. See the [agent guide](docs/implementation/agent-usage.md) and the
 
 - **Workflow evaluations.** 28 whole-conversation scenarios drive the production MCP tools
   over local HTTP with controlled FlightAware, SimBrief and browser services: planning,
-  routing, provider failures, approved revisions and recovery after a restart. The original
-  eight regression cases stay unchanged alongside them. Controlled-service results, matched
-  replays on the configured model and live-provider runs are reported separately
-  ([evaluation guide](evals/README.md), [v0.4.6 release record](docs/evidence/v046-release.md)).
+  routing, provider failures, approved revisions and recovery after a restart. Five more cover
+  trip control: cancelling at an approval, before or after a Generate click, and a turn
+  deadline. The original eight regression cases stay unchanged alongside them.
+  Controlled-service results, matched replays on the configured model and live-provider runs
+  are reported separately ([evaluation guide](evals/README.md),
+  [v0.5.1 release record](docs/evidence/v051-release.md)).
+- **The release image is tested, not just the code.** CI builds the container image and starts
+  the browser driver inside it, after v0.5.0 shipped a driver that could not run in the
+  deployed image ([incident and fix](docs/evidence/v051-release.md)).
 - **Fixes come from traces.** For example, WF-025 found that numbered revisions were treated
   as alternatives; v0.4.6 completes them in order, each separately approved
   ([fix report](docs/evidence/wf025-revision-sequence.md)).
@@ -160,12 +169,13 @@ lands. See the [agent guide](docs/implementation/agent-usage.md) and the
 - **No FlightAware fees for routine runs.** Evaluations replay synthetic or recorded FlightAware
   responses. Live provider checks are opt-in and capped at $1 per batch by default
   ([how to run them](evals/README.md)).
-- **Live acceptance per release.** Each release candidate's exact image runs a two-leg trip
-  (KIAD→KEWR, then KEWR→KIAD) on a temporary staging Worker, with a separate approval per leg,
-  before production approval. For v0.4.6 each leg generated once, the two browser sessions
-  used 151 seconds in total, and no browser was left running
-  ([release record](docs/evidence/v046-release.md), [acceptance data](docs/evidence/live-acceptance.json)).
-  These are single runs, not performance statistics.
+- **Live acceptance per release.** Each release runs a real multi-leg trip with a separate
+  approval per leg. For v0.5.1, on the promoted production server: KIAD→KEWR and KEWR→KIAD
+  each generated once (39 and 38 browser seconds), a third leg's pending approval was
+  cancelled and then refused, both finished briefings were kept, and no browser was left
+  running ([release record](docs/evidence/v051-release.md),
+  [acceptance data](docs/evidence/live-acceptance.json)). These are single runs, not
+  performance statistics.
 
 ## Releases
 
@@ -191,8 +201,11 @@ Worker version with the same name. A running server reports its version at `/hea
   large FLEX reductions there may be flagged as suspect.
 - **FlightAware only sees about two days ahead.** Flights further out have no live schedule or
   gate.
-- **It does not control the simulator.** It never claims your plan was imported, your aircraft
-  spawned, or your thrust was set.
+- **It does not connect to the simulator.** It never claims your plan was imported, your
+  aircraft spawned, or your thrust was set. A local companion that reads Infinite Flight
+  through its Connect API is planned, not built.
+- **Cancellation has limits.** Cancelling while a browser session is open, and the 600-second
+  turn deadline, are covered by controlled tests but have not been exercised live.
 
 ## Contributing
 
@@ -209,9 +222,17 @@ Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
 ## What's next
 
-v0.5.0 adds durable trip progress and safe cancellation, more dispatch inputs such as cruise
-altitude and alternates, sourced private-flight configurations, and measured aircraft expansion.
-The [roadmap](docs/roadmap.md) and [backlog](docs/backlog.md) track it.
+The agent is growing from a dispatcher into a small virtual crew:
+
+- **v0.5.2:** complete multi-airport departure searches and handle FlightAware rate limits.
+- **v0.6 — Crew scheduler:** ask "I have 4 hours" and get one real flight from your home hubs
+  and preferred airlines, with a one-line reason to fly it.
+- **v0.7 — Read-only bridge:** a local companion reads Infinite Flight's Connect API to log
+  flights automatically and record engine data, the evidence needed to verify thrust.
+- **v0.8 onward:** a full performance card, arrival gates and taxi routes, then opt-in assisted
+  autothrust. No language model ever sits in the real-time control loop.
+
+The [roadmap](docs/roadmap.md) has the full plan and its reasoning.
 
 ## License
 
