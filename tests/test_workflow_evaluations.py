@@ -3,6 +3,7 @@
 import copy
 import json
 import socket
+from importlib.metadata import version
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -60,7 +61,7 @@ def batch(manifest, runs):
 def test_frozen_manifest_and_worktree_identity(manifest, tmp_path):
     identity = source_identity()
     assert identity["commit"] and identity["source_sha256"]
-    assert identity["langsmith_version"] == "0.14.16"
+    assert identity["langsmith_version"] == version("langsmith")
     assert "src/ifdispatcher/agent.py" in identity["source_files"]
     duplicate = copy.deepcopy(manifest)
     duplicate["cases"].append(duplicate["cases"][0])
