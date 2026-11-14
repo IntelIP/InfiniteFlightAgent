@@ -3,8 +3,8 @@
 Status updated November 13, 2026 UTC. Production is **v0.5.1**; its
 [deployment record](implementation/deployment.md#current-release-v051) and
 [release report](evidence/v051-release.md) own the observed release facts. Release work is
-tracked in Linear as seven `IFA ·` projects under the "Infinite Flight Agent" project label, with
-version milestones and target dates; the [Linear roadmap document](https://linear.app/intelip/document/infinite-flight-agent-roadmap-0dcea64227b8)
+tracked in Linear as seven `Jumpseat ·` projects under the "Jumpseat" project label, with
+version milestones and target dates; the [Linear roadmap document](https://linear.app/intelip/document/jumpseat-roadmap-0dcea64227b8)
 summarizes them.
 The [backlog](backlog.md) indexes current capability and historical research;
 [goal.md](goal.md) owns accepted intent and the aircraft-support definition.

@@ -1,4 +1,4 @@
-# Infinite Flight Dispatcher working guidance
+# Jumpseat working guidance (repository: InfiniteFlightAgent)
 
 Read the workspace guidance and [goal](docs/goal.md), then the relevant [backlog item](docs/backlog.md) before starting work. The [roadmap](docs/roadmap.md) is an index of outcomes; the [technical design](docs/technical-design.md) contains engineering proposals. Keep decisions in their owning document and link rather than copying them across plans.
 
