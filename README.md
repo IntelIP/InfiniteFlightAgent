@@ -1,4 +1,4 @@
-# Infinite Flight Agent
+# Jumpseat
 
 [![CI](https://github.com/IntelIP/InfiniteFlightAgent/actions/workflows/ci.yml/badge.svg)](https://github.com/IntelIP/InfiniteFlightAgent/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/IntelIP/InfiniteFlightAgent)](https://github.com/IntelIP/InfiniteFlightAgent/releases)
@@ -17,6 +17,9 @@ your own ChatGPT plan, from the terminal or an MCP client connected to your own 
 [Self-host on Cloudflare](docs/implementation/deployment.md) ·
 [Aircraft coverage](docs/aircraft-coverage.md) · [Changelog](CHANGELOG.md)
 
+> **Jumpseat was previously called Infinite Flight Agent.** The repository address, the
+> `ifd-*` commands and the package name keep their existing names for now.
+>
 > **Early release, self-hosted, single owner.** It works end to end locally and on the
 > self-hosted Cloudflare deployment; the current release is listed in the
 > [changelog](CHANGELOG.md). Thrust targets are simulation-grade estimates, and no aircraft is
@@ -25,7 +28,7 @@ your own ChatGPT plan, from the terminal or an MCP client connected to your own 
 
 ## From flight idea to briefing
 
-Infinite Flight Agent is for pilots who want to fly real-world schedules without assembling
+Jumpseat is for pilots who want to fly real-world schedules without assembling
 them by hand: finding a flight that actually operates, filling in SimBrief, and working out
 where to spawn and what thrust to set.
 
@@ -241,6 +244,6 @@ FlyByWire A32NX `ThrustLimits_A32NX.hpp` (GPL-3.0, commit `66021c2`), so the who
 distributed under the GPL. Bring your own keys and compute: no credentials, hosted service or
 ChatGPT plan access are included.
 
-Infinite Flight Agent is an independent project. It is not affiliated with or endorsed by
+Jumpseat is an independent project. It is not affiliated with or endorsed by
 Infinite Flight LLC, FlightAware, SimBrief or Navigraph, Browserbase, OpenAI, or FlyByWire
 Simulations. All trademarks belong to their owners.

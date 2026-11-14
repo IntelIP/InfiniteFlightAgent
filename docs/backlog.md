@@ -1,8 +1,8 @@
 # Backlog
 
 Status updated November 13, 2026 UTC. Current release work is tracked in Linear as the
-`IFA ·` projects under the "Infinite Flight Agent" project label
-([roadmap document](https://linear.app/intelip/document/infinite-flight-agent-roadmap-0dcea64227b8)).
+`Jumpseat ·` projects under the "Jumpseat" project label
+([roadmap document](https://linear.app/intelip/document/jumpseat-roadmap-0dcea64227b8)).
 This file indexes that work and preserves earlier research. [goal.md](goal.md) owns the
 accepted product requirements and aircraft-support definition; the
 [roadmap](roadmap.md) maps release outcomes. Linear owns current task acceptance,
@@ -37,7 +37,7 @@ This proves the exercised dispatch integration, not simulator import or aircraft
 | v0.4.6 — shipped | [PR #24](https://github.com/IntelIP/InfiniteFlightAgent/pull/24); [release evidence](evidence/v046-release.md) | Ordered revisions complete generation/finalization with retained earlier results and exact approvals |
 | v0.4.7 — shipped | [Changelog](../CHANGELOG.md#047---2026-11-12) | Generate is clicked directly after the form is filled; Route Finder no longer hangs generation |
 | v0.5.0/v0.5.1 — shipped | INT-416/417; [release report](evidence/v051-release.md) | Durable trip progress, cancellation and turn deadlines; v0.5.1 restored generation after the v0.5.0 rollback |
-| v0.5.2 onward — planned | `IFA ·` projects in Linear | Departure search fix, crew scheduler, Connect API bridge, performance card, arrival ops and assisted power; see the [roadmap](roadmap.md) |
+| v0.5.2 onward — planned | `Jumpseat ·` projects in Linear | Departure search fix, crew scheduler, Connect API bridge, performance card, arrival ops and assisted power; see the [roadmap](roadmap.md) |
 
 The unshipped remainder of the original v0.5.0 scope (INT-418–427) was re-sequenced on
 November 13, 2026: cruise level, alternates and thrust verification moved to the v0.8.0

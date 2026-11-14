@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Infinite Flight Agent are recorded here. The format follows
+All notable changes to Jumpseat (previously Infinite Flight Agent) are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). While the version is below 1.0,
 a minor release may change behavior.
@@ -10,6 +10,11 @@ Release from its section below, and labels the deployed Cloudflare Worker versio
 A running server reports its version at `/health`.
 
 ## [Unreleased]
+
+### Changed
+
+- The product is now called **Jumpseat**. Documentation uses the new name; the repository
+  address, the `ifd-*` commands, the package name and deployed resource names are unchanged.
 
 ### Documentation
 
