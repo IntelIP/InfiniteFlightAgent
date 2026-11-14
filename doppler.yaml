@@ -1,0 +1,3 @@
+setup:
+  - project: infinite-flight-agent
+    config: dev
