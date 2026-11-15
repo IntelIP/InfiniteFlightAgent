@@ -330,7 +330,7 @@ def test_cancel_during_proposal_withdraws_the_new_approval_and_unclicked_dispatc
     progress.update("thread-p", lambda r: r.update(cancel={"reason": "owner"}))
     control = progress.TurnControl("thread-p", 60)
 
-    def invoke(payload, thread_id):
+    def invoke(payload, thread_id, run_id):
         prepare(store, leg="1")  # an approved dispatch saved just before the signal
         control.cancel("owner")
         return {"status": "approval_required", "thread_id": thread_id}
@@ -353,7 +353,7 @@ def test_turn_that_finishes_before_seeing_cancel_is_confirmed_completed(monkeypa
     progress.update("thread-c", lambda r: r.update(cancel={"reason": "owner"}))
     control = progress.TurnControl("thread-c", 60)
 
-    def invoke(payload, thread_id):
+    def invoke(payload, thread_id, run_id):
         control.cancel("owner")  # after the last boundary: the reply already exists
         return {"status": "reply", "thread_id": thread_id, "reply": "done"}
 
@@ -370,7 +370,7 @@ def test_stalled_call_is_stopped_at_the_next_boundary_by_the_deadline(monkeypatc
     middleware = progress.TurnControlMiddleware()
     after_stall = []
 
-    def invoke(payload, thread_id):
+    def invoke(payload, thread_id, run_id):
         time.sleep(0.3)  # a model or provider call that outlives the turn deadline
         middleware.before_model({}, None)
         after_stall.append("next model call")
@@ -387,7 +387,7 @@ def test_stalled_call_is_stopped_at_the_next_boundary_by_the_deadline(monkeypatc
 def test_active_time_counts_turns_only_not_the_approval_wait(monkeypatch):
     monkeypatch.setattr(remote, "_get_agent", lambda: NoModel(empty_state()))
 
-    def invoke(payload, thread_id):
+    def invoke(payload, thread_id, run_id):
         time.sleep(0.1)
         return {"status": "reply", "thread_id": thread_id, "reply": "ok"}
 

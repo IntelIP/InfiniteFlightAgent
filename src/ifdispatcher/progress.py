@@ -138,6 +138,7 @@ def start_turn(thread_id: str, action: str) -> dict:
             deadline_at=(datetime.now(timezone.utc) + timedelta(seconds=deadline)).isoformat(),
             cancel=None,
             error=None,
+            trace=None,
         )
 
     return update(thread_id, change)
@@ -195,6 +196,7 @@ def turn_view(record: dict | None, live: bool) -> dict | None:
             "active_seconds_total",
             "cancel",
             "error",
+            "trace",
         )
     }
     if record.get("status") in LIVE and not live:

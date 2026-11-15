@@ -121,6 +121,8 @@ def test_mcp_http_dispatch_approval_saved_trip_and_metrics(server, tmp_path, mon
     monkeypatch.setattr(
         observability, "write_feedback", lambda rid, signals: feedback.append((rid, signals))
     )
+    link = lambda rid: {"run_id": rid, "url": f"https://smith.example/r/{rid}"}  # noqa: E731
+    monkeypatch.setattr(observability, "trace_link", link)
 
     def generation(fields, click, _screenshots, before_click):
         before_click()
@@ -186,11 +188,15 @@ def test_mcp_http_dispatch_approval_saved_trip_and_metrics(server, tmp_path, mon
                 assert asked["status"] == "approval_required"
                 assert Store(tmp_path).trips() == []  # no preparation/generation before approval
                 assert asked["workflow"]["outcome"] == "approval_required"
+                assert asked["trace"] == link(asked["run_id"])  # approval prompt links its trace
                 done = await call("approve_dispatch", {"thread_id": thread, "approve": True})
                 while done["status"] == "running":
                     done = await call("turn_status", {"thread_id": thread})
                 assert done["status"] == "reply"
                 assert done["workflow"]["outcome"] == "briefing_ready"
+                assert done["trace"] == link(done["run_id"])
+                progress_view = await call("trip_progress", {"thread_id": thread})
+                assert progress_view["turn"]["trace"] == link(done["run_id"])
                 assert done["provider_usage"][0]["released"] is True
                 assert "elapsed_s" in done["provider_usage"][0]
                 saved = await call("list_saved_trips", {"trip": leg["trip"]})
@@ -206,3 +212,39 @@ def test_mcp_http_dispatch_approval_saved_trip_and_metrics(server, tmp_path, mon
     asked, done = asyncio.run(journey())
     assert [rid for rid, _ in feedback] == [asked["run_id"], done["run_id"]]
     assert [s["outcome"] for _, s in feedback] == ["approval_required", "briefing_ready"]
+
+
+def test_trace_link_builds_one_click_url_and_degrades_to_run_id(monkeypatch):
+    from types import SimpleNamespace
+
+    import langsmith
+
+    from ifdispatcher import observability
+
+    monkeypatch.setattr(observability, "_trace_home", {})
+    monkeypatch.setattr(observability, "_tracing_key", lambda: None)
+    assert observability.trace_link("r1") is None  # tracing off: nothing to link
+
+    monkeypatch.setattr(observability, "_tracing_key", lambda: "lsv2_synthetic")
+    monkeypatch.setenv("LANGSMITH_PROJECT", "infinite-flight-dispatcher")
+    reads = []
+
+    class Client:
+        api_url = "https://api.smith.langchain.com"
+
+        def __init__(self, **_):
+            pass
+
+        def read_project(self, project_name):
+            reads.append(project_name)
+            if len(reads) == 1:
+                raise ConnectionError("offline")
+            return SimpleNamespace(tenant_id="ws", id="proj")
+
+    monkeypatch.setattr(langsmith, "Client", Client)
+    assert observability.trace_link("r1") == {"run_id": "r1", "url": None}
+    url = "https://smith.langchain.com/o/ws/projects/p/proj/r/r2?trace_id=r2"
+    assert observability.trace_link("r2") == {"run_id": "r2", "url": url}
+    observability.trace_link("r3")
+    assert reads == ["infinite-flight-dispatcher"] * 2  # looked up once after success
+    assert observability.run_metadata("remote")["product"] == "jumpseat"

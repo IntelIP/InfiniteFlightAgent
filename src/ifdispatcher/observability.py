@@ -7,6 +7,61 @@ from contextvars import ContextVar
 
 meter = ContextVar("ifd_provider_events", default=None)
 log = logging.getLogger(__name__)
+PRODUCT = "jumpseat"
+_trace_home: dict = {}  # LangSmith web URL prefix, looked up once per process
+
+
+def environment() -> str:
+    """Deployment environment for trace metadata; the Worker sets production."""
+    from ifdispatcher.config import setting
+
+    return setting("IFD_ENVIRONMENT") or "local"
+
+
+def run_metadata(surface: str) -> dict:
+    """Standard root-run metadata; LangGraph adds thread_id from the config."""
+    from ifdispatcher import __version__
+
+    return {
+        "product": PRODUCT,
+        "version": __version__,
+        "environment": environment(),
+        "surface": surface,
+    }
+
+
+def _tracing_key() -> str | None:
+    from ifdispatcher.config import setting
+
+    key = setting("LANGSMITH_API_KEY")
+    return key if key and (setting("LANGSMITH_TRACING") or "").lower() == "true" else None
+
+
+def trace_link(run_id: str) -> dict | None:
+    """The turn's LangSmith root run and a one-click URL; None when tracing is off.
+
+    The URL needs the workspace and project ids, read once from LangSmith. If that lookup
+    fails the run id is still returned, so the trace can be found by id.
+    """
+    key = _tracing_key()
+    if not key:
+        return None
+    if "prefix" not in _trace_home:
+        try:
+            from langsmith import Client, utils
+            from ifdispatcher.config import setting
+
+            client = Client(api_key=key)
+            project = client.read_project(project_name=setting("LANGSMITH_PROJECT") or "default")
+            host = utils.get_host_url(None, client.api_url)
+            _trace_home["prefix"] = f"{host}/o/{project.tenant_id}/projects/p/{project.id}/r/"
+        except Exception as exc:
+            log.warning("LangSmith project lookup unavailable: %s", type(exc).__name__)
+    prefix = _trace_home.get("prefix")
+    return {
+        "run_id": run_id,
+        "url": f"{prefix}{run_id}?trace_id={run_id}" if prefix else None,
+    }
 
 
 def event(provider: str, **fields):
@@ -85,10 +140,8 @@ def summarize(messages, seen: set) -> dict:
 
 def write_feedback(run_id: str, signals: dict):
     """Best-effort objective feedback on the root trace; a tracing outage cannot fail a flight."""
-    from ifdispatcher.config import setting
-
-    key = setting("LANGSMITH_API_KEY")
-    if not key or (setting("LANGSMITH_TRACING") or "").lower() != "true":
+    key = _tracing_key()
+    if not key:
         return
     try:
         from langsmith import Client

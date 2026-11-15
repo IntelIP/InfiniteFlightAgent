@@ -90,10 +90,13 @@ def _run(payload, thread_id: str, control: progress.TurnControl | None = None) -
     control = control or progress.TurnControl(thread_id, progress.turn_deadline_seconds())
     bound = progress.bind(control)
     started = time.monotonic()
+    # The turn's LangSmith root run id, known before work starts so trip_progress can link
+    # a running, failed or cancelled turn to its trace.
+    run_id = str(uuid.uuid4())
     try:
         control.check()  # cancelled while queued: start no work
-        progress.set_status(thread_id, "running")
-        response = _invoke(payload, thread_id)
+        progress.set_status(thread_id, "running", trace=observability.trace_link(run_id))
+        response = _invoke(payload, thread_id, run_id)
         if response["status"] == "approval_required" and control.event.is_set():
             # Cancel arrived while the model proposed this dispatch: withdraw it, never offer it.
             raise progress.TurnCancelled(control.reason or "cancelled")
@@ -133,17 +136,16 @@ def _run(payload, thread_id: str, control: progress.TurnControl | None = None) -
         progress.unbind(bound)
 
 
-def _invoke(payload, thread_id: str) -> dict[str, Any]:
+def _invoke(payload, thread_id: str, run_id: str) -> dict[str, Any]:
     if not paid_operations_enabled():
         return {"status": "paid_operations_disabled", "thread_id": thread_id}
     from ifdispatcher.agent import message_ids
 
-    run_id = str(uuid.uuid4())
     config = {
         "configurable": {"thread_id": thread_id},
         "tags": ["remote", f"v{__version__}"],
         "run_id": run_id,
-        "metadata": {"version": __version__, "surface": "remote"},
+        "metadata": observability.run_metadata("remote"),
     }
     agent = _get_agent()
     seen = message_ids(agent.get_state(config))
@@ -156,7 +158,12 @@ def _invoke(payload, thread_id: str) -> dict[str, Any]:
         signals = observability.summarize(result.value["messages"], seen)
         if result.interrupts:
             signals["outcome"] = "approval_required"
-        response.update(run_id=run_id, workflow=signals, provider_usage=events)
+        response.update(
+            run_id=run_id,
+            trace=observability.trace_link(run_id),
+            workflow=signals,
+            provider_usage=events,
+        )
         observability.write_feedback(run_id, signals)
         return response
     finally:

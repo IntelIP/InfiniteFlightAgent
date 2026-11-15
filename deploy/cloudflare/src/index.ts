@@ -39,6 +39,8 @@ export function containerEnv(env: Env): Record<string, string> {
     const value = source[key];
     if (typeof value === "string" && value !== "") result[key] = value;
   }
+  // Trace metadata: this Worker is the deployed (production) dispatcher.
+  result.IFD_ENVIRONMENT = "production";
   // Paid operations stay off unless explicitly enabled.
   result.IFD_PAID_OPERATIONS_ENABLED = source.IFD_PAID_OPERATIONS_ENABLED === "true" ? "true" : "false";
   return result;
