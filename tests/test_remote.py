@@ -257,6 +257,30 @@ def test_trace_link_builds_one_click_url_and_degrades_to_run_id(monkeypatch):
     assert observability.run_metadata("remote")["product"] == "jumpseat"
 
 
+def test_concurrent_turns_never_wait_on_the_same_project_lookup(monkeypatch):
+    from ifdispatcher import observability
+
+    monkeypatch.setattr(observability, "_trace_home", {})
+    monkeypatch.setattr(observability, "_tracing_key", lambda: "lsv2_synthetic")
+    entered, release, lookups = threading.Event(), threading.Event(), []
+
+    def slow_lookup(key):  # a LangSmith call hanging on a network timeout
+        lookups.append(key)
+        entered.set()
+        release.wait(5)
+        observability._trace_home["retry_at"] = time.monotonic() + 300
+
+    monkeypatch.setattr(observability, "_look_up_trace_home", slow_lookup)
+    first = threading.Thread(target=observability.trace_link, args=("r1",))
+    first.start()
+    assert entered.wait(5)
+    # While one worker retries, the others return the run id at once instead of waiting.
+    assert observability.trace_link("r2") == {"run_id": "r2", "url": None}
+    release.set()
+    first.join(5)
+    assert len(lookups) == 1
+
+
 def test_kill_switch_turn_publishes_no_trace_link(monkeypatch):
     from ifdispatcher import observability
 

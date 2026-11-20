@@ -2,6 +2,7 @@
 
 import json
 import logging
+import threading
 import time
 from contextvars import ContextVar
 
@@ -10,6 +11,7 @@ log = logging.getLogger(__name__)
 PRODUCT = "jumpseat"
 _trace_home: dict = {}  # LangSmith web URL prefix, looked up once per process
 LOOKUP_RETRY_SECONDS = 300.0  # after a failed lookup, links carry only the run id until then
+_lookup = threading.Lock()  # one worker looks the project up; the others do not wait for it
 
 
 def environment() -> str:
@@ -43,29 +45,42 @@ def trace_link(run_id: str) -> dict | None:
 
     The URL needs the workspace and project ids, read once from LangSmith. If that lookup
     fails the run id is still returned, so the trace can be found by id, and the lookup is
-    retried only after LOOKUP_RETRY_SECONDS.
+    retried only after LOOKUP_RETRY_SECONDS. Only one worker looks it up at a time; turns that
+    arrive meanwhile return the run id alone rather than wait on LangSmith.
     """
     key = _tracing_key()
     if not key:
         return None
-    if "prefix" not in _trace_home and time.monotonic() >= _trace_home.get("retry_at", 0.0):
+    if _lookup_due() and _lookup.acquire(blocking=False):
         try:
-            from langsmith import Client, utils
-            from ifdispatcher.config import setting
-
-            client = Client(api_key=key)
-            project = client.read_project(project_name=setting("LANGSMITH_PROJECT") or "default")
-            host = utils.get_host_url(None, client.api_url)
-            _trace_home["prefix"] = f"{host}/o/{project.tenant_id}/projects/p/{project.id}/r/"
-        except Exception as exc:
-            # Back off so a LangSmith outage cannot make every turn wait on the lookup again.
-            _trace_home["retry_at"] = time.monotonic() + LOOKUP_RETRY_SECONDS
-            log.warning("LangSmith project lookup unavailable: %s", type(exc).__name__)
+            if _lookup_due():  # another worker may have finished the lookup meanwhile
+                _look_up_trace_home(key)
+        finally:
+            _lookup.release()
     prefix = _trace_home.get("prefix")
     return {
         "run_id": run_id,
         "url": f"{prefix}{run_id}?trace_id={run_id}" if prefix else None,
     }
+
+
+def _lookup_due() -> bool:
+    return "prefix" not in _trace_home and time.monotonic() >= _trace_home.get("retry_at", 0.0)
+
+
+def _look_up_trace_home(key: str) -> None:
+    try:
+        from langsmith import Client, utils
+        from ifdispatcher.config import setting
+
+        client = Client(api_key=key)
+        project = client.read_project(project_name=setting("LANGSMITH_PROJECT") or "default")
+        host = utils.get_host_url(None, client.api_url)
+        _trace_home["prefix"] = f"{host}/o/{project.tenant_id}/projects/p/{project.id}/r/"
+    except Exception as exc:
+        # Back off so a LangSmith outage cannot make every turn wait on the lookup again.
+        _trace_home["retry_at"] = time.monotonic() + LOOKUP_RETRY_SECONDS
+        log.warning("LangSmith project lookup unavailable: %s", type(exc).__name__)
 
 
 def event(provider: str, **fields):
