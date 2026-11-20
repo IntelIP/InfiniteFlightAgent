@@ -86,13 +86,32 @@ def test_long_turn_returns_running_then_result(monkeypatch):
 
     first, busy, still, done = asyncio.run(scenario())
     assert first["status"] == "running"
-    assert busy["status"] == "busy"
+    assert busy["status"] == "busy" and busy["run_id"] == first["run_id"]
     assert still["status"] == "running"
     # A running turn already reports its root run id and trace.
     assert first["run_id"] and still["run_id"] == first["run_id"]
     assert still["trace"] == {"run_id": first["run_id"]}
     assert done["status"] == "reply"
     assert done["reply"]["messages"][0]["content"] == "hello"
+
+
+def test_failed_turn_returns_its_trace_instead_of_an_error(monkeypatch):
+    def failing_run(payload, thread_id, control=None, run_id=None):
+        progress.set_status(thread_id, "running", run_id=run_id, trace={"run_id": run_id})
+        progress.finish_turn(thread_id, "failed", 0.0, error="RuntimeError")
+        raise RuntimeError("model unavailable")
+
+    monkeypatch.setattr(remote, "_run", failing_run)
+
+    async def scenario():
+        return await remote.plan_flight("hello", thread_id="t-fail"), await remote.turn_status(
+            "t-fail"
+        )
+
+    failed, again = asyncio.run(scenario())
+    assert failed["status"] == "failed" and failed["error"] == "RuntimeError"
+    assert failed["run_id"] and failed["trace"] == {"run_id": failed["run_id"]}
+    assert again == failed  # turn_status reports the same failed turn, not an MCP error
 
 
 def test_turn_status_for_unknown_thread():

@@ -188,19 +188,33 @@ def _invoke(payload, thread_id: str, run_id: str) -> dict[str, Any]:
         observability.meter.reset(token)
 
 
+def _identity(thread_id: str) -> dict[str, Any]:
+    """The latest turn's root run id and trace link, from durable progress."""
+    record = progress.read(thread_id) or {}
+    return {"run_id": record.get("run_id"), "trace": record.get("trace")}
+
+
 async def _wait(thread_id: str) -> dict[str, Any]:
     turn = _turns[thread_id]
     try:
         # shield: a timeout must not cancel the turn itself.
         return await asyncio.wait_for(asyncio.shield(asyncio.wrap_future(turn)), WAIT_SECONDS)
     except TimeoutError:
-        record = progress.read(thread_id) or {}
         return {
             "status": "running",
             "thread_id": thread_id,
-            "run_id": record.get("run_id"),
-            "trace": record.get("trace"),
+            **_identity(thread_id),
             "next": "Still working. Call turn_status with this thread_id in about 20 seconds.",
+        }
+    except Exception as exc:
+        # _run recorded the failed turn; report it with its trace instead of an MCP error.
+        return {
+            "status": "failed",
+            "thread_id": thread_id,
+            **_identity(thread_id),
+            "error": type(exc).__name__,
+            "next": "This turn failed. Call trip_progress for completed legs and any uncertain "
+            "generation before sending plan_flight again on this thread.",
         }
 
 
@@ -210,6 +224,7 @@ async def _start(payload, thread_id: str, action: str) -> dict[str, Any]:
         return {
             "status": "busy",
             "thread_id": thread_id,
+            **_identity(thread_id),  # the running turn's trace
             "next": "A turn is still running on this thread. Call turn_status instead.",
         }
     if sum(not f.done() for f in _turns.values()) >= MAX_OUTSTANDING_TURNS:
