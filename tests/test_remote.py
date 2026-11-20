@@ -97,7 +97,8 @@ def test_long_turn_returns_running_then_result(monkeypatch):
 
 def test_failed_turn_returns_its_trace_instead_of_an_error(monkeypatch):
     def failing_run(payload, thread_id, control=None, run_id=None):
-        progress.set_status(thread_id, "running", run_id=run_id, trace={"run_id": run_id})
+        control.trace = {"run_id": run_id}
+        progress.set_status(thread_id, "running", run_id=run_id, trace=control.trace)
         progress.finish_turn(thread_id, "failed", 0.0, error="RuntimeError")
         raise RuntimeError("model unavailable")
 
@@ -129,7 +130,8 @@ def test_failed_and_cancelled_turns_refresh_their_trace_link(monkeypatch):
             observability, "trace_link", lambda rid: {"run_id": rid, "url": next(links)}
         )
 
-        def invoke(payload, thread_id, run_id, error=error):
+        def invoke(payload, thread_id, run_id, begin, error=error):
+            begin()  # the root run started before the failure
             raise error or progress.TurnCancelled("owner")
 
         monkeypatch.setattr(remote, "_invoke", invoke)
@@ -142,6 +144,68 @@ def test_failed_and_cancelled_turns_refresh_their_trace_link(monkeypatch):
         assert progress.read(thread)["trace"] == final
         if result:
             assert result["status"] == "cancelled" and result["trace"] == final
+
+
+def test_turn_failing_before_its_root_run_publishes_no_trace_link(monkeypatch):
+    from types import SimpleNamespace
+
+    from ifdispatcher import observability
+
+    monkeypatch.setattr(remote, "paid_operations_enabled", lambda: True)
+    monkeypatch.setattr(observability, "trace_link", lambda rid: {"run_id": rid, "url": "dead"})
+    idle = SimpleNamespace(values={}, interrupts=())
+    monkeypatch.setattr(remote, "_get_agent", lambda: SimpleNamespace(get_state=lambda c: idle))
+    for thread, error in (("t-early", RuntimeError("checkpoint down")), ("t-admit", None)):
+        # Agent build, checkpoint read or browser admission fails before agent.invoke.
+        def invoke(payload, thread_id, run_id, begin, error=error):
+            raise error or progress.TurnCancelled("owner")
+
+        monkeypatch.setattr(remote, "_invoke", invoke)
+        progress.start_turn(thread, "plan_flight")
+        try:
+            result = remote._run({"messages": []}, thread, run_id=thread)
+        except RuntimeError:
+            result = None
+        record = progress.read(thread)
+        assert record["run_id"] == thread and record["trace"] is None
+        if result:
+            assert result["status"] == "cancelled" and result["trace"] is None
+
+
+def test_failed_response_keeps_the_failed_turns_identity(monkeypatch):
+    from concurrent.futures import Future
+
+    failed = Future()
+    failed.set_exception(RuntimeError("model down"))
+    control = progress.TurnControl("t-race", 60)
+    control.run_id, control.trace = "r-old", {"run_id": "r-old", "url": None}
+    monkeypatch.setitem(remote._turns, "t-race", failed)
+    monkeypatch.setitem(remote._controls, "t-race", control)
+    # A newer turn on the thread replaced the durable record before the failure was reported.
+    progress.start_turn("t-race", "plan_flight")
+    result = asyncio.run(remote._wait("t-race"))
+    assert result["status"] == "failed"
+    assert result["run_id"] == "r-old" and result["trace"] == control.trace
+
+
+def test_turn_status_recovery_paths_carry_top_level_trace(monkeypatch):
+    from concurrent.futures import Future
+
+    trace = {"run_id": "r-restored", "url": "https://smith.example/r/r-restored"}
+    progress.start_turn("t-restored", "plan_flight")
+    progress.finish_turn("t-restored", "failed", 0.0, run_id="r-restored", trace=trace)
+    restored = asyncio.run(remote.turn_status("t-restored"))  # after a restart
+    assert restored["status"] == "failed"
+    assert restored["run_id"] == "r-restored" and restored["trace"] == trace
+
+    done = Future()
+    done.set_result({"status": "approval_required", "thread_id": "t-withdrawn"})
+    monkeypatch.setitem(remote._turns, "t-withdrawn", done)
+    progress.start_turn("t-withdrawn", "plan_flight")
+    progress.finish_turn("t-withdrawn", "cancelled", 0.0, run_id="r-cancel", trace=trace)
+    cancelled = asyncio.run(remote.turn_status("t-withdrawn"))  # cancel_trip after completion
+    assert cancelled["status"] == "cancelled"
+    assert cancelled["run_id"] == "r-cancel" and cancelled["trace"] == trace
 
 
 def test_turn_status_for_unknown_thread():
@@ -351,7 +415,7 @@ def test_completion_trace_link_replaces_the_start_time_link(monkeypatch):
     monkeypatch.setattr(observability, "trace_link", lambda rid: {"run_id": rid, "url": None})
     final = {"run_id": "r-late", "url": "https://smith.example/r/r-late"}
 
-    def invoke(payload, thread_id, run_id):
+    def invoke(payload, thread_id, run_id, begin):
         return {"status": "reply", "thread_id": thread_id, "run_id": run_id, "trace": final}
 
     monkeypatch.setattr(remote, "_invoke", invoke)

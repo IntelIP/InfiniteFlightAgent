@@ -48,6 +48,10 @@ class TurnControl:
         self.deadline = time.monotonic() + deadline_seconds
         self.event = threading.Event()
         self.reason = None
+        # This turn's root run id and trace link, kept with the turn rather than the
+        # thread's record so a newer turn on the thread cannot replace them.
+        self.run_id = None
+        self.trace = None
 
     def cancel(self, reason: str):
         self.reason = self.reason or reason
