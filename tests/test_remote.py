@@ -114,6 +114,36 @@ def test_failed_turn_returns_its_trace_instead_of_an_error(monkeypatch):
     assert again == failed  # turn_status reports the same failed turn, not an MCP error
 
 
+def test_failed_and_cancelled_turns_refresh_their_trace_link(monkeypatch):
+    from ifdispatcher import observability
+
+    monkeypatch.setattr(remote, "paid_operations_enabled", lambda: True)
+    from types import SimpleNamespace
+
+    idle = SimpleNamespace(values={}, interrupts=())
+    monkeypatch.setattr(remote, "_get_agent", lambda: SimpleNamespace(get_state=lambda c: idle))
+    for thread, error in (("t-raise", RuntimeError("model down")), ("t-stop", None)):
+        # The project lookup is in backoff at turn start and succeeds by the turn's end.
+        links = iter([None, f"https://smith.example/r/{thread}"])
+        monkeypatch.setattr(
+            observability, "trace_link", lambda rid: {"run_id": rid, "url": next(links)}
+        )
+
+        def invoke(payload, thread_id, run_id, error=error):
+            raise error or progress.TurnCancelled("owner")
+
+        monkeypatch.setattr(remote, "_invoke", invoke)
+        progress.start_turn(thread, "plan_flight")
+        try:
+            result = remote._run({"messages": []}, thread, run_id=thread)
+        except RuntimeError:
+            result = None
+        final = {"run_id": thread, "url": f"https://smith.example/r/{thread}"}
+        assert progress.read(thread)["trace"] == final
+        if result:
+            assert result["status"] == "cancelled" and result["trace"] == final
+
+
 def test_turn_status_for_unknown_thread():
     result = asyncio.run(remote.turn_status("t-never-started"))
     assert result["status"] == "not_found"

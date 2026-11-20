@@ -271,8 +271,11 @@ def test_cancel_pending_approval_keeps_completed_legs_and_refuses_approval(store
         {"trip": "T1", "leg": "1", "revision": 1, "stage": "briefing_ready"}
     ]
 
+    link = {"run_id": "r-a", "url": None}
+    progress.update("thread-a", lambda r: r.update(run_id="r-a", trace=link))
     refused = asyncio.run(remote.approve_dispatch("thread-a", approve=True))
     assert refused["status"] == "cancelled"
+    assert refused["run_id"] == "r-a" and refused["trace"] == link  # the cancelled turn's trace
     report = remote.trip_progress("thread-a")
     assert report["approval"]["pending"]["status"] == "cancelled"
     assert report["turn"]["status"] == "cancelled"

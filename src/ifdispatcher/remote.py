@@ -118,6 +118,7 @@ def _run(
         )
         return response
     except progress.TurnCancelled as exc:
+        trace = _final_trace(run_id, trace)
         state = _get_agent().get_state(_config(thread_id))
         pending = progress.pending_approval(state, None)
         progress.finish_turn(
@@ -126,6 +127,7 @@ def _run(
             time.monotonic() - started,
             cancel_outcome="stopped",
             cancelled_interrupt=pending["interrupt_id"] if pending else None,
+            trace=trace,
         )
         # A dispatch saved after cancel_trip looked (or before a deadline) needs a new approval.
         progress.mark_cancelled_legs(progress.trips_in(state), thread_id, exc.reason)
@@ -141,11 +143,20 @@ def _run(
         }
     except Exception as exc:
         progress.finish_turn(
-            thread_id, "failed", time.monotonic() - started, error=type(exc).__name__
+            thread_id,
+            "failed",
+            time.monotonic() - started,
+            error=type(exc).__name__,
+            trace=_final_trace(run_id, trace),
         )
         raise
     finally:
         progress.unbind(bound)
+
+
+def _final_trace(run_id: str, trace: dict | None) -> dict | None:
+    """A started turn's link rebuilt at its end, when a backed-off lookup may now succeed."""
+    return observability.trace_link(run_id) if trace else trace
 
 
 def _invoke(payload, thread_id: str, run_id: str) -> dict[str, Any]:
@@ -271,6 +282,7 @@ async def approve_dispatch(
             return {
                 "status": "cancelled",
                 "thread_id": thread_id,
+                **_identity(thread_id),  # the cancelled turn's trace
                 "pending": pending,
                 "next": "This approval was cancelled and cannot be approved. Nothing was "
                 "dispatched or generated. Send plan_flight to start again with a new approval.",
