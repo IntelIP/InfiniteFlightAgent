@@ -12,7 +12,7 @@ import uvicorn
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
-from ifdispatcher import remote
+from ifdispatcher import progress, remote
 
 TOKEN = "test-internal-token"
 
@@ -68,7 +68,8 @@ def test_mcp_client_lists_dispatcher_tools(server):
 def test_long_turn_returns_running_then_result(monkeypatch):
     release = threading.Event()
 
-    def slow_run(payload, thread_id, control=None):
+    def slow_run(payload, thread_id, control=None, run_id=None):
+        progress.set_status(thread_id, "running", run_id=run_id, trace={"run_id": run_id})
         release.wait(5)
         return {"status": "reply", "thread_id": thread_id, "reply": payload}
 
@@ -87,6 +88,9 @@ def test_long_turn_returns_running_then_result(monkeypatch):
     assert first["status"] == "running"
     assert busy["status"] == "busy"
     assert still["status"] == "running"
+    # A running turn already reports its root run id and trace.
+    assert first["run_id"] and still["run_id"] == first["run_id"]
+    assert still["trace"] == {"run_id": first["run_id"]}
     assert done["status"] == "reply"
     assert done["reply"]["messages"][0]["content"] == "hello"
 
@@ -243,8 +247,23 @@ def test_trace_link_builds_one_click_url_and_degrades_to_run_id(monkeypatch):
 
     monkeypatch.setattr(langsmith, "Client", Client)
     assert observability.trace_link("r1") == {"run_id": "r1", "url": None}
+    assert observability.trace_link("r1b") == {"run_id": "r1b", "url": None}
+    assert len(reads) == 1  # a failed lookup backs off instead of repeating on every turn
+    observability._trace_home["retry_at"] = 0.0  # the backoff has elapsed
     url = "https://smith.langchain.com/o/ws/projects/p/proj/r/r2?trace_id=r2"
     assert observability.trace_link("r2") == {"run_id": "r2", "url": url}
     observability.trace_link("r3")
     assert reads == ["infinite-flight-dispatcher"] * 2  # looked up once after success
     assert observability.run_metadata("remote")["product"] == "jumpseat"
+
+
+def test_kill_switch_turn_publishes_no_trace_link(monkeypatch):
+    from ifdispatcher import observability
+
+    monkeypatch.setattr(remote, "paid_operations_enabled", lambda: False)
+    monkeypatch.setattr(observability, "trace_link", lambda rid: {"run_id": rid, "url": "dead"})
+    progress.start_turn("t-off", "plan_flight")
+    result = remote._run({"messages": []}, "t-off", run_id="r-off")
+    assert result["status"] == "paid_operations_disabled"
+    turn = progress.turn_view(progress.read("t-off"), live=False)
+    assert turn["trace"] is None and turn["run_id"] == "r-off"

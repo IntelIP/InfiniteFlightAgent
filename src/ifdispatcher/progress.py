@@ -138,6 +138,9 @@ def start_turn(thread_id: str, action: str) -> dict:
             deadline_at=(datetime.now(timezone.utc) + timedelta(seconds=deadline)).isoformat(),
             cancel=None,
             error=None,
+            # The turn's LangSmith root run id, fixed before work starts so a running turn can
+            # report it; trace holds the link once the turn has started a traced run.
+            run_id=str(uuid.uuid4()),
             trace=None,
         )
 
@@ -196,6 +199,7 @@ def turn_view(record: dict | None, live: bool) -> dict | None:
             "active_seconds_total",
             "cancel",
             "error",
+            "run_id",
             "trace",
         )
     }

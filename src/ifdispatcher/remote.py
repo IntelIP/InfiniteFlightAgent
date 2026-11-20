@@ -86,16 +86,23 @@ def _config(thread_id: str) -> dict:
     return {"configurable": {"thread_id": thread_id}}
 
 
-def _run(payload, thread_id: str, control: progress.TurnControl | None = None) -> dict[str, Any]:
+def _run(
+    payload,
+    thread_id: str,
+    control: progress.TurnControl | None = None,
+    run_id: str | None = None,
+) -> dict[str, Any]:
     control = control or progress.TurnControl(thread_id, progress.turn_deadline_seconds())
     bound = progress.bind(control)
     started = time.monotonic()
     # The turn's LangSmith root run id, known before work starts so trip_progress can link
     # a running, failed or cancelled turn to its trace.
-    run_id = str(uuid.uuid4())
+    run_id = run_id or str(uuid.uuid4())
     try:
         control.check()  # cancelled while queued: start no work
-        progress.set_status(thread_id, "running", trace=observability.trace_link(run_id))
+        # With paid operations off no run is created, so there is no trace to link.
+        trace = observability.trace_link(run_id) if paid_operations_enabled() else None
+        progress.set_status(thread_id, "running", run_id=run_id, trace=trace)
         response = _invoke(payload, thread_id, run_id)
         if response["status"] == "approval_required" and control.event.is_set():
             # Cancel arrived while the model proposed this dispatch: withdraw it, never offer it.
@@ -176,9 +183,12 @@ async def _wait(thread_id: str) -> dict[str, Any]:
         # shield: a timeout must not cancel the turn itself.
         return await asyncio.wait_for(asyncio.shield(asyncio.wrap_future(turn)), WAIT_SECONDS)
     except TimeoutError:
+        record = progress.read(thread_id) or {}
         return {
             "status": "running",
             "thread_id": thread_id,
+            "run_id": record.get("run_id"),
+            "trace": record.get("trace"),
             "next": "Still working. Call turn_status with this thread_id in about 20 seconds.",
         }
 
@@ -200,7 +210,7 @@ async def _start(payload, thread_id: str, action: str) -> dict[str, Any]:
     record = progress.start_turn(thread_id, action)
     control = progress.TurnControl(thread_id, record["deadline_seconds"])
     _controls[thread_id] = control
-    _turns[thread_id] = _pool.submit(_run, payload, thread_id, control)
+    _turns[thread_id] = _pool.submit(_run, payload, thread_id, control, record["run_id"])
     return await _wait(thread_id)
 
 
