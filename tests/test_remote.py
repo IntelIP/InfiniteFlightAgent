@@ -265,5 +265,23 @@ def test_kill_switch_turn_publishes_no_trace_link(monkeypatch):
     progress.start_turn("t-off", "plan_flight")
     result = remote._run({"messages": []}, "t-off", run_id="r-off")
     assert result["status"] == "paid_operations_disabled"
+    assert result["run_id"] == "r-off" and result["trace"] is None  # same schema, no dead link
     turn = progress.turn_view(progress.read("t-off"), live=False)
     assert turn["trace"] is None and turn["run_id"] == "r-off"
+
+
+def test_completion_trace_link_replaces_the_start_time_link(monkeypatch):
+    from ifdispatcher import observability
+
+    monkeypatch.setattr(remote, "paid_operations_enabled", lambda: True)
+    # The project lookup is in backoff at turn start, then succeeds before the turn ends.
+    monkeypatch.setattr(observability, "trace_link", lambda rid: {"run_id": rid, "url": None})
+    final = {"run_id": "r-late", "url": "https://smith.example/r/r-late"}
+
+    def invoke(payload, thread_id, run_id):
+        return {"status": "reply", "thread_id": thread_id, "run_id": run_id, "trace": final}
+
+    monkeypatch.setattr(remote, "_invoke", invoke)
+    progress.start_turn("t-late", "plan_flight")
+    remote._run({"messages": []}, "t-late", run_id="r-late")
+    assert progress.turn_view(progress.read("t-late"), live=False)["trace"] == final

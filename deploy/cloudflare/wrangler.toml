@@ -24,6 +24,8 @@ ACCESS_ALLOWED_EMAIL = "" # optional second check on the Access identity
 # (scripts/sync-secrets.sh). IFD_PAID_OPERATIONS_ENABLED is deliberately a
 # secret, not a var, so the emergency stop can change it without new code;
 # the Worker treats a missing value as "false".
+# IFD_ENVIRONMENT (trace metadata) defaults to "production"; deploy a temporary
+# acceptance Worker with --var IFD_ENVIRONMENT:staging so its traces are labeled.
 [secrets]
 required = ["DATABASE_URL", "IFD_CREDENTIAL_KEY", "IFD_INTERNAL_TOKEN"]
 

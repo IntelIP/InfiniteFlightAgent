@@ -251,10 +251,10 @@ Cloudflare Access does the OAuth for MCP clients; the Worker does not implement 
 | --- | --- |
 | LangSmith project | `infinite-flight-dispatcher` (Doppler `infinite-flight-agent/prd` `LANGSMITH_PROJECT`); the deployed Worker is the only traced environment. Local runs trace only when `.env` sets the `LANGSMITH_*` values, ideally to a separate project. |
 | Root run | One per MCP turn (`plan_flight` or `approve_dispatch`), id generated before work starts |
-| Required root metadata | `product` (`jumpseat`), `version` (package version), `environment` (`production` from the Worker, `local` otherwise via `IFD_ENVIRONMENT`), `surface` (`remote`/`cli`), `thread_id` (the trip conversation, added by LangGraph) |
+| Required root metadata | `product` (`jumpseat`), `version` (package version), `environment` (`production` from the Worker unless it is deployed with `--var IFD_ENVIRONMENT:staging`, as temporary acceptance Workers should be; `local` otherwise via `IFD_ENVIRONMENT`), `surface` (`remote`/`cli`), `thread_id` (the trip conversation, added by LangGraph) |
 | Feedback | `ifd_workflow_outcome` and `ifd_blocked_steps` — objective workflow signals, not user acceptance |
 
-**Result → trace.** Every `plan_flight`, `approve_dispatch` and `turn_status` result, including `approval_required` prompts, carries `run_id` and `trace: {run_id, url}`. `trip_progress` and `turn_status` after a restart report the latest turn's `trace` too, including running, failed and cancelled turns. `url` opens the trace in LangSmith in one click; it is `null` if the one-time project lookup failed, and `trace` is `null` when tracing is off. To see every turn of one trip, filter the project by metadata `thread_id`.
+**Result → trace.** Every `plan_flight`, `approve_dispatch` and `turn_status` result, including `approval_required` prompts, carries `run_id` and `trace: {run_id, url}`; a turn stopped by the paid-operations kill switch carries `run_id` with `trace: null` because no LangSmith run is created. `trip_progress` and `turn_status` after a restart report the latest turn's `trace` too, including running, failed and cancelled turns. `url` opens the trace in LangSmith in one click; it is `null` if the one-time project lookup failed, and `trace` is `null` when tracing is off. To see every turn of one trip, filter the project by metadata `thread_id`.
 
 ## Resources the owner creates
 

@@ -98,6 +98,7 @@ def _run(
     # The turn's LangSmith root run id, known before work starts so trip_progress can link
     # a running, failed or cancelled turn to its trace.
     run_id = run_id or str(uuid.uuid4())
+    trace = None
     try:
         control.check()  # cancelled while queued: start no work
         # With paid operations off no run is created, so there is no trace to link.
@@ -112,6 +113,8 @@ def _run(
             response["status"],
             time.monotonic() - started,
             cancel_outcome="completed" if control.event.is_set() else None,
+            # The completion-time link may have a URL the start-time lookup could not build.
+            trace=response.get("trace", trace),
         )
         return response
     except progress.TurnCancelled as exc:
@@ -130,6 +133,8 @@ def _run(
         return {
             "status": "cancelled",
             "thread_id": thread_id,
+            "run_id": run_id,
+            "trace": trace,
             "reason": exc.reason,
             "progress": report,
             "next": "Work stopped at a safe point; completed legs are kept. " + report["next"],
@@ -145,7 +150,13 @@ def _run(
 
 def _invoke(payload, thread_id: str, run_id: str) -> dict[str, Any]:
     if not paid_operations_enabled():
-        return {"status": "paid_operations_disabled", "thread_id": thread_id}
+        # No LangSmith run is created, so the result names the turn but links no trace.
+        return {
+            "status": "paid_operations_disabled",
+            "thread_id": thread_id,
+            "run_id": run_id,
+            "trace": None,
+        }
     from ifdispatcher.agent import message_ids
 
     config = {
