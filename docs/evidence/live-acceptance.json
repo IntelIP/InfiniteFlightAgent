@@ -1,34 +1,34 @@
 {
   "schemaVersion": "ifd-live-acceptance/v1",
   "acceptance": "BUILD-04",
-  "recorded_at": "2026-11-21T02:28:37.228079+00:00",
+  "recorded_at": "2026-11-21T02:49:01.716294+00:00",
   "deployment": {
-    "commit": "27648102c77ad067a4fd16f609d348dab691daa9",
-    "worker_version": "212c406d-6898-49c8-9e21-5f863ec4f9a0"
+    "commit": "c2ce473397d7847ebc38cb767ca664a97cd47b5a",
+    "worker_version": "734239ba-d34d-4432-94d0-17a86ce3a5d1"
   },
-  "integration_digest": "bf886f1373243e70c2d8f9e970cf566d667aa626a33742b70a226d0824d1696a",
+  "integration_digest": "d162aa6d018588d64cc32eec3ddb9cdb0b3b842f62ac816700ac77bb1ce23d17",
   "outcomes": {
     "generation_through_mcp": {
       "passed": true,
-      "detail": "v052-acceptance-20261121 leg 1, v052-acceptance-20261121 leg 2"
+      "detail": "pr51-acceptance-20261121-024215 leg 1, pr51-acceptance-20261121-024215 leg 2"
     },
     "neo_response": {
       "passed": true,
-      "detail": "v052-acceptance-20261121 leg 1 (A20N), v052-acceptance-20261121 leg 2 (A20N)"
+      "detail": "pr51-acceptance-20261121-024215 leg 1 (A20N), pr51-acceptance-20261121-024215 leg 2 (A20N)"
     },
     "two_legs_retained": {
       "passed": true,
-      "detail": "v052-acceptance-20261121 legs 1 and 2"
+      "detail": "pr51-acceptance-20261121-024215 legs 1 and 2"
     },
     "authentication_and_resumption": {
       "passed": true,
-      "detail": "approval wait, resume and signed-in generation: v052-acceptance-20261121"
+      "detail": "approval wait, resume and signed-in generation: pr51-acceptance-20261121-024215"
     }
   },
   "cases": [
     {
-      "thread": "v052-acceptance-20261121",
-      "trip": "v052-acceptance-20261121",
+      "thread": "pr51-live-20261121-024215",
+      "trip": "pr51-acceptance-20261121-024215",
       "interrupts": 2,
       "resumes": 4,
       "legs": [
@@ -43,13 +43,13 @@
           },
           "generation": {
             "status": "generated",
-            "clicked_at": "2026-11-21T02:24:56.661043+00:00",
+            "clicked_at": "2026-11-21T02:43:46.204170+00:00",
             "browser_session": true
           },
           "snapshot": {
-            "sha256": "8ae90a7fd3a4ce6601bbbdec032431a38be34d6083037d015d6caf24f8f0e472",
-            "retrieved_at": "2026-11-21T02:25:26.361606+00:00",
-            "generated_at": "2026-11-21T02:24:57Z",
+            "sha256": "db4d44fcc31df35791ad98819adf2d6f76294a6fee4346225ffd68c1748e6d55",
+            "retrieved_at": "2026-11-21T02:44:01.771089+00:00",
+            "generated_at": "2026-11-21T02:43:47Z",
             "origin": "KIAD",
             "destination": "KEWR",
             "aircraft": "A20N",
@@ -67,13 +67,13 @@
           },
           "generation": {
             "status": "generated",
-            "clicked_at": "2026-11-21T02:27:20.472177+00:00",
+            "clicked_at": "2026-11-21T02:47:45.161915+00:00",
             "browser_session": true
           },
           "snapshot": {
-            "sha256": "1c8cedee4c1a763802d3443ddeab2be31a65aae6808dd55d6125516490cefe94",
-            "retrieved_at": "2026-11-21T02:27:42.254384+00:00",
-            "generated_at": "2026-11-21T02:27:21Z",
+            "sha256": "40ac25d0fbe6b381823a2205f0f71d91c9f3048050b53f8c9937cc92b3abb506",
+            "retrieved_at": "2026-11-21T02:48:01.210107+00:00",
+            "generated_at": "2026-11-21T02:47:45Z",
             "origin": "KEWR",
             "destination": "KIAD",
             "aircraft": "A20N",
