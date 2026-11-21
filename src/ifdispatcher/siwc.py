@@ -26,7 +26,7 @@ from langchain_openai import ChatOpenAI
 from openai.types.responses import ResponseFunctionCallArgumentsDeltaEvent
 from pydantic import model_validator
 
-from ifdispatcher.config import setting
+from ifdispatcher.config import require_paid_operations, setting
 
 ISSUER = "https://auth.openai.com"
 AUTHORIZE = ISSUER + "/api/accounts/authorize"
@@ -159,7 +159,6 @@ def _fernet():
 
 
 def _db_write(conn, record: dict) -> None:
-    conn.execute(CREDENTIAL_DDL)
     conn.execute(
         "INSERT INTO siwc_credentials (id, ciphertext) VALUES ('default', %s) ON CONFLICT (id) "
         "DO UPDATE SET ciphertext = EXCLUDED.ciphertext, updated_at = now()",
@@ -172,7 +171,6 @@ def _db_access_token(dsn: str) -> str:
 
     with psycopg.connect(dsn, prepare_threshold=None) as conn:
         conn.execute(f"SELECT pg_advisory_xact_lock({CREDENTIAL_LOCK})")
-        conn.execute(CREDENTIAL_DDL)
         row = conn.execute(
             "SELECT ciphertext FROM siwc_credentials WHERE id = 'default'"
         ).fetchone()
@@ -369,6 +367,7 @@ class ChatGPTPlanModel(ChatOpenAI):
         return self
 
     def _get_request_payload(self, input_, *, stop=None, **kwargs) -> dict:
+        require_paid_operations()
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
         for key in UNSUPPORTED:
             payload.pop(key, None)
@@ -435,7 +434,6 @@ def credentials_main() -> None:
         raise SystemExit("DATABASE_URL is not set (run under `doppler run`)")
     if args.command == "status":
         with psycopg.connect(dsn, prepare_threshold=None) as conn:
-            conn.execute(CREDENTIAL_DDL)
             row = conn.execute(
                 "SELECT ciphertext, updated_at FROM siwc_credentials WHERE id = 'default'"
             ).fetchone()

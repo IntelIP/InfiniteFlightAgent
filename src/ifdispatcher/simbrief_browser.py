@@ -406,6 +406,7 @@ def open_session(bb: Browserbase, minutes: int = 15):
     if current and current.lease:
         current.remaining()
         current.lease.fence_create()
+    require_paid_operations()
     session = bb.sessions.create(
         browser_settings={
             "context": {"id": context_id, "persist": True},

@@ -11,6 +11,13 @@ A running server reports its version at `/health`.
 
 ## [Unreleased]
 
+### Security
+
+- Hosted MCP requests require the configured owner's verified email. Browser requests with a foreign origin are denied before forwarding.
+- Paid operations now have a persistent emergency stop. AeroAPI requests reserve result pages against an operator-configured UTC daily allowance before contacting the provider. Cached reads remain available.
+- The service runs with read-only application code and dependencies. Releases use pinned container inputs and promote the image tested in CI.
+- **Upgrade before enabling paid work.** Run the database migration, provision restricted runtime and stop identities, configure protected release secrets, and exercise the stop in staging. The database policy starts stopped with a zero-page allowance. Follow the [cutover and rollback instructions](docs/implementation/deployment.md#kill-switch-and-emergency-stop).
+
 ## [0.5.2] - 2026-11-20
 
 ### Added

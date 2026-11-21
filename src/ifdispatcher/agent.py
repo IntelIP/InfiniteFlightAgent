@@ -610,9 +610,7 @@ def checkpointer():
             check=ConnectionPool.check_connection,
             open=True,
         )
-        saver = PostgresSaver(pool)
-        saver.setup()
-        return saver
+        return PostgresSaver(pool)
     directory = data_dir()
     directory.mkdir(parents=True, exist_ok=True, mode=0o700)
     return SqliteSaver(sqlite3.connect(directory / "agent.sqlite", check_same_thread=False))

@@ -38,7 +38,7 @@ def db(monkeypatch):
     dsn = os.environ["TEST_DATABASE_URL"]
     monkeypatch.setenv("IFD_CREDENTIAL_KEY", Fernet.generate_key().decode())
     with psycopg.connect(dsn) as conn:
-        conn.execute("DROP TABLE IF EXISTS siwc_credentials")
+        conn.execute("DELETE FROM siwc_credentials")
     return dsn
 
 

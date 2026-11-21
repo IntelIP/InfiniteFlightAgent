@@ -38,7 +38,18 @@ def paid_operations_enabled() -> bool:
     Unset means enabled (local use); deployments set it explicitly. Invalid values fail closed.
     """
     value = (setting("IFD_PAID_OPERATIONS_ENABLED") or "true").strip().lower()
-    return value == "true"
+    if value != "true":
+        return False
+    if not os.environ.get("IFD_HOSTED"):
+        return True
+    import psycopg
+
+    try:
+        with psycopg.connect(os.environ["DATABASE_URL"], connect_timeout=3) as conn:
+            row = conn.execute("SELECT stopped FROM paid_policy WHERE id").fetchone()
+    except (KeyError, psycopg.Error):
+        return False
+    return bool(row and not row[0])
 
 
 def require_paid_operations() -> None:

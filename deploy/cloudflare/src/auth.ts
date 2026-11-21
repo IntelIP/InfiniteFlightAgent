@@ -60,7 +60,8 @@ export async function checkAccess(
 ): Promise<AccessResult> {
   const issuer = normalizeTeamDomain(settings.teamDomain);
   const audience = settings.audience?.trim();
-  if (!issuer || !audience) return deny(503, "Access verification is not configured");
+  const allowed = settings.allowedEmail?.trim().toLowerCase();
+  if (!issuer || !audience || !allowed) return deny(503, "Access verification is not configured");
 
   const token = request.headers.get("cf-access-jwt-assertion");
   if (!token) return deny(401, "Missing Cloudflare Access token");
@@ -73,10 +74,13 @@ export async function checkAccess(
   }
 
   const email = typeof payload.email === "string" ? payload.email.toLowerCase() : undefined;
-  const allowed = settings.allowedEmail?.trim().toLowerCase();
-  if (allowed && email !== allowed) return deny(403, "Identity is not allowed");
+  if (email !== allowed) return deny(403, "Identity is not allowed");
 
-  const identity = email ?? (typeof payload.sub === "string" ? payload.sub : "");
-  if (!identity) return deny(403, "Access token has no identity");
-  return { ok: true, identity };
+  return { ok: true, identity: email };
+}
+
+// Browser clients send Origin. Native MCP clients may omit it.
+export function checkOrigin(request: Request): boolean {
+  const origin = request.headers.get("origin");
+  return origin === null || origin === new URL(request.url).origin;
 }

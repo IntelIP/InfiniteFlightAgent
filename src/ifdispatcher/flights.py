@@ -6,6 +6,7 @@ simulator positions; a missing gate or aircraft stays "unavailable".
 """
 
 import json
+import os
 import re
 import time
 from pathlib import Path
@@ -103,6 +104,18 @@ def _wait_for_rate_limit(sets: int) -> None:
         time.sleep(min(60.0, 60 - (now - _recent[0][0]) + 0.5))
 
 
+def _reserve_pages(pages: int) -> None:
+    """Reserve the maximum billable result sets before a hosted request."""
+    if not os.environ.get("IFD_HOSTED"):
+        return
+    import psycopg
+
+    with psycopg.connect(os.environ["DATABASE_URL"], connect_timeout=3) as conn:
+        status = conn.execute("SELECT public.reserve_aeroapi_pages(%s)", (pages,)).fetchone()[0]
+        if status != "reserved":
+            raise ValueError(status)
+
+
 def _api_key() -> str:
     key = setting("AEROAPI_KEY")
     if not key:
@@ -125,12 +138,15 @@ def _get(path: str, params: dict | None = None, transport=None) -> dict:
         return stored
     rate = price_milliusd(path)
     require_paid_operations()
-    _wait_for_rate_limit(int(query.get("max_pages") or 1))
+    pages = int(query.get("max_pages") or 1)
+    _wait_for_rate_limit(pages)
+    api_key = _api_key()
+    _reserve_pages(pages)
     measured = event("flightaware", endpoint=path, cached=False, list_price_usd=None)
     started = time.monotonic()
     try:
         with httpx.Client(timeout=30, transport=transport) as client:
-            response = client.get(BASE + path, params=query, headers={"x-apikey": _api_key()})
+            response = client.get(BASE + path, params=query, headers={"x-apikey": api_key})
     except httpx.RequestError as exc:
         measured.update(outcome="network_error", elapsed_s=round(time.monotonic() - started, 3))
         raise ValueError("network_error: AeroAPI request failed; no retry performed") from exc

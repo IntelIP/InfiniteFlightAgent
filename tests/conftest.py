@@ -20,6 +20,9 @@ def database(monkeypatch):
     with psycopg.connect(TEST_DSN) as conn:
         for table in ("requests", "snapshots", "leg_meta", "settings"):
             conn.execute(f"DROP TABLE IF EXISTS {table}")
+    from ifdispatcher.migrate import migrate
+
+    migrate(TEST_DSN)
     yield
 
 
