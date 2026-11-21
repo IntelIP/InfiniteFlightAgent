@@ -230,7 +230,7 @@ Cloudflare Access ── rejects unauthenticated requests at the edge
   ▼
 Worker  infinite-flight-dispatcher            deploy/cloudflare/src/index.ts
   • verifies the Access JWT against the team JWKS (iss = team domain, aud = ACCESS_AUD),
-    optional ACCESS_ALLOWED_EMAIL; missing config → 503, no token → 401, bad token → 403
+    required ACCESS_ALLOWED_EMAIL; missing config → 503, no token → 401, bad token → 403
   • forwards only /mcp and /health (all methods, streamed both ways)
   • strips the Access JWT and cookies, adds X-IFD-Internal-Token
   ▼
@@ -255,24 +255,25 @@ Cloudflare Access does the OAuth for MCP clients; the Worker does not implement 
 | Neon project and database | Pooled connection string → `DATABASE_URL` |
 | R2 bucket and S3 API token | Bucket-scoped read/write token → `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`; plus `R2_ACCOUNT_ID`, `R2_BUCKET` |
 | Doppler project and config | Holds `DATABASE_URL`, `IFD_CREDENTIAL_KEY`, `IFD_INTERNAL_TOKEN` (random, 32+ bytes), `AEROAPI_KEY`, `BROWSERBASE_API_KEY`, `BROWSERBASE_SIMBRIEF_CONTEXT_ID`, `SIMBRIEF_USERID`, `NAVIGRAPH_USERNAME`, `NAVIGRAPH_PASSWORD` (automatic SimBrief sign-in), `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT`, `LANGSMITH_TRACING`, the four `R2_*` values, and `IFD_PAID_OPERATIONS_ENABLED` (`"false"` until the first validation passes). Create a read-only service token for that config |
-| GitHub repository secrets | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DOPPLER_TOKEN` |
-| GitHub repository variables | `DOPPLER_PROJECT`, `DOPPLER_CONFIG`, `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `ACCESS_ALLOWED_EMAIL` (optional) |
-| GitHub environment `production` | Required reviewer: the owner. Gates promotion and bootstrap |
+| GitHub production environment secrets | `PRODUCTION_CLOUDFLARE_API_TOKEN` (upload and traffic changes), `CLOUDFLARE_ACCOUNT_ID`, and `PRODUCTION_DOPPLER_READ_TOKEN` (app runtime config only) |
+| Emergency-stop repository secret | `STOP_PGSERVICE` authenticates only the database stop role |
+| GitHub repository variables | `DOPPLER_PROJECT`, `DOPPLER_CONFIG`, `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `ACCESS_ALLOWED_EMAIL` (required owner email) |
+| GitHub environment `production` | Required reviewer: the owner. Gates upload, promotion and bootstrap |
 
-`DATABASE_URL`, `IFD_CREDENTIAL_KEY`, and `IFD_INTERNAL_TOKEN` are required: `scripts/sync-secrets.sh` and Wrangler's `secrets.required` check refuse to upload without them. `IFD_PAID_OPERATIONS_ENABLED` is a Worker secret rather than a `[vars]` entry so the emergency stop can change it without new code; a missing value is passed to the container as `"false"`.
+`DATABASE_URL`, `IFD_CREDENTIAL_KEY`, and `IFD_INTERNAL_TOKEN` are required: `scripts/sync-secrets.sh` and Wrangler's `secrets.required` check refuse to upload without them. `IFD_PAID_OPERATIONS_ENABLED` is a Worker secret rather than a `[vars]` entry for deployment-level enablement; a missing value is passed to the container as `"false"`.
 
 ## Workflows
 
 - `ci.yml`: pull requests, pushes to `main`, and release checks. Python: `uv sync --locked`, pytest, ruff, dead-code check. Worker: `npm ci`, `wrangler types --check`, `tsc --noEmit`, auth-gate unit tests (`node --test`).
-- `release.yml` (manual): refuses anything but the current `main` commit, runs CI on it, syncs secrets from Doppler into a temporary file, then `wrangler versions upload --secrets-file …` builds the image with Docker and uploads a version with no traffic. The version id is in the job summary, and each job uploads a `release-*` evidence artifact (Wrangler output, `wrangler versions view` of the candidate, deployment status before and after, commit and version id). With `promote=true`, the `production` environment approval gates `wrangler versions deploy <id>@100% -y`, followed by `wrangler triggers deploy` to apply the daily cron (version uploads do not change triggers). The cron still calls the container's legacy keep-alive route, which now returns `skipped` and opens no browser; SimBrief sign-in happens on demand during browser work. The release takes its name from the version in `pyproject.toml`: the guard job requires a matching `CHANGELOG.md` section and refuses a version already tagged on another commit. The uploaded Worker version is tagged `vX.Y.Z`, and promotion publishes the `vX.Y.Z` Git tag and GitHub Release with that changelog section as its notes.
-- `emergency-stop.yml` (manual, type `STOP`): sets `IFD_PAID_OPERATIONS_ENABLED=false` with `wrangler secret put`.
+- `release.yml` (manual): refuses anything but the current `main` commit, runs CI on it, syncs secrets from Doppler into a temporary file, then uploads a version with no traffic. CI builds the Linux image and checks it without deployment credentials. A production-approved runner loads that image, pushes it, and supplies its immutable registry digest to Wrangler. The version id is in the job summary, and each job uploads a `release-*` evidence artifact (Wrangler output, `wrangler versions view` of the candidate, deployment status before and after, commit and version id). With `promote=true`, the `production` environment approval gates `wrangler versions deploy <id>@100% -y`, followed by `wrangler triggers deploy` to apply the daily cron (version uploads do not change triggers). The cron still calls the container's legacy keep-alive route, which now returns `skipped` and opens no browser; SimBrief sign-in happens on demand during browser work. The release takes its name from the version in `pyproject.toml`: the guard job requires a matching `CHANGELOG.md` section and refuses a version already tagged on another commit. The uploaded Worker version is tagged `vX.Y.Z`, and promotion publishes the `vX.Y.Z` Git tag and GitHub Release with that changelog section as its notes.
+- `emergency-stop.yml` (manual, type `STOP`): calls the database stop function and checks its result.
 
 `scripts/sync-secrets.sh` can also be run locally (`DOPPLER_PROJECT=… DOPPLER_CONFIG=… scripts/sync-secrets.sh`). Without arguments it is a dry run that checks the required keys and lists the names it would sync; `--apply` pushes them with `wrangler secret bulk`, which deploys a new version of the current code immediately. It prints key names only.
 
 ## First deploy
 
 1. Create the resources above with `IFD_PAID_OPERATIONS_ENABLED=false` in Doppler.
-2. Import ChatGPT-plan credentials (below).
+2. Complete the database setup under **Kill switch and emergency stop**, then import ChatGPT-plan credentials (below).
 3. Run **Release** with `bootstrap=true` and approve `production`. A first upload must use `wrangler deploy`: `wrangler versions upload` cannot create a Worker or apply the Durable Object migration. This version takes traffic immediately, behind Access, with paid operations off. The first container provisioning can take several minutes.
 4. Validate: from an Access-authenticated browser open `https://<worker-host>/health` (expect 200 JSON); without Access, expect a block or 401/403. Connect one MCP client and make one call, such as a flight lookup.
 5. Set `IFD_PAID_OPERATIONS_ENABLED=true` in Doppler when ready, then release again.
@@ -288,7 +289,7 @@ Already matched here:
 - Prepare a candidate with no traffic; live acceptance and promotion are separate gates.
 - A paid-operations kill switch that fails closed: the Worker passes anything other than `"true"` as `"false"`. Condere's runtime keeps a compatibility default of enabled when the value is missing, so it binds the switch explicitly on every deploy.
 - Doppler is the operator source of truth, and runtime secrets are copied into the platform's secret store (Secret Manager there, Worker secrets here). The container never holds a `DOPPLER_TOKEN`.
-- A documented emergency stop and rollback. Condere's stop targets job names that its new release no longer creates. Ours cannot drift this way: the stop and the release both use `deploy/cloudflare/wrangler.toml`, so they target the same Worker.
+- A documented emergency stop and rollback. Condere's stop targets job names that its new release no longer creates. The stop role must target the same application database as the deployed runtime.
 
 Gaps found, and their state:
 
@@ -296,7 +297,7 @@ Gaps found, and their state:
 2. **Keep release evidence.** Condere saves `preflight.json`, `previous.json` (traffic before), `candidate.json`, and `verification.json` as build artifacts and fails if the candidate does not match. Closed: each release job uploads the Wrangler output, `wrangler deployments status` before and after, the candidate's `wrangler versions view`, and the commit and version id.
 3. **Pin the image by digest.** Condere deploys `repository@sha256:…` and records commit, digest, and acceptance source in the runtime environment. Wrangler builds and pushes our image during `versions upload` and pins it in the version; the evidence artifact keeps the version record. Whether that record shows the image digest is unverified until the first real upload.
 4. **Secret sync should default to a dry run.** Condere documented this pattern (`sync_doppler_gcp_secrets.sh`, list keys unless `--apply`), but that script was removed on 2026-08-24 and its syncs are now manual. Closed: `scripts/sync-secrets.sh` is now a dry run unless given `--apply`.
-5. **Approve before preparing.** Condere puts a manual block step before candidate preparation as well as before promotion. Our upload runs without approval; that is acceptable only while it cannot take traffic or spend.
+5. **Approve before preparing.** Condere puts a manual block step before candidate preparation as well as before promotion. Upload now requires production approval because its credential can edit the Worker.
 6. **Before enabling paid work:** one bounded live run with retained usage receipts (AeroAPI result sets, Browserbase minutes, ChatGPT plan usage), stop on uncertain cost, and pin the exercised version before moving traffic.
 
 Checked against the shared playbook's pitfalls (`AgenticEngineering/openwiki/deployment-playbook.md`, the executed Condere spin-off deployment):
@@ -316,8 +317,14 @@ Open owner decisions this raises:
 
 ## Kill switch and emergency stop
 
-- **Paid operations flag**: `IFD_PAID_OPERATIONS_ENABLED=false` stops spending inside the Python server. Run **Emergency stop**, then also set it to `false` in Doppler, or the next release restores the old value.
-- Limits: `wrangler secret put` fails if an uploaded version is waiting for promotion (Wrangler refuses to edit secrets when the latest version is not deployed). Use the Cloudflare dashboard (Worker → Settings → Variables and Secrets → deploy) in that case, and do not leave uploads unpromoted. Requests already running continue until they finish; the container restarts with the new value on the next request. The flag does not revoke keys: for a leaked or compromised key, rotate it at the provider (OpenAI, AeroAPI, Browserbase, Neon, R2, LangSmith), update Doppler, and release.
+Before rollout, run `python -m ifdispatcher.migrate` from the locked application environment with `IFD_MIGRATION_DATABASE_URL` set to the schema owner's direct Postgres connection. This idempotent step sets up trip, credential, checkpoint, and billing tables. Run it before bringing up the new runtime, including on existing databases. Keep that URL in an operator-only config separate from the Doppler config read by CI.
+
+Create distinct non-owner runtime and emergency-stop logins in the dedicated application database. Give neither login elevated role memberships, database ownership, nor schema creation rights. Run `psql -X -v runtime=ROLE_NAME -v stopper=STOP_ROLE -f scripts/runtime-grants.sql` as the schema owner. Use the runtime connection for the app's DATABASE_URL and a libpq service-file entry named `[jumpseat_stop]` in GitHub's STOP_PGSERVICE. Set its host, dbname, user, password, and sslmode fields. The stop role can disable work through one database function. Only the operator can resume. Use TLS with server verification for remote connections.
+
+The hosted runtime honors both the deployment switch and the database stop. Missing policy or database access denies new paid work. The migration starts stopped, with zero AeroAPI pages per UTC day. To enable or resume, the owner explicitly updates the single row in `public.paid_policy`, setting `daily_pages` to their chosen nonnegative daily result-set limit and `stopped=false`. Existing usage stays charged against the current UTC day. Each provider attempt reserves its maximum requested pages, including attempts with uncertain billing. Cached reads bypass reservation. Browser sessions and model turns already admitted may complete.
+
+To stop, dispatch **Emergency stop** from main and check the success summary. The stop survives release, restart, and migration. For the first rollout, cancel outstanding pre-hardening candidates and retain the older deployment-level switch or an Access block as the fallback for any rollback to legacy code. During cutover, Emergency stop runs the legacy Worker stop alongside the database latch when its credential is available. Leave the legacy stop credentials in place until every active and eligible rollback version honors the database latch. Confirm that the new stop works, then set the GitHub repository variable `IFD_DURABLE_STOP_READY=true` and retire the old repository-level credentials. In durable-only mode a missing stop credential fails the workflow. Validate stop and resume with staging credentials before enabling production paid work.
+
 - **Full stop**: disable the Access application's Allow policy or the Worker route in the dashboard. Every request is then rejected at the edge.
 
 ## Rollback

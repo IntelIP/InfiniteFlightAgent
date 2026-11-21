@@ -401,9 +401,6 @@ class PgStore(Store):
 
     def __init__(self, dsn: str):
         self.dsn = dsn
-        with self.connect() as db:
-            for ddl in PG_SCHEMA:
-                db.conn.execute(ddl)
 
     @contextmanager
     def connect(self):

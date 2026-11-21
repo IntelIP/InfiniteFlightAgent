@@ -2,7 +2,7 @@
 // /health to one Cloudflare Container running the Python MCP server. A daily
 // cron asks the container to refresh the SimBrief login.
 import { DurableObject } from "cloudflare:workers";
-import { checkAccess } from "./auth.ts";
+import { checkAccess, checkOrigin } from "./auth.ts";
 
 const CONTAINER_NAME = "dispatcher";
 const CONTAINER_PORT = 8080;
@@ -40,6 +40,7 @@ export function containerEnv(env: Env): Record<string, string> {
     if (typeof value === "string" && value !== "") result[key] = value;
   }
   // Paid operations stay off unless explicitly enabled.
+  result.IFD_HOSTED = "1";
   result.IFD_PAID_OPERATIONS_ENABLED = source.IFD_PAID_OPERATIONS_ENABLED === "true" ? "true" : "false";
   return result;
 }
@@ -133,6 +134,7 @@ export default {
       allowedEmail: env.ACCESS_ALLOWED_EMAIL,
     });
     if (!access.ok) return access.response;
+    if (!checkOrigin(request)) return errorResponse(403, "Origin is not allowed");
 
     if (!FORWARDED_PATHS.has(new URL(request.url).pathname)) return errorResponse(404, "Not found");
     if (!env.IFD_INTERNAL_TOKEN) return errorResponse(503, "Internal token is not configured");
