@@ -227,7 +227,7 @@ Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
 The agent is growing from a dispatcher into a small virtual crew:
 
-- **v0.5.2:** complete multi-airport departure searches and handle FlightAware rate limits.
+- **v0.5.3:** complete multi-airport departure searches and handle FlightAware rate limits.
 - **v0.6 — Crew scheduler:** ask "I have 4 hours" and get one real flight from your home hubs
   and preferred airlines, with a one-line reason to fly it.
 - **v0.7 — Read-only bridge:** a local companion reads Infinite Flight's Connect API to log

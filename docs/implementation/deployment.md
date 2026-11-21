@@ -245,6 +245,17 @@ Container  repo-root Dockerfile → uv run --locked --no-dev ifd-serve on 0.0.0.
 
 Cloudflare Access does the OAuth for MCP clients; the Worker does not implement OAuth. The Worker's JWT check exists so a deleted or misconfigured Access application fails closed.
 
+## Tracing standard
+
+| Item | Value |
+| --- | --- |
+| LangSmith project | `infinite-flight-dispatcher` (Doppler `infinite-flight-agent/prd` `LANGSMITH_PROJECT`); the deployed Worker is the only traced environment. Local runs trace only when `.env` sets the `LANGSMITH_*` values, ideally to a separate project. |
+| Root run | One per MCP turn (`plan_flight` or `approve_dispatch`), id generated before work starts |
+| Required root metadata | `product` (`jumpseat`), `version` (package version), `environment` (`production` from the Worker unless it is deployed with `--var IFD_ENVIRONMENT:staging`, as temporary acceptance Workers should be; `local` otherwise via `IFD_ENVIRONMENT`), `surface` (`remote`/`cli`), `thread_id` (the trip conversation, added by LangGraph) |
+| Feedback | `ifd_workflow_outcome` and `ifd_blocked_steps` — objective workflow signals, not user acceptance |
+
+**Result → trace.** Every `plan_flight`, `approve_dispatch` and `turn_status` result about a turn — `running`, `busy` (the running turn), `approval_required`, `reply`, `failed` and `cancelled` — carries `run_id` and `trace: {run_id, url}`; `queue_full` starts no turn and carries neither; a turn stopped by the paid-operations kill switch, or one that failed or was cancelled before its root run started (agent build, checkpoint read, browser admission), carries `run_id` with `trace: null` because no LangSmith run was created; a queued or just-started turn reports `trace: null` until then. `trip_progress` and `turn_status` after a restart report the latest turn's `trace` too, including running, failed and cancelled turns. `url` opens the trace in LangSmith in one click; it is `null` if the one-time project lookup failed, and `trace` is `null` when tracing is off. To see every turn of one trip, filter the project by metadata `thread_id`.
+
 ## Resources the owner creates
 
 | Resource | Notes |

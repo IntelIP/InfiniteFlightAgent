@@ -75,7 +75,7 @@ to build. Arrival ops fills that calendar gap without control-write risk.
 
 ```mermaid
 flowchart LR
-  P[v0.5.2 Departure search fix] --> S[v0.6 Crew scheduler MVP]
+  P[v0.5.3 Departure search fix] --> S[v0.6 Crew scheduler MVP]
   K[Spike: Connect manifest] --> B[v0.7 Read-only bridge]
   S --> B
   B --> C[v0.8 Performance card + verified thrust]
@@ -91,9 +91,10 @@ Versioning follows the existing policy: fixes ship as patches; each new capabili
 
 | Version | Name | User outcome | Contents | Depends on |
 | --- | --- | --- | --- | --- |
-| **v0.5.2** | Departure search reliability | Multi-airport and 24-hour departure searches return complete results or say clearly what is missing | Page through boards instead of returning ~3-hour windows; back off and report on HTTP 429 (seen on KJFK) | — |
+| **v0.5.2** | Dependency updates and trace links | The dependency updates merged since v0.5.1 are live-accepted, and every MCP result links to its LangSmith trace | INT-528 live acceptance on a staging Worker; `run_id` and `trace` on turn results (INT-529) | — |
+| **v0.5.3** | Departure search reliability | Multi-airport and 24-hour departure searches return complete results or say clearly what is missing | Page through boards instead of returning ~3-hour windows; back off and report on HTTP 429 (seen on KJFK) (INT-475) | — |
 | **Spike** (no release) | Connect manifest | Known answers before phases 2–4 are designed | Dump the manifest for A20N, A21N and 77W; confirm N1, OAT, throttle read-back and AP speed/VS target writes; record in `docs/research/` | Hudson's device on the local network |
-| **v0.6.0** | Crew scheduler MVP | "I have 4 hours" returns one real flight from a home hub, on a fleet aircraft, with a purpose line, ready to dispatch | Pilot profile (hubs, airline affinity, fleet, availability, regions); FlightAware `/schedules` with a cache; rules check in code; aircraft tiers in scoring; purpose generator (hub rotation, ~1-in-3 exploration, logbook gaps); manual "mark flown" logbook; hand-off to dispatch | v0.5.2 |
+| **v0.6.0** | Crew scheduler MVP | "I have 4 hours" returns one real flight from a home hub, on a fleet aircraft, with a purpose line, ready to dispatch | Pilot profile (hubs, airline affinity, fleet, availability, regions); FlightAware `/schedules` with a cache; rules check in code; aircraft tiers in scoring; purpose generator (hub rotation, ~1-in-3 exploration, logbook gaps); manual "mark flown" logbook; hand-off to dispatch | v0.5.3 |
 | **v0.7.0** | Read-only bridge | Flights log themselves, and every flight records the engine data needed to verify thrust | Local companion: Connect discovery and reads; automatic logbook (out/off/on/in), landing rate, flight-phase detection; N1/altitude/OAT/weight logs uploaded to the agent; checks that the imported plan matches the OFP (INT-426) | Spike, v0.6 |
 | **v0.8.0** | Performance card | Before each flight: FLEX or derated N1, V-speeds, thrust reduction and acceleration altitudes, climb schedule and cruise level, with verified aircraft counted | Cruise level and alternate inputs (INT-418); per-aircraft reference scenarios (INT-420); first verified A20N/A21N/B38M from bridge logs (INT-412–414); thrust models for 77W, A35K, A339 (INT-422/423); measured coverage (INT-427) | v0.7 |
 | **v0.9.0** | Arrival ops | A "company" message in descent with an assigned gate and an alternate, plus a taxi route on a companion map | FlightAware arrival gate when published, otherwise airline terminal and size-appropriate stand; OpenStreetMap taxiways and stands; text taxi instructions | v0.7 |
@@ -186,7 +187,7 @@ a thrust-model change.
 ## Known issues
 
 - Multi-airport 24-hour departure search returned truncated ~3-hour windows and an HTTP 429 on
-  KJFK (2026-11-12/13 testing). Planned for v0.5.2.
+  KJFK (2026-11-12/13 testing). Planned for v0.5.3 (INT-475).
 - SimBrief timed out before the Generate click (`clicked: false`); fixed in v0.4.7. v0.5.0's
   generation failure is fixed in v0.5.1.
 

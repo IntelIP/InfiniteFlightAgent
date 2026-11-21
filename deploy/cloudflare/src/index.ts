@@ -39,6 +39,10 @@ export function containerEnv(env: Env): Record<string, string> {
     const value = source[key];
     if (typeof value === "string" && value !== "") result[key] = value;
   }
+  // Trace metadata: production unless a temporary acceptance Worker is deployed with
+  // --var IFD_ENVIRONMENT:staging, so its traces stay distinguishable from production.
+  const environment = source.IFD_ENVIRONMENT;
+  result.IFD_ENVIRONMENT = typeof environment === "string" && environment !== "" ? environment : "production";
   // Paid operations stay off unless explicitly enabled.
   result.IFD_HOSTED = "1";
   result.IFD_PAID_OPERATIONS_ENABLED = source.IFD_PAID_OPERATIONS_ENABLED === "true" ? "true" : "false";

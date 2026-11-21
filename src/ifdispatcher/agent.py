@@ -26,7 +26,7 @@ from langchain.tools import tool
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 
-from ifdispatcher import flights, operations, thrust, workflow
+from ifdispatcher import flights, observability, operations, thrust, workflow
 from ifdispatcher.config import data_dir, export_tracing_settings, setting
 from ifdispatcher.siwc import chatgpt_model
 from ifdispatcher.browser_middleware import BrowserBudgetMiddleware
@@ -658,7 +658,10 @@ def main() -> None:
     args = parser.parse_args()
     export_tracing_settings()
     thread = args.thread or f"chat-{uuid.uuid4().hex[:8]}"
-    config = {"configurable": {"thread_id": thread}}
+    config = {
+        "configurable": {"thread_id": thread},
+        "metadata": observability.run_metadata("cli"),
+    }
     agent = build_agent(checkpointer=checkpointer())
     print(f"Thread {thread}. Ctrl-D to exit.")
     while True:

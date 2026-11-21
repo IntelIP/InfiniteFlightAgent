@@ -18,8 +18,25 @@ A running server reports its version at `/health`.
 - The service runs with read-only application code and dependencies. Releases use pinned container inputs and promote the image tested in CI.
 - **Upgrade before enabling paid work.** Run the database migration, provision restricted runtime and stop identities, configure protected release secrets, and exercise the stop in staging. The database policy starts stopped with a zero-page allowance. Follow the [cutover and rollback instructions](docs/implementation/deployment.md#kill-switch-and-emergency-stop).
 
+## [0.5.2] - 2026-11-20
+
+### Added
+
+- Every MCP result about a turn links to its LangSmith trace (INT-529). `plan_flight`,
+  `approve_dispatch` and `turn_status` results carry `run_id` and `trace: {run_id, url}`;
+  `trip_progress`, and `turn_status` after a restart, report the latest turn's trace as well,
+  including running, failed and cancelled turns. `trace` is `null` when tracing is off or no
+  root run was created, and `url` is `null` if the project lookup failed.
+- Root traces carry standard metadata: `product`, `version`, `environment` and `surface`.
+  The Worker reports `production` unless it is deployed with `--var IFD_ENVIRONMENT:staging`,
+  as temporary acceptance Workers are.
+
 ### Changed
 
+- Dependency updates merged since v0.5.1 ship after their own live acceptance (INT-528):
+  deepagents 0.7.35, langchain 1.5.0, langchain-anthropic 1.7.10, langchain-google-genai
+  4.5.0, google-genai 3.3.0 and wrangler 4.160.0, with pytest 9.2.0 and ruff 0.14.14 for
+  development. Playwright stays pinned to 1.64.1.
 - The product is now called **Jumpseat**. Documentation uses the new name; the repository
   address, the `ifd-*` commands, the package name and deployed resource names are unchanged.
 
@@ -363,7 +380,8 @@ First public release, and the first version live on the self-hosted Cloudflare d
 - A SimBrief generation that fails before the Generate click leaves the leg retryable instead
   of blocking it permanently ([#3](https://github.com/IntelIP/InfiniteFlightAgent/pull/3)).
 
-[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.6...HEAD
+[Unreleased]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.7...v0.5.0
 [0.4.7]: https://github.com/IntelIP/InfiniteFlightAgent/compare/v0.4.6...v0.4.7
