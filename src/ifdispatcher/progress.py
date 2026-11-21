@@ -48,6 +48,10 @@ class TurnControl:
         self.deadline = time.monotonic() + deadline_seconds
         self.event = threading.Event()
         self.reason = None
+        # This turn's root run id and trace link, kept with the turn rather than the
+        # thread's record so a newer turn on the thread cannot replace them.
+        self.run_id = None
+        self.trace = None
 
     def cancel(self, reason: str):
         self.reason = self.reason or reason
@@ -138,6 +142,10 @@ def start_turn(thread_id: str, action: str) -> dict:
             deadline_at=(datetime.now(timezone.utc) + timedelta(seconds=deadline)).isoformat(),
             cancel=None,
             error=None,
+            # The turn's LangSmith root run id, fixed before work starts so a running turn can
+            # report it; trace holds the link once the turn has started a traced run.
+            run_id=str(uuid.uuid4()),
+            trace=None,
         )
 
     return update(thread_id, change)
@@ -195,6 +203,8 @@ def turn_view(record: dict | None, live: bool) -> dict | None:
             "active_seconds_total",
             "cancel",
             "error",
+            "run_id",
+            "trace",
         )
     }
     if record.get("status") in LIVE and not live:

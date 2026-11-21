@@ -86,25 +86,44 @@ def _config(thread_id: str) -> dict:
     return {"configurable": {"thread_id": thread_id}}
 
 
-def _run(payload, thread_id: str, control: progress.TurnControl | None = None) -> dict[str, Any]:
+def _run(
+    payload,
+    thread_id: str,
+    control: progress.TurnControl | None = None,
+    run_id: str | None = None,
+) -> dict[str, Any]:
     control = control or progress.TurnControl(thread_id, progress.turn_deadline_seconds())
     bound = progress.bind(control)
     started = time.monotonic()
+    # The turn's LangSmith root run id, known before work starts so trip_progress can link
+    # a running, failed or cancelled turn to its trace.
+    run_id = control.run_id = run_id or str(uuid.uuid4())
+
+    def begin():
+        # Called just before agent.invoke creates the root run: a turn that fails or stops
+        # earlier (agent build, checkpoint read, browser admission) publishes no dead link.
+        control.trace = observability.trace_link(run_id)
+        progress.set_status(thread_id, "running", trace=control.trace)
+
     try:
         control.check()  # cancelled while queued: start no work
-        progress.set_status(thread_id, "running")
-        response = _invoke(payload, thread_id)
+        progress.set_status(thread_id, "running", run_id=run_id, trace=None)
+        response = _invoke(payload, thread_id, run_id, begin)
         if response["status"] == "approval_required" and control.event.is_set():
             # Cancel arrived while the model proposed this dispatch: withdraw it, never offer it.
             raise progress.TurnCancelled(control.reason or "cancelled")
+        # The completion-time link may have a URL the start-time lookup could not build.
+        control.trace = response.get("trace", control.trace)
         progress.finish_turn(
             thread_id,
             response["status"],
             time.monotonic() - started,
             cancel_outcome="completed" if control.event.is_set() else None,
+            trace=control.trace,
         )
         return response
     except progress.TurnCancelled as exc:
+        trace = control.trace = _final_trace(run_id, control.trace)
         state = _get_agent().get_state(_config(thread_id))
         pending = progress.pending_approval(state, None)
         progress.finish_turn(
@@ -113,6 +132,7 @@ def _run(payload, thread_id: str, control: progress.TurnControl | None = None) -
             time.monotonic() - started,
             cancel_outcome="stopped",
             cancelled_interrupt=pending["interrupt_id"] if pending else None,
+            trace=trace,
         )
         # A dispatch saved after cancel_trip looked (or before a deadline) needs a new approval.
         progress.mark_cancelled_legs(progress.trips_in(state), thread_id, exc.reason)
@@ -120,30 +140,47 @@ def _run(payload, thread_id: str, control: progress.TurnControl | None = None) -
         return {
             "status": "cancelled",
             "thread_id": thread_id,
+            "run_id": run_id,
+            "trace": trace,
             "reason": exc.reason,
             "progress": report,
             "next": "Work stopped at a safe point; completed legs are kept. " + report["next"],
         }
     except Exception as exc:
+        control.trace = _final_trace(run_id, control.trace)
         progress.finish_turn(
-            thread_id, "failed", time.monotonic() - started, error=type(exc).__name__
+            thread_id,
+            "failed",
+            time.monotonic() - started,
+            error=type(exc).__name__,
+            trace=control.trace,
         )
         raise
     finally:
         progress.unbind(bound)
 
 
-def _invoke(payload, thread_id: str) -> dict[str, Any]:
+def _final_trace(run_id: str, trace: dict | None) -> dict | None:
+    """A started turn's link rebuilt at its end, when a backed-off lookup may now succeed."""
+    return observability.trace_link(run_id) if trace else trace
+
+
+def _invoke(payload, thread_id: str, run_id: str, begin) -> dict[str, Any]:
     if not paid_operations_enabled():
-        return {"status": "paid_operations_disabled", "thread_id": thread_id}
+        # No LangSmith run is created, so the result names the turn but links no trace.
+        return {
+            "status": "paid_operations_disabled",
+            "thread_id": thread_id,
+            "run_id": run_id,
+            "trace": None,
+        }
     from ifdispatcher.agent import message_ids
 
-    run_id = str(uuid.uuid4())
     config = {
         "configurable": {"thread_id": thread_id},
         "tags": ["remote", f"v{__version__}"],
         "run_id": run_id,
-        "metadata": {"version": __version__, "surface": "remote"},
+        "metadata": observability.run_metadata("remote"),
     }
     agent = _get_agent()
     seen = message_ids(agent.get_state(config))
@@ -151,20 +188,32 @@ def _invoke(payload, thread_id: str) -> dict[str, Any]:
     token = observability.meter.set(events)
     try:
         with simbrief_browser.session_scope():
+            begin()  # the root run starts now, so its trace link is no longer dead
             result = agent.invoke(payload, config=config, version="v2")
         response = _turn(result, thread_id, seen)
         signals = observability.summarize(result.value["messages"], seen)
         if result.interrupts:
             signals["outcome"] = "approval_required"
-        response.update(run_id=run_id, workflow=signals, provider_usage=events)
+        response.update(
+            run_id=run_id,
+            trace=observability.trace_link(run_id),
+            workflow=signals,
+            provider_usage=events,
+        )
         observability.write_feedback(run_id, signals)
         return response
     finally:
         observability.meter.reset(token)
 
 
+def _identity(thread_id: str, record: dict | None = None) -> dict[str, Any]:
+    """The latest turn's root run id and trace link, from durable progress."""
+    record = record or progress.read(thread_id) or {}
+    return {"run_id": record.get("run_id"), "trace": record.get("trace")}
+
+
 async def _wait(thread_id: str) -> dict[str, Any]:
-    turn = _turns[thread_id]
+    turn, control = _turns[thread_id], _controls.get(thread_id)
     try:
         # shield: a timeout must not cancel the turn itself.
         return await asyncio.wait_for(asyncio.shield(asyncio.wrap_future(turn)), WAIT_SECONDS)
@@ -172,7 +221,23 @@ async def _wait(thread_id: str) -> dict[str, Any]:
         return {
             "status": "running",
             "thread_id": thread_id,
+            **_identity(thread_id),
             "next": "Still working. Call turn_status with this thread_id in about 20 seconds.",
+        }
+    except Exception as exc:
+        # _run recorded the failed turn; report it with its trace instead of an MCP error.
+        return {
+            "status": "failed",
+            "thread_id": thread_id,
+            # This turn's identity: a newer turn may already own the durable record.
+            **(
+                {"run_id": control.run_id, "trace": control.trace}
+                if control
+                else _identity(thread_id)
+            ),
+            "error": type(exc).__name__,
+            "next": "This turn failed. Call trip_progress for completed legs and any uncertain "
+            "generation before sending plan_flight again on this thread.",
         }
 
 
@@ -182,6 +247,7 @@ async def _start(payload, thread_id: str, action: str) -> dict[str, Any]:
         return {
             "status": "busy",
             "thread_id": thread_id,
+            **_identity(thread_id),  # the running turn's trace
             "next": "A turn is still running on this thread. Call turn_status instead.",
         }
     if sum(not f.done() for f in _turns.values()) >= MAX_OUTSTANDING_TURNS:
@@ -192,8 +258,9 @@ async def _start(payload, thread_id: str, action: str) -> dict[str, Any]:
         }
     record = progress.start_turn(thread_id, action)
     control = progress.TurnControl(thread_id, record["deadline_seconds"])
+    control.run_id = record["run_id"]
     _controls[thread_id] = control
-    _turns[thread_id] = _pool.submit(_run, payload, thread_id, control)
+    _turns[thread_id] = _pool.submit(_run, payload, thread_id, control, record["run_id"])
     return await _wait(thread_id)
 
 
@@ -228,6 +295,7 @@ async def approve_dispatch(
             return {
                 "status": "cancelled",
                 "thread_id": thread_id,
+                **_identity(thread_id),  # the cancelled turn's trace
                 "pending": pending,
                 "next": "This approval was cancelled and cannot be approved. Nothing was "
                 "dispatched or generated. Send plan_flight to start again with a new approval.",
@@ -262,6 +330,7 @@ async def turn_status(thread_id: str) -> dict[str, Any]:
         return {
             "status": "cancelled",
             "thread_id": thread_id,
+            **_identity(thread_id, record),
             "turn": progress.turn_view(record, live=False),
             "next": "This turn was cancelled; any pending approval was withdrawn and cannot be "
             "approved. Call trip_progress for kept legs, or send plan_flight to start again.",
@@ -272,6 +341,7 @@ async def turn_status(thread_id: str) -> dict[str, Any]:
             return {
                 "status": turn["status"],
                 "thread_id": thread_id,
+                **_identity(thread_id, record),
                 "turn": turn,
                 "next": "Call trip_progress for completed legs, pending approval and any "
                 "uncertain generation before continuing with plan_flight on this thread.",
